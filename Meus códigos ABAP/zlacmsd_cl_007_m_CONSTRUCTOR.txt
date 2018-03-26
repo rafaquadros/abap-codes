@@ -1,0 +1,12 @@
+METHOD constructor.
+*  DATA lvc_flag(1) TYPE c.
+*  WHILE lvc_flag IS INITIAL.
+*
+*  ENDWHILE.
+  CALL METHOD super->constructor
+    EXPORTING
+      p_key           = p_key
+      p_typeid        = 'ZLACMSD_CL_007'
+      pt_dlv_crt_data = pt_dlv_crt_data[]
+      pt_relationship = pt_relationship[].
+ENDMETHOD.

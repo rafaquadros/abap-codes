@@ -1,0 +1,20 @@
+*"* use this source file for any macro definitions you need
+*"* in the implementation part of the class
+DEFINE m_raise_fm_exception.
+  message id &1
+          type &2
+          number &3
+          with &4 &5 &6 &7
+          into lvc_dummy.
+  lw_return-type       = sy-msgty.
+  lw_return-id         = sy-msgid.
+  lw_return-number     = sy-msgno.
+  lw_return-message_v1 = sy-msgv1.
+  lw_return-message_v2 = sy-msgv2.
+  lw_return-message_v3 = sy-msgv3.
+  lw_return-message_v4 = sy-msgv4.
+  append lw_return to lt_return.
+  raise exception type cx_bapi_error
+   exporting
+     status = lt_return[].
+END-OF-DEFINITION.

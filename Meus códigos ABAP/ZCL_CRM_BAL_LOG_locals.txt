@@ -1,0 +1,345 @@
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
+*--------------------------------------------------------------------*
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It?s a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* Class LCL_API
+*  OVERVIEW: Objects of this class mediates API calls. It aims to
+*            isolate this development from external dependencies, as
+*            might be desirable in tests.
+*            The instances of this object is provided by the private
+*            method GET_API of the main class (ZCL_CRM_BAL_LOG). By
+*            redefining the method GET_API one can  provide appropriated
+*            stubs, which must redefine the desired methods of LCL_API,
+*            instead of accessing the real APIs.
+*--------------------------------------------------------------------*
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    METHODS: get_log_handle IMPORTING p_object        TYPE balobj_d
+                                      p_extnumber     TYPE balnrext
+                            RETURNING VALUE(r_handle) TYPE balloghndl
+                            RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method GET_LOG_HANDLE
+*--------------------------------------------------------------------*
+* REQUIRES: The log object and the external identifier must be provided.
+* EFFECTS.: If the API BAL_LOG_CREATE returns an error, this method
+*           raises the exception type CX_BAPI_ERROR, otherwise returns
+*           the log handle.
+*--------------------------------------------------------------------*
+* ->    P_OBJECT      Application log: Object name (Application code).
+* ->    P_EXTNUMBER   Instance Identification in Persistent Object
+*                     References.
+* <-    R_HANDLE     Application Log: Log Handle.
+*--------------------------------------------------------------------*
+      show_messages IMPORTING p_object TYPE balobj_d
+                              p_extnum TYPE balnrext
+                              p_title  TYPE baltitle
+                              p_mode   TYPE char03 OPTIONAL
+                    RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method SHOW_MESSAGES
+*--------------------------------------------------------------------*
+* REQUIRES: The log object, the external identifier and the window
+*           title must be provided.
+* EFFECTS.: If the API BAL_DSP_LOG_DISPLAY returns an error raises
+*           exception CX_BAPI_ERROR, otherwise shows the related log
+*           messages.
+*--------------------------------------------------------------------*
+* ->    P_OBJECT      Application log: Object name (Application code).
+* ->    P_EXTNUMBER   Instance Identification in Persistent Object
+*                     References.
+* ->    P_TITLE       Application Log: Screen title.
+* ->    P_MODE        Presentation mode (default STD).
+*--------------------------------------------------------------------*
+      clean_up_log IMPORTING p_object TYPE balobj_d
+                             p_date   TYPE sydatum
+                   RAISING   cx_bapi_error.
+*--------------------------------------------------------------------*
+* Method CLEAN_UP_LOG
+*--------------------------------------------------------------------*
+*       REQUIRES: The cut date must be provided.
+*       EFFECTS.: If the API BAL_DB_DELETE returns an error raises
+*                 exception CX_BAPI_ERROR, otherwise deletes from
+*                 database entries older than the date provided.
+*----------------------------------------------------------------------*
+* ->    P_OBJECT      Application log: Object name (Application code).
+* ->    P_DATE        Date up to which the log will be cleaned up.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    METHODS: get_search_arguments IMPORTING pw_lfil        TYPE bal_s_lfil
+                                  RETURNING VALUE(rt_lhdr) TYPE balhdr_t
+                                  RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method GET_SEARCH_ARGUMENTS
+*--------------------------------------------------------------------*
+*       REQUIRES: Log header filter criteria must be provided.
+*       EFFECTS.: If the API BAL_DB_SEARCH returns an error raises
+*                 exception CX_BAPI_ERROR, otherwise returns a sorted
+*                 table of related log headers.
+*----------------------------------------------------------------------*
+*  -->  PW_LFIL     Log filter criteria
+*  <--  RT_LHDR     Application Log: Log header data table
+*----------------------------------------------------------------------*
+      load_logs IMPORTING pw_lfil TYPE bal_s_lfil
+                RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method LOAD_LOGS
+*--------------------------------------------------------------------*
+*       REQUIRES: Log filter criteria must be provided.
+*       EFFECTS.: If the API BAL_DB_LOAD returns an error raises
+*                 exception CX_BAPI_ERROR.
+*       MODIFIES: Loads the related log messages into memory.
+*----------------------------------------------------------------------*
+*  -->  PW_LFIL     Log filter criteria
+*----------------------------------------------------------------------*
+      get_std_profile RETURNING VALUE(rw_dsprof) TYPE bal_s_prof
+                      RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method GET_STD_PROFILE
+*--------------------------------------------------------------------*
+*       EFFECTS.: If the API BAL_DSP_PROFILE_STANDARD_GET returns an
+*                 error raises exception CX_BAPI_ERROR, otherwise
+*                 returns standard format profile
+*----------------------------------------------------------------------*
+*  <--  RW_DSPROF     Log Output Format Profile
+*----------------------------------------------------------------------*
+      get_pop_profile RETURNING VALUE(rw_dsprof) TYPE bal_s_prof
+                      RAISING   cx_bapi_error.
+*--------------------------------------------------------------------*
+* Method GET_POP_PROFILE
+*--------------------------------------------------------------------*
+*       EFFECTS.: If the API BAL_DSP_PROFILE_POPUP_GET returns an
+*                 error raises exception CX_BAPI_ERROR, otherwise
+*                 returns standard format profile
+*----------------------------------------------------------------------*
+*  <--  RW_DSPROF     Log Output Format Profile
+*----------------------------------------------------------------------*
+ENDCLASS.
+CLASS lcl_api IMPLEMENTATION.
+  METHOD get_log_handle.
+    DATA: lw_log       TYPE bal_s_log,    "Log header data
+          lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+
+* define some header data of this log
+    lw_log-extnumber  = p_extnumber.
+    lw_log-object     = p_object.
+    lw_log-aldate     = sy-datum.
+    lw_log-altime     = sy-uzeit.
+    lw_log-aluser     = sy-uname.
+    lw_log-alprog     = sy-repid.
+
+    CALL FUNCTION 'BAL_LOG_CREATE'
+      EXPORTING
+        i_s_log                 = lw_log
+      IMPORTING
+        e_log_handle            = r_handle
+      EXCEPTIONS
+        log_header_inconsistent = 1
+        OTHERS                  = 2.
+
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+  METHOD show_messages.
+    DATA: lr_object          TYPE        bal_s_obj,
+          lr_extnumber       TYPE        bal_s_extn,
+          lw_log_filter      TYPE        bal_s_lfil,
+          lw_display_profile TYPE        bal_s_prof,
+          lvc_dummy(1)       TYPE        c,
+          lw_return          TYPE        bapiret2,
+          lt_return          TYPE        bapiret2_t,
+          lx_error           TYPE REF TO cx_bapi_error,
+          lv_mode            TYPE        char03.
+
+* create a filter with all relevant criteria:
+    lr_object-sign   = 'I'.
+    lr_object-option = 'EQ'.
+    lr_object-low    = p_object.
+    APPEND lr_object TO lw_log_filter-object.
+
+    lr_extnumber-sign   = 'I'.
+    lr_extnumber-option = 'EQ'.
+    lr_extnumber-low    = p_extnum.
+    APPEND lr_extnumber TO lw_log_filter-extnumber.
+
+    TRY .
+* Load logs into memory
+        load_logs( lw_log_filter ).
+* Initilizes the displaying profile
+        IF p_mode IS SUPPLIED.
+          lv_mode = p_mode.
+        ELSE.
+          lv_mode = 'STD'.
+        ENDIF.
+        CASE lv_mode.
+          WHEN 'POP'.
+            lw_display_profile = get_pop_profile( ).
+          WHEN OTHERS.
+            lw_display_profile = get_std_profile( ).
+        ENDCASE.
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+* use grid and detail level for display
+    lw_display_profile-title  = p_title.
+* call display function module
+    CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
+      EXPORTING
+        i_s_display_profile  = lw_display_profile
+        i_s_log_filter       = lw_log_filter
+      EXCEPTIONS
+        profile_inconsistent = 1
+        internal_error       = 2
+        no_data_available    = 3
+        no_authority         = 4
+        OTHERS               = 5.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+  METHOD load_logs.
+    DATA: lt_log_header TYPE        balhdr_t,
+          lx_error      TYPE REF TO cx_bapi_error,
+          lvc_dummy(1)  TYPE        c,
+          lw_return     TYPE        bapiret2,
+          lt_return     TYPE        bapiret2_t.
+
+* search on DB for the logs
+    TRY .
+        lt_log_header = get_search_arguments( pw_lfil ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+* load messages into memory
+    CALL FUNCTION 'BAL_DB_LOAD'
+      EXPORTING
+        i_t_log_header     = lt_log_header[]
+      EXCEPTIONS
+        no_logs_specified  = 1
+        log_not_found      = 2
+        log_already_loaded = 3.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_search_arguments.
+    DATA: lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+
+    CALL FUNCTION 'BAL_DB_SEARCH'
+      EXPORTING
+        i_s_log_filter     = pw_lfil
+      IMPORTING
+        e_t_log_header     = rt_lhdr
+      EXCEPTIONS
+        log_not_found      = 1
+        no_filter_criteria = 2.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_std_profile.
+    DATA: lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+
+    CALL FUNCTION 'BAL_DSP_PROFILE_STANDARD_GET'
+      IMPORTING
+        e_s_display_profile = rw_dsprof
+      EXCEPTIONS
+        OTHERS              = 1.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    rw_dsprof-use_grid   = 'X'.
+    rw_dsprof-bydetlevel = 'X'.
+  ENDMETHOD.
+  METHOD get_pop_profile.
+    DATA: lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+
+    CALL FUNCTION 'BAL_DSP_PROFILE_POPUP_GET'
+      IMPORTING
+        e_s_display_profile = rw_dsprof
+      EXCEPTIONS
+        OTHERS              = 1.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+  METHOD clean_up_log.
+    DATA: lr_object          TYPE        bal_s_obj,
+          lr_date            TYPE        bal_s_date,
+          lw_log_filter      TYPE        bal_s_lfil,
+          lt_log_header      TYPE        balhdr_t,
+          lx_error           TYPE REF TO cx_bapi_error,
+          lvc_dummy(1)       TYPE        c,
+          lw_return          TYPE        bapiret2,
+          lt_return          TYPE        bapiret2_t.
+
+* create a filter with all relevant criteria:
+    lr_object-sign = lr_date-sign = 'I'.
+    lr_object-option = 'EQ'.
+    lr_object-low    = p_object.
+    APPEND lr_object TO lw_log_filter-object.
+    lr_date-option = 'LE'.
+    lr_date-low    = p_date.
+    APPEND lr_date TO lw_log_filter-aldate.
+
+* search on DB for the logs
+    TRY .
+        lt_log_header = get_search_arguments( lw_log_filter ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+* Delete the log
+    IF lt_log_header[] IS NOT INITIAL.
+      CALL FUNCTION 'BAL_DB_DELETE'
+        EXPORTING
+          i_t_logs_to_delete = lt_log_header[]
+*         i_in_update_task   = 'X'
+*         i_with_commit_work = 'X'
+        EXCEPTIONS
+          no_logs_specified  = 1
+          OTHERS             = 2.
+      IF sy-subrc <> 0.
+        m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                             sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,105 @@
+class ZLACMSD_CL_INTERCOMP_PROCESS definition
+  public
+  create public
+
+  global friends ZLACMSD_CL_001
+                 ZLACMSD_CL_INTCMP_WFSTEP .
+
+*"* public components of class ZLACMSD_CL_INTERCOMP_PROCESS
+*"* do not include other source files here!!!
+public section.
+
+  interfaces BI_OBJECT .
+  interfaces BI_PERSISTENT .
+  interfaces IF_WORKFLOW .
+
+  types:
+    CYT_PICKING_ITEMS TYPE STANDARD TABLE OF vbpok .
+  types:
+    BEGIN OF cy_purch_item,
+            ebeln TYPE ebeln,
+            ebelp TYPE ebelp,
+           END OF cy_purch_item .
+  types:
+    cyt_purch_items TYPE STANDARD TABLE OF cy_purch_item .
+  types:
+    cyt_return TYPE STANDARD TABLE OF bapiret2 .
+  types:
+    BEGIN OF cy_id_relationship,
+                vbelv TYPE vbeln,
+                posnv TYPE posnv,
+                ebeln TYPE ebeln,
+                ebelp TYPE ebelp,
+                mjahr TYPE mjahr,
+                mblnr TYPE mblnr,
+                mblpo TYPE mblpo,
+             END OF  cy_id_relationship .
+  types:
+    cyt_id_relationship TYPE STANDARD TABLE
+              OF cy_id_relationship .
+  types:
+    cyt_relationship TYPE STANDARD TABLE OF zlacmsd_t_gic_dl .
+  types:
+    BEGIN OF cy_sale_item,
+                  vbeln TYPE vbeln,
+                  posnr TYPE posnr,
+                 END OF cy_sale_item .
+  types:
+    cyt_sale_items TYPE STANDARD TABLE OF cy_sale_item .
+  types:
+    cyt_deliveries_items TYPE STANDARD TABLE
+         OF bapidlvitemcreated .
+
+  data AV_MBLNR type MBLNR .
+  data AV_MJAHR type MJAHR .
+  data AW_PERSIST_REF type SIBFLPOR .
+  data AV_VSBED type VSBED .
+  data AV_KEY type CHAR15 read-only .
+
+  class-events PO_RECEIVED
+    exporting
+      value(PO_INTCMP_PROCESS) type ref to ZLACMSD_CL_INTERCOMP_PROCESS .
+  class-events MATERIAL_RECEIPT_CANCELED
+    exporting
+      value(PO_INTCMP_PROCESS) type ref to ZLACMSD_CL_INTERCOMP_PROCESS .
+
+  class-methods CLASS_CONSTRUCTOR .
+  methods ZM_MAIN .
+  methods RAISE_DLV_RECEIVED
+    raising
+      CX_SWF_EVT_EXCEPTION .
+  class-methods CREATE_INTERCOMP_PROCESS
+    importing
+      value(P_TYPEID) type SIBFTYPEID optional
+      value(PT_XMSEG) type TY_T_MSEG
+      value(P_CANCELATION) type CHAR01
+    returning
+      value(RO_INTERCOMP_PROCESS) type ref to ZLACMSD_CL_INTERCOMP_PROCESS .
+  methods CONSTRUCTOR
+    importing
+      !P_TYPEID type SIBFTYPEID optional
+      value(PT_XMSEG) type TY_T_MSEG
+      value(P_CANCELATION) type CHAR01 .
+  class-methods ZM_INTERCOMPANY_PROCESS
+    importing
+      value(PT_XMSEG) type TY_T_MSEG .
+  methods IS_INTERCOMPANY
+    returning
+      value(R_BOOLEAN) type CHAR1 .
+  class-methods IMPORT_SHIPPING_COND
+    returning
+      value(R_VSBED) type VSBED .
+  methods RAISE_DLV_CANCELED
+    raising
+      CX_SWF_EVT_EXCEPTION .
+  methods DELETE_FRIEND_DELIVERY
+    returning
+      value(R_NOK) type CHAR01 .
+  class-methods CREATE_ASSOCIATION_PERSISTENCE
+    importing
+      value(PT_DELIVERIES_ITEMS) type CYT_DELIVERIES_ITEMS
+      value(PT_ID_RELATIONSHIP) type CYT_ID_RELATIONSHIP
+      value(P_DLPTY) type ZLACMSD_L_DLPTY optional
+    raising
+      CX_SY_SQL_ERROR .
+  class-methods RELEASE_SHM_MEMORY .

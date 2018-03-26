@@ -1,0 +1,2067 @@
+<?xml version="1.0" encoding="utf-16"?>
+<nugget name="CONSULTA_PACKING_LIST">
+ <CLAS CLSNAME="ZCL_WM_PCKLST_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" UUID="0050560000471EE583BAC869233B44FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_LOAD definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!
+
+  data LOAD_ID type ZWM_ELOAD_ID read-only .
+  data WERKS type WERKS_D read-only .
+  data EBELN type EBELN read-only .
+  data PRONU type PRONU read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !P_LOAD_ID type ZWM_ELOAD_ID
+      !P_WERKS type WERKS_D
+      !P_EBELN type EBELN
+      !P_PRONU type PRONU .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!
+
+  data T_VBELN type VBELN_VL_T .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_LOAD). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_inbound_deliveries IMPORTING i_load_id
+                                                       TYPE zwm_eload_id
+                               RETURNING value(rt_vbeln) TYPE vbeln_vl_t
+                                    RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_INBOUND_DELIVERIES
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_INBD
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the inbound deliveries related to the load id provided.
+*--------------------------------------------------------------------*
+* -&gt; I_LOAD_ID SOURCE Packing List Load Id.
+* &lt;- RT_VBELN  Table of Delivery Numbers.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_inbound_deliveries.
+
+    SELECT inbdl
+      FROM zwm_tpcklst_inbd
+      INTO TABLE rt_vbeln
+     WHERE load_id = i_load_id.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_inbound_deliveries
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="EBELN" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="LOAD_ID" VERSION="1" LANGU="E" DESCRIPT="Packing List Load Id" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_ELOAD_ID" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="PRONU" VERSION="1" LANGU="E" DESCRIPT="Invoice: Number of invoice document for import processing" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="PRONU" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="T_VBELN" VERSION="1" LANGU="E" DESCRIPT="Table of Delivery Numbers" EXPOSURE="0" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="VBELN_VL_T" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_LOAD_ID" VERSION="1" LANGU="E" DESCRIPT="Packing List Load Id" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_ELOAD_ID"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELN"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_PRONU" VERSION="1" LANGU="E" DESCRIPT="Invoice: Number of invoice document for import processing" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="PRONU"/>
+   <source>method CONSTRUCTOR.
+  me-&gt;load_id = p_load_id.
+  me-&gt;werks   = p_werks.
+  me-&gt;ebeln   = p_ebeln.
+  me-&gt;pronu   = p_pronu.
+endmethod.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_BOX" VERSION="1" LANGU="E" DESCRIPT="Box" UUID="0050560000471EE583BAFBBAD73CA4FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_BOX definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!
+
+  data WERKS type WERKS_D read-only .
+  data SOURCE type ZWM_EPCKLST_SRC read-only .
+  data MODEL type ZWM_EPCKLST_MODEL read-only .
+  data CHARG type CHARG_D read-only .
+  data CDK_BOX type ZCDK_BOX read-only .
+  data VARIANT type ZVARIANT read-only .
+  data PKMTH type ZWM_EPKMTH read-only .
+  data LENUM type LENUM read-only .
+  data COLOR type ZWM_EPCKLST_COLOR read-only .
+  data CMODEL type ZWM_EPCKLST_CMODEL read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !IO_LOAD type ref to ZCL_WM_PCKLST_LOAD
+      !I_SOURCE type ZWM_EPCKLST_SRC
+      !I_MODEL type ZWM_EPCKLST_MODEL
+      !I_CHARG type CHARG_D
+      !I_CDK_BOX type ZCDK_BOX
+      !I_VARIANT type ZVARIANT
+      !I_PKMTH type ZWM_EPKMTH
+      !I_LENUM type LENUM
+      !I_COLOR type ZWM_EPCKLST_COLOR
+      !I_CMODEL type ZWM_EPCKLST_CMODEL .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!
+
+  data O_SOURCE type ref to ZCL_WM_PCKLST_SOURCE .
+  data O_MODEL type ref to ZCL_WM_PCKLST_MODEL .
+  data O_LOAD type ref to ZCL_WM_PCKLST_LOAD .
+  data O_ITEMS type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_BOX). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_items      IMPORTING  i_source TYPE zwm_epcklst_src
+                                       i_model  TYPE zwm_epcklst_model
+                                       i_charg  TYPE charg_d
+                                       i_box    TYPE zcdk_box
+                          EXPORTING value(et_items) TYPE zwm_ttcklst_itm
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_ITEMS
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the items related to the box provided.
+*--------------------------------------------------------------------*
+* -&gt; I_SOURCE Packing List Source.
+* -&gt; I_MODEL  Model (Car) Code.
+* -&gt; I_CHARG  Batch Number.
+* -&gt; I_BOX    CDK - BOX.
+* &lt;- RT_ITEMS Box Items.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_items.
+
+    SELECT idnlf matnr meins menge lenum vbeln chkst
+      FROM zwm_tpcklst
+      INTO TABLE et_items
+     WHERE source  = i_source
+       AND model   = i_model
+       AND charg   = i_charg
+       AND cdk_box = i_box.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_items
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CDK_BOX" VERSION="1" LANGU="E" DESCRIPT="CDK - BOX" EXPOSURE="2" STATE="1" EDITORDER="7 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZCDK_BOX" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CHARG" VERSION="1" LANGU="E" DESCRIPT="Batch Number" EXPOSURE="2" STATE="1" EDITORDER="6 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="CHARG_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CMODEL" VERSION="1" LANGU="E" DESCRIPT="Car Model" EXPOSURE="2" STATE="1" EDITORDER="12 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="COLOR" VERSION="1" LANGU="E" DESCRIPT="Color" EXPOSURE="2" STATE="1" EDITORDER="11 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_COLOR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="LENUM" VERSION="1" LANGU="E" DESCRIPT="Storage Unit Number" EXPOSURE="2" STATE="1" EDITORDER="10 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="LENUM" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" EXPOSURE="2" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_ITEMS" VERSION="1" LANGU="E" DESCRIPT="Items collection" EXPOSURE="0" STATE="1" EDITORDER="14 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDBY="RQUADROS" CHANGEDON="20150616" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" EXPOSURE="0" STATE="1" EDITORDER="13 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_LOAD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" EXPOSURE="0" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_SOURCE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="PKMTH" VERSION="1" LANGU="E" DESCRIPT="Pack Month" EXPOSURE="2" STATE="1" EDITORDER="9 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPKMTH" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="VARIANT" VERSION="1" LANGU="E" DESCRIPT="Variant" EXPOSURE="2" STATE="1" EDITORDER="8 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZVARIANT" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" MTDTYPE="2" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="IO_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_LOAD"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CHARG" VERSION="1" LANGU="E" DESCRIPT="Batch Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="CHARG_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CDK_BOX" VERSION="1" LANGU="E" DESCRIPT="CDK - BOX" CMPTYPE="1" MTDTYPE="2" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZCDK_BOX"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_VARIANT" VERSION="1" LANGU="E" DESCRIPT="Variant" CMPTYPE="1" MTDTYPE="2" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZVARIANT"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_PKMTH" VERSION="1" LANGU="E" DESCRIPT="Pack Month" CMPTYPE="1" MTDTYPE="2" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPKMTH"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_LENUM" VERSION="1" LANGU="E" DESCRIPT="Storage Unit Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="8 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="LENUM"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_COLOR" VERSION="1" LANGU="E" DESCRIPT="Color" CMPTYPE="1" MTDTYPE="2" EDITORDER="9 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_COLOR"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CMODEL" VERSION="1" LANGU="E" DESCRIPT="Car Model" CMPTYPE="1" MTDTYPE="2" EDITORDER="10 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMODEL"/>
+   <source>METHOD constructor.
+  me-&gt;o_load  = io_load.
+  me-&gt;source  = i_source.
+  me-&gt;model   = i_model.
+  me-&gt;charg  	= i_charg.
+  me-&gt;cdk_box	= i_cdk_box.
+  me-&gt;variant	= i_variant.
+  me-&gt;pkmth	  = i_pkmth.
+  me-&gt;lenum	  = i_lenum.
+  me-&gt;color	  = i_color.
+  me-&gt;cmodel  = i_cmodel.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDBY="RQUADROS" CHANGEDON="20150616" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>method GET_DB.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+endmethod.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150616" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000"/>
+   <source>METHOD set_attributes.
+  DATA: lo_db      TYPE REF TO lcl_db,
+        lo_item    TYPE REF TO zcl_wm_pcklst_item,
+        lt_items   TYPE zwm_ttcklst_itm,
+        lx_error   TYPE REF TO cx_bapi_error,
+        ls_message TYPE string,
+        lw_return  TYPE bapiret2,
+        lt_return  TYPE bapiret2_t.
+  FIELD-SYMBOLS  &lt;lw_item&gt; TYPE zwm_spcklst_itm.
+
+  TRY .
+      me-&gt;o_source =
+              zcl_wm_pcklst_source=&gt;get_instance(
+                                            i_werks  = me-&gt;o_load-&gt;werks
+                                            i_source = me-&gt;source ).
+      me-&gt;o_model  =
+               zcl_wm_pcklst_model=&gt;get_instance( i_model = me-&gt;model ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  lo_db ?= me-&gt;get_db( ).
+  TRY .
+      lo_db-&gt;get_items( EXPORTING i_source = me-&gt;source
+                                  i_model  = me-&gt;model
+                                  i_charg  = me-&gt;charg
+                                  i_box    = me-&gt;cdk_box
+                        IMPORTING
+                          et_items = lt_items  ).
+    CATCH cx_sy_sql_error.
+      CLEAR o_items.
+  ENDTRY.
+  LOOP AT lt_items ASSIGNING &lt;lw_item&gt;.
+    CREATE OBJECT lo_item
+      EXPORTING
+        i_idnlf = &lt;lw_item&gt;-idnlf
+        i_matnr = &lt;lw_item&gt;-matnr
+        i_meins = &lt;lw_item&gt;-meins
+        i_menge = &lt;lw_item&gt;-menge
+        i_vbeln = &lt;lw_item&gt;-vbeln
+        i_chkst = &lt;lw_item&gt;-chkst.
+    o_items-&gt;add( lo_item ).
+    FREE lo_item.
+  ENDLOOP.
+
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" UUID="0050560000471EE583BB889AD1ABC4FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" RSTAT="K" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZWM02" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_SOURCE definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!
+
+  data WERKS type WERKS_D read-only .
+  data SOURCE type ZWM_EPCKLST_SRC read-only .
+  data CODE type ZWM_EPCKLST_CODE .
+
+  methods CONSTRUCTOR
+    importing
+      !I_WERKS type WERKS_D
+      !I_SOURCE type ZWM_EPCKLST_SRC .
+  methods GET_CODE
+    returning
+      value(R_CODE) type ZWM_EPCKLST_CODE
+    raising
+      CX_BAPI_ERROR .
+  type-pools ABAP .
+  methods IS_DELIVERY_CREATION_REQUIRED
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .
+  class-methods GET_INSTANCE
+    importing
+      !I_WERKS type WERKS_D
+      !I_SOURCE type ZWM_EPCKLST_SRC
+    returning
+      value(RO_SOURCE) type ref to ZCL_WM_PCKLST_SOURCE
+    raising
+      CX_BAPI_ERROR .
+  methods CHECK_CONFIGURATION
+    raising
+      CX_BAPI_ERROR .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!
+
+  data CINBD type ZWM_EPCKLST_CINBD .
+  class-data COLLECTION type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_SOURCE). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_source_data IMPORTING i_werks  TYPE werks_d
+                                       i_source TYPE zwm_epcklst_src
+                             EXPORTING e_code   TYPE zwm_epcklst_code
+                                       e_cinbd  TYPE zwm_epcklst_cinbd
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_SOURCE_DATA
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_SRC
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the related SOURCE information.
+*--------------------------------------------------------------------*
+* -&gt; I_WERKS  Plant.
+* -&gt; I_SOURCE Packing List Source.
+* &lt;- E_CODE   Packing List Source Code.
+* &lt;- E_CINBD  Inb. Delivery creation indicator.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_source_data.
+
+    SELECT code cinbd
+      FROM zwm_tpcklst_src
+      INTO (e_code, e_cinbd)
+        UP TO 1 ROWS
+     WHERE source = i_source
+       AND werks  = i_werks.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_source_data
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <typeUsage CLSNAME="ZCL_WM_PCKLST_SOURCE" TYPEGROUP="ABAP" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+  <forwardDeclaration>ABAP</forwardDeclaration>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CINBD" VERSION="1" LANGU="E" DESCRIPT="Packing List Data Model - Inb. Delivery creation indicator" EXPOSURE="0" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CINBD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="COLLECTION" VERSION="1" LANGU="E" DESCRIPT="List of sources" EXPOSURE="0" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CHECK_CONFIGURATION" VERSION="1" LANGU="E" DESCRIPT="Checks the existence of source configuration." EXPOSURE="2" STATE="1" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CHECK_CONFIGURATION" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD check_configuration.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  TRY .
+      me-&gt;set_attributes( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" SCONAME="I_WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <source>METHOD constructor.
+  me-&gt;werks = i_werks.
+  me-&gt;source = i_source.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the numeric code related to the source." EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" SCONAME="R_CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD get_code.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  IF me-&gt;code IS INITIAL.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDIF.
+  r_code = me-&gt;code.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>METHOD get_db.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of this class" EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="I_WERKS" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="RO_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_SOURCE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD get_instance.
+  DATA: lo_iterator TYPE REF TO cl_object_collection_iterator,
+        lo_instance TYPE REF TO zcl_wm_pcklst_source,
+        lx_error    TYPE REF TO cx_bapi_error.
+
+  lo_iterator = collection-&gt;get_iterator( ).
+  WHILE lo_iterator-&gt;has_next( ) = abap_true.
+    lo_instance ?= lo_iterator-&gt;get_next( ).
+    IF lo_instance-&gt;werks  = i_werks AND
+       lo_instance-&gt;source = i_source.
+      EXIT.
+    ENDIF.
+    FREE lo_instance.
+  ENDWHILE.
+  FREE lo_iterator.
+
+  IF lo_instance IS NOT INITIAL.
+    ro_source = lo_instance.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT lo_instance
+    EXPORTING
+      i_werks  = i_werks
+      i_source = i_source.
+
+  TRY .
+      lo_instance-&gt;check_configuration( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  collection-&gt;add( lo_instance ).
+
+  ro_source = lo_instance.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="IS_DELIVERY_CREATION_REQUIRED" VERSION="1" LANGU="E" DESCRIPT="Returns TRUE if delivery creation in the load is required." EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="IS_DELIVERY_CREATION_REQUIRED" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" DESCRIPT="TRUE if the delivery creation is required in the load" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+   <source>METHOD is_delivery_creation_required.
+
+  r_boolean = abap_false.
+  IF me-&gt;cinbd = abap_false.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error.
+        RETURN.
+    ENDTRY.
+  ENDIF.
+  r_boolean = me-&gt;cinbd.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD set_attributes.
+  DATA: lo_db       TYPE REF TO lcl_db,
+        lv_code     TYPE zwm_epcklst_code,
+        lv_cinbd    TYPE zwm_epcklst_cinbd,
+        lw_return   TYPE bapiret2,
+        lt_return   TYPE bapiret2_t,
+        ls_message  TYPE string.
+
+  CREATE OBJECT lo_db.
+  TRY .
+      lo_db-&gt;get_source_data(
+        EXPORTING
+          i_werks  = me-&gt;werks
+          i_source = me-&gt;source
+        IMPORTING
+          e_code  = me-&gt;code
+          e_cinbd = me-&gt;cinbd ).
+    CATCH cx_sy_sql_error.
+      FREE lo_db.
+      MESSAGE e030 WITH me-&gt;source INTO ls_message.
+      lw_return-id         = sy-msgid.
+      lw_return-type       = sy-msgty.
+      lw_return-number     = sy-msgno.
+      lw_return-message    = ls_message.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v3 = sy-msgv3.
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" UUID="0050560000471EE583DF7C12A93844FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150610" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" RSTAT="K" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZWM02" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_MODEL definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!
+
+  data MODEL type ZWM_EPCKLST_MODEL read-only .
+  data CODE type ZWM_EPCKLST_CMCD read-only .
+  data INUSE type ZWM_EPCKLST_INUSE .
+
+  methods CONSTRUCTOR
+    importing
+      !I_MODEL type ZWM_EPCKLST_MODEL .
+  methods GET_CODE
+    returning
+      value(R_CODE) type ZWM_EPCKLST_CODE
+    raising
+      CX_BAPI_ERROR .
+  class-methods GET_INSTANCE
+    importing
+      !I_MODEL type ZWM_EPCKLST_MODEL
+    returning
+      value(RO_MODEL) type ref to ZCL_WM_PCKLST_MODEL
+    raising
+      CX_BAPI_ERROR .
+  methods CHECK_CONFIGURATION
+    raising
+      CX_BAPI_ERROR .
+  type-pools ABAP .
+  methods IS_INUSE
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!
+
+  class-data COLLECTION type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_MODEL). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_model_data  IMPORTING i_model  TYPE zwm_epcklst_model
+                             EXPORTING e_code   TYPE zwm_epcklst_cmcd
+                                       e_inuse  TYPE zwm_epcklst_inuse
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_SOURCE_DATA
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_CMD
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the related MODEL information.
+*--------------------------------------------------------------------*
+* -&gt; I_MODEL  Packing List Source.
+* &lt;- E_CODE   Packing List Source Code.
+* &lt;- E_INUSE  Use indicator.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_model_data.
+
+    SELECT code inuse
+      FROM zwm_tpcklst_cmd
+      INTO (e_code, e_inuse)
+        UP TO 1 ROWS
+     WHERE model = i_model.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_model_data
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <typeUsage CLSNAME="ZCL_WM_PCKLST_MODEL" TYPEGROUP="ABAP" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+  <forwardDeclaration>ABAP</forwardDeclaration>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CODE" VERSION="1" LANGU="E" DESCRIPT="Car+Model Code" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMCD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="COLLECTION" VERSION="1" LANGU="E" DESCRIPT="List of sources" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="INUSE" VERSION="1" LANGU="E" DESCRIPT="Packing List Data Model - Use indicator" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_INUSE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CHECK_CONFIGURATION" VERSION="1" LANGU="E" DESCRIPT="Checks the existence of model configuration." EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150610" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CHECK_CONFIGURATION" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD CHECK_CONFIGURATION.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  TRY .
+      me-&gt;set_attributes( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CONSTRUCTOR" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <source>METHOD CONSTRUCTOR.
+  me-&gt;model = i_model.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the numeric code related to the model (variant)." EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" SCONAME="R_CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD GET_CODE.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  IF me-&gt;code IS INITIAL.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDIF.
+  r_code = me-&gt;code.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>METHOD GET_DB.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of this class" EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="RO_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_MODEL"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD get_instance.
+  DATA: lo_iterator TYPE REF TO cl_object_collection_iterator,
+        lo_instance TYPE REF TO zcl_wm_pcklst_model,
+        lx_error    TYPE REF TO cx_bapi_error.
+
+  lo_iterator = collection-&gt;get_iterator( ).
+  WHILE lo_iterator-&gt;has_next( ) = abap_true.
+    lo_instance ?= lo_iterator-&gt;get_next( ).
+    IF lo_instance-&gt;model  = i_model.
+      EXIT.
+    ENDIF.
+    FREE lo_instance.
+  ENDWHILE.
+  FREE lo_iterator.
+
+  IF lo_instance IS NOT INITIAL.
+    ro_model = lo_instance.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT lo_instance
+    EXPORTING
+      i_model = i_model.
+
+  TRY .
+      lo_instance-&gt;check_configuration( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  collection-&gt;add( lo_instance ).
+
+  ro_model = lo_instance.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="IS_INUSE" VERSION="1" LANGU="E" DESCRIPT="Returns TRUE if the model is in use." EXPOSURE="2" STATE="1" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="IS_INUSE" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+   <source>METHOD is_inuse.
+  r_boolean = abap_false.
+
+  IF me-&gt;inuse = abap_false.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error.
+        RETURN.
+    ENDTRY.
+  ENDIF.
+  r_boolean = me-&gt;inuse.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD SET_ATTRIBUTES.
+  DATA: lo_db       TYPE REF TO lcl_db,
+        lv_code     TYPE zwm_epcklst_code,
+        lv_cinbd    TYPE zwm_epcklst_cinbd,
+        lw_return   TYPE bapiret2,
+        lt_return   TYPE bapiret2_t,
+        ls_message  TYPE string.
+
+  CREATE OBJECT lo_db.
+  TRY .
+      lo_db-&gt;get_model_data(
+        EXPORTING
+          i_model = me-&gt;model
+        IMPORTING
+          e_code  = me-&gt;code
+          e_inuse = me-&gt;inuse ).
+    CATCH cx_sy_sql_error.
+      FREE lo_db.
+      MESSAGE e058 WITH me-&gt;model INTO ls_message.
+      lw_return-id         = sy-msgid.
+      lw_return-type       = sy-msgty.
+      lw_return-number     = sy-msgno.
+      lw_return-message    = ls_message.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v3 = sy-msgv3.
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_ITEM" VERSION="1" LANGU="E" DESCRIPT="Packing List Item" UUID="0050560000471EE583F9E131E15244FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_ITEM definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!
+
+  data IDNLF type IDNLF read-only .
+  data MATNR type MATNR read-only .
+  data MEINS type MEINS read-only .
+  data MENGE type MENGE_D read-only .
+  data VBELN type VBELN_VL read-only .
+  data CHKST type ZWM_EPCKLST_CHK read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !I_IDNLF type IDNLF
+      !I_MATNR type MATNR
+      !I_MEINS type MEINS
+      !I_MENGE type MENGE_D
+      !I_VBELN type VBELN_VL
+      !I_CHKST type ZWM_EPCKLST_CHK .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CHKST" VERSION="1" LANGU="E" DESCRIPT="Packing List Item Checking Status" EXPOSURE="2" STATE="1" EDITORDER="6 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CHK" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="IDNLF" VERSION="1" LANGU="E" DESCRIPT="Material Number Used by Vendor" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="IDNLF" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MATNR" VERSION="1" LANGU="E" DESCRIPT="Material Number" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MATNR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MEINS" VERSION="1" LANGU="E" DESCRIPT="Base Unit of Measure" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MEINS" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MENGE" VERSION="1" LANGU="E" DESCRIPT="Quantity" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MENGE_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" EXPOSURE="2" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="VBELN_VL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_IDNLF" VERSION="1" LANGU="E" DESCRIPT="Material Number Used by Vendor" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="IDNLF"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MATNR" VERSION="1" LANGU="E" DESCRIPT="Material Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MATNR"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MEINS" VERSION="1" LANGU="E" DESCRIPT="Base Unit of Measure" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEINS"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MENGE" VERSION="1" LANGU="E" DESCRIPT="Quantity" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" CMPTYPE="1" MTDTYPE="2" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="VBELN_VL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_CHKST" VERSION="1" LANGU="E" DESCRIPT="Packing List Item Checking Status" CMPTYPE="1" MTDTYPE="2" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_CHK"/>
+   <source>method CONSTRUCTOR.
+  me-&gt;idnlf = i_idnlf.
+  me-&gt;matnr = i_matnr.
+  me-&gt;meins = i_meins.
+  me-&gt;menge = i_menge.
+  me-&gt;vbeln = i_vbeln.
+  me-&gt;chkst = i_chkst.
+endmethod.</source>
+  </method>
+ </CLAS>
+ <PROG NAME="ZBRWMR008" VARCL="X" SUBC="1" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" RSTAT="K" RMAND="100" RLOAD="E" FIXPT="X" SDATE="20150601" STIME="212238" IDATE="20150528" ITIME="122537" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="I" KEY="001" ENTRY="Picking List Generation" LENGTH="30 "/>
+    <textElement ID="I" KEY="H01" ENTRY="Variant" LENGTH="10 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Mark the boxes to which the picking list must" LENGTH="50 "/>
+    <textElement ID="I" KEY="M02" ENTRY="be created." LENGTH="15 "/>
+    <textElement ID="I" KEY="M03" ENTRY="There are no incomplete boxes for the current" LENGTH="48 "/>
+    <textElement ID="I" KEY="M04" ENTRY=" selection." LENGTH="15 "/>
+    <textElement ID="R" ENTRY="Picking List Generation" LENGTH="23 "/>
+    <textElement ID="S" KEY="P_CHARG" ENTRY="        Batch" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_CMODL" ENTRY="        Car Model" LENGTH="17 "/>
+    <textElement ID="S" KEY="P_COLOR" ENTRY="        Color" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_MATNR" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MENGE" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MODEL" ENTRY="        Variant" LENGTH="15 "/>
+    <textElement ID="S" KEY="P_PKMTN" ENTRY="D       ." LENGTH="18 "/>
+   </language>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="001" ENTRY="Geração de Picking List" LENGTH="30 "/>
+    <textElement ID="I" KEY="H01" ENTRY="Variante" LENGTH="10 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Marque as caixas para as quais a picking list deve" LENGTH="50 "/>
+    <textElement ID="I" KEY="M02" ENTRY="ser criada." LENGTH="15 "/>
+    <textElement ID="I" KEY="M03" ENTRY="Não caixas incompletas na atual" LENGTH="45 "/>
+    <textElement ID="I" KEY="M04" ENTRY="seleção." LENGTH="15 "/>
+    <textElement ID="R" ENTRY="Geração de Picking List" LENGTH="70 "/>
+    <textElement ID="S" KEY="P_CHARG" ENTRY="        Lote" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_CMODL" ENTRY="        Modelo de Carro" LENGTH="23 "/>
+    <textElement ID="S" KEY="P_COLOR" ENTRY="        Cor" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_MODEL" ENTRY="        Variante" LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MATNR" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MENGE" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_PKMTN" ENTRY="D       ." LENGTH="18 "/>
+   </language>
+  </textPool>
+  <source>REPORT ZBRWMR008 .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_TOP" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150512" STIME="225624" IDATE="20150512" ITIME="225624" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_TOP" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_TOP .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_C01" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150514" STIME="132220" IDATE="20150514" ITIME="132220" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_C01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_C01 .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_F01" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150601" STIME="212238" IDATE="20150601" ITIME="212238" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_F01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_F01 .</source>
+ </PROG>
+ <TABL TABNAME="ZWM_SPCKLST_ITM" DDLANGUAGE="E" TABCLASS="INTTAB" DATMIN="0000000000" DATMAX="0000000000" DATAVG="0000000000" DDTEXT="Packing List Management - Box Item" AUTHCLASS="00" AS4USER="RQUADROS" AS4DATE="20150616" AS4TIME="193146" PROZPUFF="000" EXCLASS="3">
+  <dd09l AS4VERS="0000" SCHFELDANZ="000" AS4DATE="00000000" AS4TIME="000000"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="IDNLF" DDLANGUAGE="E" POSITION="0001" ROLLNAME="IDNLF" ADMINFIELD="0" INTTYPE="C" INTLEN="000070" DOMNAME="IDNEX" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="22" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000035" OUTPUTLEN="000035" DECIMALS="000000" MASK="  CHARE" MASKLEN="0000" DDTEXT="Material Number Used by Vendor" REPTEXT="Vendor Material Number" SCRTEXT_S="Vend. Mat." SCRTEXT_M="Vendor Mat. No." SCRTEXT_L="Vendor Material No." DOMNAME3L="IDNEX" DEPTH="00" COMPTYPE="E" DEFFDNAME="VEND_MAT" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MATNR" DDLANGUAGE="E" POSITION="0002" ROLLNAME="MATNR" ADMINFIELD="0" INTTYPE="C" INTLEN="000036" DOMNAME="MATNR" ROUTPUTLEN="000000" MEMORYID="MAT" LOGFLAG="X" HEADLEN="18" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000018" OUTPUTLEN="000018" DECIMALS="000000" ENTITYTAB="MARA" CONVEXIT="MATN1" MASK="  CHARE" MASKLEN="0000" DDTEXT="Material Number" REPTEXT="Material" SCRTEXT_S="Material" SCRTEXT_M="Material" SCRTEXT_L="Material" DOMNAME3L="MATNR" SHLPORIGIN="D" SHLPNAME="S_MAT1" SHLPFIELD="MATNR" DEPTH="00" COMPTYPE="E" DEFFDNAME="MATERIAL" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MEINS" DDLANGUAGE="E" POSITION="0003" ROLLNAME="MEINS" ADMINFIELD="0" INTTYPE="C" INTLEN="000006" DOMNAME="MEINS" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="03" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="UNIT" LENG="000003" OUTPUTLEN="000003" DECIMALS="000000" LOWERCASE="X" ENTITYTAB="T006" CONVEXIT="CUNIT" MASK="  UNITE" MASKLEN="0000" DDTEXT="Base Unit of Measure" REPTEXT="BUn" SCRTEXT_S="Unit" SCRTEXT_M="Base Unit" SCRTEXT_L="Base Unit of Measure" DOMNAME3L="MEINS" DEPTH="00" COMPTYPE="E" DEFFDNAME="BASE_UOM" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MENGE" DDLANGUAGE="E" POSITION="0004" ROLLNAME="MENGE_D" ADMINFIELD="0" INTTYPE="P" INTLEN="000007" REFTABLE="ZWM_SPCKLST_ITM" REFFIELD="MEINS" DOMNAME="MENG13" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="17" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="QUAN" LENG="000013" OUTPUTLEN="000017" DECIMALS="000003" MASK="  QUANE" MASKLEN="0000" DDTEXT="Quantity" REPTEXT="Quantity" SCRTEXT_S="Quantity" SCRTEXT_M="Quantity" SCRTEXT_L="Quantity" DOMNAME3L="MENG13" DEPTH="00" COMPTYPE="E" DEFFDNAME="QUANTITY" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="LENUM" DDLANGUAGE="E" POSITION="0005" ROLLNAME="LENUM" ADMINFIELD="0" INTTYPE="C" INTLEN="000040" DOMNAME="LENUM" ROUTPUTLEN="000000" MEMORYID="LEN" HEADLEN="20" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000020" OUTPUTLEN="000020" DECIMALS="000000" ENTITYTAB="LEIN" CONVEXIT="LENUM" MASK="  CHARE" MASKLEN="0000" DDTEXT="Storage Unit Number" REPTEXT="Storage Unit" SCRTEXT_S="Stor.Unit" SCRTEXT_M="Storage Unit" SCRTEXT_L="Storage Unit" DOMNAME3L="LENUM" DEPTH="00" COMPTYPE="E" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="VBELN" DDLANGUAGE="E" POSITION="0006" ROLLNAME="VBELN_VL" ADMINFIELD="0" INTTYPE="C" INTLEN="000020" DOMNAME="VBELN" ROUTPUTLEN="000000" MEMORYID="VL" LOGFLAG="X" HEADLEN="20" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000010" OUTPUTLEN="000010" DECIMALS="000000" ENTITYTAB="VBUK" CONVEXIT="ALPHA" MASK="  CHARE" MASKLEN="0000" DDTEXT="Delivery" REPTEXT="Delivery" SCRTEXT_S="Delivery" SCRTEXT_M="Delivery" SCRTEXT_L="Delivery" DOMNAME3L="VBELN" DEPTH="00" COMPTYPE="E" DEFFDNAME="DELIV_NUMB" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="CHKST" DDLANGUAGE="E" POSITION="0007" ROLLNAME="ZWM_EPCKLST_CHK" ADMINFIELD="0" INTTYPE="C" INTLEN="000002" DOMNAME="ZWM_DPCKLST_CHK" ROUTPUTLEN="000000" HEADLEN="34" SCRLEN1="10" SCRLEN2="20" SCRLEN3="34" DTELMASTER="E" DATATYPE="CHAR" LENG="000001" OUTPUTLEN="000001" DECIMALS="000000" VALEXI="X" MASK="  CHARE" MASKLEN="0000" DDTEXT="Packing List Item Checking Status" REPTEXT="Packing List Item Checking Status" SCRTEXT_S="Chk.Status" SCRTEXT_M="Item Checking Status" SCRTEXT_L="Packing List Item Checking Status" DOMNAME3L="ZWM_DPCKLST_CHK" SHLPORIGIN="F" DEPTH="00" COMPTYPE="E" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+ </TABL>
+ <TTYP TYPENAME="ZWM_TTCKLST_ITM" DDLANGUAGE="E" ROWTYPE="ZWM_SPCKLST_ITM" ROWKIND="S" DATATYPE="STRU" LENG="000000" DECIMALS="000000" ACCESSMODE="T" KEYDEF="D" KEYKIND="N" KEYFDCOUNT="0000" AS4USER="RQUADROS" AS4DATE="20150616" AS4TIME="193147" DDTEXT="Packing List Management - Box Items" TYPELEN="000182" CTLENG="000000" CTDECIMALS="000000" OCCURS="00000"/>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" UUID="0050560000471EE583BAC869233B44FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_LOAD definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!
+
+  data LOAD_ID type ZWM_ELOAD_ID read-only .
+  data WERKS type WERKS_D read-only .
+  data EBELN type EBELN read-only .
+  data PRONU type PRONU read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !P_LOAD_ID type ZWM_ELOAD_ID
+      !P_WERKS type WERKS_D
+      !P_EBELN type EBELN
+      !P_PRONU type PRONU .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_LOAD
+*&quot;* do not include other source files here!!!
+
+  data T_VBELN type VBELN_VL_T .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_LOAD). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_inbound_deliveries IMPORTING i_load_id
+                                                       TYPE zwm_eload_id
+                               RETURNING value(rt_vbeln) TYPE vbeln_vl_t
+                                    RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_INBOUND_DELIVERIES
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_INBD
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the inbound deliveries related to the load id provided.
+*--------------------------------------------------------------------*
+* -&gt; I_LOAD_ID SOURCE Packing List Load Id.
+* &lt;- RT_VBELN  Table of Delivery Numbers.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_inbound_deliveries.
+
+    SELECT inbdl
+      FROM zwm_tpcklst_inbd
+      INTO TABLE rt_vbeln
+     WHERE load_id = i_load_id.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_inbound_deliveries
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="EBELN" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="LOAD_ID" VERSION="1" LANGU="E" DESCRIPT="Packing List Load Id" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_ELOAD_ID" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="PRONU" VERSION="1" LANGU="E" DESCRIPT="Invoice: Number of invoice document for import processing" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="PRONU" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="T_VBELN" VERSION="1" LANGU="E" DESCRIPT="Table of Delivery Numbers" EXPOSURE="0" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="VBELN_VL_T" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_LOAD_ID" VERSION="1" LANGU="E" DESCRIPT="Packing List Load Id" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_ELOAD_ID"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELN"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_LOAD" CMPNAME="CONSTRUCTOR" SCONAME="P_PRONU" VERSION="1" LANGU="E" DESCRIPT="Invoice: Number of invoice document for import processing" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="PRONU"/>
+   <source>method CONSTRUCTOR.
+  me-&gt;load_id = p_load_id.
+  me-&gt;werks   = p_werks.
+  me-&gt;ebeln   = p_ebeln.
+  me-&gt;pronu   = p_pronu.
+endmethod.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_BOX" VERSION="1" LANGU="E" DESCRIPT="Box" UUID="0050560000471EE583BAFBBAD73CA4FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_BOX definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!
+
+  data WERKS type WERKS_D read-only .
+  data SOURCE type ZWM_EPCKLST_SRC read-only .
+  data MODEL type ZWM_EPCKLST_MODEL read-only .
+  data CHARG type CHARG_D read-only .
+  data CDK_BOX type ZCDK_BOX read-only .
+  data VARIANT type ZVARIANT read-only .
+  data PKMTH type ZWM_EPKMTH read-only .
+  data LENUM type LENUM read-only .
+  data COLOR type ZWM_EPCKLST_COLOR read-only .
+  data CMODEL type ZWM_EPCKLST_CMODEL read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !IO_LOAD type ref to ZCL_WM_PCKLST_LOAD
+      !I_SOURCE type ZWM_EPCKLST_SRC
+      !I_MODEL type ZWM_EPCKLST_MODEL
+      !I_CHARG type CHARG_D
+      !I_CDK_BOX type ZCDK_BOX
+      !I_VARIANT type ZVARIANT
+      !I_PKMTH type ZWM_EPKMTH
+      !I_LENUM type LENUM
+      !I_COLOR type ZWM_EPCKLST_COLOR
+      !I_CMODEL type ZWM_EPCKLST_CMODEL .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_BOX
+*&quot;* do not include other source files here!!!
+
+  data O_SOURCE type ref to ZCL_WM_PCKLST_SOURCE .
+  data O_MODEL type ref to ZCL_WM_PCKLST_MODEL .
+  data O_LOAD type ref to ZCL_WM_PCKLST_LOAD .
+  data O_ITEMS type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_BOX). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_items      IMPORTING  i_source TYPE zwm_epcklst_src
+                                       i_model  TYPE zwm_epcklst_model
+                                       i_charg  TYPE charg_d
+                                       i_box    TYPE zcdk_box
+                          EXPORTING value(et_items) TYPE zwm_ttcklst_itm
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_ITEMS
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the items related to the box provided.
+*--------------------------------------------------------------------*
+* -&gt; I_SOURCE Packing List Source.
+* -&gt; I_MODEL  Model (Car) Code.
+* -&gt; I_CHARG  Batch Number.
+* -&gt; I_BOX    CDK - BOX.
+* &lt;- RT_ITEMS Box Items.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_items.
+
+    SELECT idnlf matnr meins menge lenum vbeln chkst
+      FROM zwm_tpcklst
+      INTO TABLE et_items
+     WHERE source  = i_source
+       AND model   = i_model
+       AND charg   = i_charg
+       AND cdk_box = i_box.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_items
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CDK_BOX" VERSION="1" LANGU="E" DESCRIPT="CDK - BOX" EXPOSURE="2" STATE="1" EDITORDER="7 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZCDK_BOX" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CHARG" VERSION="1" LANGU="E" DESCRIPT="Batch Number" EXPOSURE="2" STATE="1" EDITORDER="6 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="CHARG_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CMODEL" VERSION="1" LANGU="E" DESCRIPT="Car Model" EXPOSURE="2" STATE="1" EDITORDER="12 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="COLOR" VERSION="1" LANGU="E" DESCRIPT="Color" EXPOSURE="2" STATE="1" EDITORDER="11 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_COLOR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="LENUM" VERSION="1" LANGU="E" DESCRIPT="Storage Unit Number" EXPOSURE="2" STATE="1" EDITORDER="10 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="LENUM" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" EXPOSURE="2" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_ITEMS" VERSION="1" LANGU="E" DESCRIPT="Items collection" EXPOSURE="0" STATE="1" EDITORDER="14 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDBY="RQUADROS" CHANGEDON="20150616" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" EXPOSURE="0" STATE="1" EDITORDER="13 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_LOAD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" EXPOSURE="0" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="O_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_SOURCE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="PKMTH" VERSION="1" LANGU="E" DESCRIPT="Pack Month" EXPOSURE="2" STATE="1" EDITORDER="9 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPKMTH" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="VARIANT" VERSION="1" LANGU="E" DESCRIPT="Variant" EXPOSURE="2" STATE="1" EDITORDER="8 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZVARIANT" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150611" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150610" MTDTYPE="2" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="IO_LOAD" VERSION="1" LANGU="E" DESCRIPT="Packing List Load" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_LOAD"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CHARG" VERSION="1" LANGU="E" DESCRIPT="Batch Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="CHARG_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CDK_BOX" VERSION="1" LANGU="E" DESCRIPT="CDK - BOX" CMPTYPE="1" MTDTYPE="2" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZCDK_BOX"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_VARIANT" VERSION="1" LANGU="E" DESCRIPT="Variant" CMPTYPE="1" MTDTYPE="2" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZVARIANT"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_PKMTH" VERSION="1" LANGU="E" DESCRIPT="Pack Month" CMPTYPE="1" MTDTYPE="2" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPKMTH"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_LENUM" VERSION="1" LANGU="E" DESCRIPT="Storage Unit Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="8 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="LENUM"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_COLOR" VERSION="1" LANGU="E" DESCRIPT="Color" CMPTYPE="1" MTDTYPE="2" EDITORDER="9 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_COLOR"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="CONSTRUCTOR" SCONAME="I_CMODEL" VERSION="1" LANGU="E" DESCRIPT="Car Model" CMPTYPE="1" MTDTYPE="2" EDITORDER="10 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150616" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMODEL"/>
+   <source>METHOD constructor.
+  me-&gt;o_load  = io_load.
+  me-&gt;source  = i_source.
+  me-&gt;model   = i_model.
+  me-&gt;charg  	= i_charg.
+  me-&gt;cdk_box	= i_cdk_box.
+  me-&gt;variant	= i_variant.
+  me-&gt;pkmth	  = i_pkmth.
+  me-&gt;lenum	  = i_lenum.
+  me-&gt;color	  = i_color.
+  me-&gt;cmodel  = i_cmodel.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDBY="RQUADROS" CHANGEDON="20150616" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>method GET_DB.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+endmethod.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDBY="RQUADROS" CHANGEDON="20150616" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_BOX" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000"/>
+   <source>METHOD set_attributes.
+  DATA: lo_db      TYPE REF TO lcl_db,
+        lo_item    TYPE REF TO zcl_wm_pcklst_item,
+        lt_items   TYPE zwm_ttcklst_itm,
+        lx_error   TYPE REF TO cx_bapi_error,
+        ls_message TYPE string,
+        lw_return  TYPE bapiret2,
+        lt_return  TYPE bapiret2_t.
+  FIELD-SYMBOLS  &lt;lw_item&gt; TYPE zwm_spcklst_itm.
+
+  TRY .
+      me-&gt;o_source =
+              zcl_wm_pcklst_source=&gt;get_instance(
+                                            i_werks  = me-&gt;o_load-&gt;werks
+                                            i_source = me-&gt;source ).
+      me-&gt;o_model  =
+               zcl_wm_pcklst_model=&gt;get_instance( i_model = me-&gt;model ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  lo_db ?= me-&gt;get_db( ).
+  TRY .
+      lo_db-&gt;get_items( EXPORTING i_source = me-&gt;source
+                                  i_model  = me-&gt;model
+                                  i_charg  = me-&gt;charg
+                                  i_box    = me-&gt;cdk_box
+                        IMPORTING
+                          et_items = lt_items  ).
+    CATCH cx_sy_sql_error.
+      CLEAR o_items.
+  ENDTRY.
+  LOOP AT lt_items ASSIGNING &lt;lw_item&gt;.
+    CREATE OBJECT lo_item
+      EXPORTING
+        i_idnlf = &lt;lw_item&gt;-idnlf
+        i_matnr = &lt;lw_item&gt;-matnr
+        i_meins = &lt;lw_item&gt;-meins
+        i_menge = &lt;lw_item&gt;-menge
+        i_vbeln = &lt;lw_item&gt;-vbeln
+        i_chkst = &lt;lw_item&gt;-chkst.
+    o_items-&gt;add( lo_item ).
+    FREE lo_item.
+  ENDLOOP.
+
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" UUID="0050560000471EE583BB889AD1ABC4FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" RSTAT="K" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZWM02" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_SOURCE definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!
+
+  data WERKS type WERKS_D read-only .
+  data SOURCE type ZWM_EPCKLST_SRC read-only .
+  data CODE type ZWM_EPCKLST_CODE .
+
+  methods CONSTRUCTOR
+    importing
+      !I_WERKS type WERKS_D
+      !I_SOURCE type ZWM_EPCKLST_SRC .
+  methods GET_CODE
+    returning
+      value(R_CODE) type ZWM_EPCKLST_CODE
+    raising
+      CX_BAPI_ERROR .
+  type-pools ABAP .
+  methods IS_DELIVERY_CREATION_REQUIRED
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .
+  class-methods GET_INSTANCE
+    importing
+      !I_WERKS type WERKS_D
+      !I_SOURCE type ZWM_EPCKLST_SRC
+    returning
+      value(RO_SOURCE) type ref to ZCL_WM_PCKLST_SOURCE
+    raising
+      CX_BAPI_ERROR .
+  methods CHECK_CONFIGURATION
+    raising
+      CX_BAPI_ERROR .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_SOURCE
+*&quot;* do not include other source files here!!!
+
+  data CINBD type ZWM_EPCKLST_CINBD .
+  class-data COLLECTION type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_SOURCE). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_source_data IMPORTING i_werks  TYPE werks_d
+                                       i_source TYPE zwm_epcklst_src
+                             EXPORTING e_code   TYPE zwm_epcklst_code
+                                       e_cinbd  TYPE zwm_epcklst_cinbd
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_SOURCE_DATA
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_SRC
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the related SOURCE information.
+*--------------------------------------------------------------------*
+* -&gt; I_WERKS  Plant.
+* -&gt; I_SOURCE Packing List Source.
+* &lt;- E_CODE   Packing List Source Code.
+* &lt;- E_CINBD  Inb. Delivery creation indicator.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_source_data.
+
+    SELECT code cinbd
+      FROM zwm_tpcklst_src
+      INTO (e_code, e_cinbd)
+        UP TO 1 ROWS
+     WHERE source = i_source
+       AND werks  = i_werks.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_source_data
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <typeUsage CLSNAME="ZCL_WM_PCKLST_SOURCE" TYPEGROUP="ABAP" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+  <forwardDeclaration>ABAP</forwardDeclaration>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CINBD" VERSION="1" LANGU="E" DESCRIPT="Packing List Data Model - Inb. Delivery creation indicator" EXPOSURE="0" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CINBD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="COLLECTION" VERSION="1" LANGU="E" DESCRIPT="List of sources" EXPOSURE="0" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="WERKS_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CHECK_CONFIGURATION" VERSION="1" LANGU="E" DESCRIPT="Checks the existence of source configuration." EXPOSURE="2" STATE="1" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CHECK_CONFIGURATION" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD check_configuration.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  TRY .
+      me-&gt;set_attributes( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" SCONAME="I_WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="CONSTRUCTOR" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <source>METHOD constructor.
+  me-&gt;werks = i_werks.
+  me-&gt;source = i_source.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the numeric code related to the source." EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" SCONAME="R_CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_CODE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD get_code.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  IF me-&gt;code IS INITIAL.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDIF.
+  r_code = me-&gt;code.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>METHOD get_db.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of this class" EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="I_WERKS" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WERKS_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="I_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_SRC"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="RO_SOURCE" VERSION="1" LANGU="E" DESCRIPT="Source" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_SOURCE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="GET_INSTANCE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD get_instance.
+  DATA: lo_iterator TYPE REF TO cl_object_collection_iterator,
+        lo_instance TYPE REF TO zcl_wm_pcklst_source,
+        lx_error    TYPE REF TO cx_bapi_error.
+
+  lo_iterator = collection-&gt;get_iterator( ).
+  WHILE lo_iterator-&gt;has_next( ) = abap_true.
+    lo_instance ?= lo_iterator-&gt;get_next( ).
+    IF lo_instance-&gt;werks  = i_werks AND
+       lo_instance-&gt;source = i_source.
+      EXIT.
+    ENDIF.
+    FREE lo_instance.
+  ENDWHILE.
+  FREE lo_iterator.
+
+  IF lo_instance IS NOT INITIAL.
+    ro_source = lo_instance.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT lo_instance
+    EXPORTING
+      i_werks  = i_werks
+      i_source = i_source.
+
+  TRY .
+      lo_instance-&gt;check_configuration( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  collection-&gt;add( lo_instance ).
+
+  ro_source = lo_instance.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="IS_DELIVERY_CREATION_REQUIRED" VERSION="1" LANGU="E" DESCRIPT="Returns TRUE if delivery creation in the load is required." EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="IS_DELIVERY_CREATION_REQUIRED" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" DESCRIPT="TRUE if the delivery creation is required in the load" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+   <source>METHOD is_delivery_creation_required.
+
+  r_boolean = abap_false.
+  IF me-&gt;cinbd = abap_false.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error.
+        RETURN.
+    ENDTRY.
+  ENDIF.
+  r_boolean = me-&gt;cinbd.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDBY="RQUADROS" CHANGEDON="20150608" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_SOURCE" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150608" CHANGEDON="00000000"/>
+   <source>METHOD set_attributes.
+  DATA: lo_db       TYPE REF TO lcl_db,
+        lv_code     TYPE zwm_epcklst_code,
+        lv_cinbd    TYPE zwm_epcklst_cinbd,
+        lw_return   TYPE bapiret2,
+        lt_return   TYPE bapiret2_t,
+        ls_message  TYPE string.
+
+  CREATE OBJECT lo_db.
+  TRY .
+      lo_db-&gt;get_source_data(
+        EXPORTING
+          i_werks  = me-&gt;werks
+          i_source = me-&gt;source
+        IMPORTING
+          e_code  = me-&gt;code
+          e_cinbd = me-&gt;cinbd ).
+    CATCH cx_sy_sql_error.
+      FREE lo_db.
+      MESSAGE e030 WITH me-&gt;source INTO ls_message.
+      lw_return-id         = sy-msgid.
+      lw_return-type       = sy-msgty.
+      lw_return-number     = sy-msgno.
+      lw_return-message    = ls_message.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v3 = sy-msgv3.
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" UUID="0050560000471EE583DF7C12A93844FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150610" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" RSTAT="K" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZWM02" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_MODEL definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!
+
+  data MODEL type ZWM_EPCKLST_MODEL read-only .
+  data CODE type ZWM_EPCKLST_CMCD read-only .
+  data INUSE type ZWM_EPCKLST_INUSE .
+
+  methods CONSTRUCTOR
+    importing
+      !I_MODEL type ZWM_EPCKLST_MODEL .
+  methods GET_CODE
+    returning
+      value(R_CODE) type ZWM_EPCKLST_CODE
+    raising
+      CX_BAPI_ERROR .
+  class-methods GET_INSTANCE
+    importing
+      !I_MODEL type ZWM_EPCKLST_MODEL
+    returning
+      value(RO_MODEL) type ref to ZCL_WM_PCKLST_MODEL
+    raising
+      CX_BAPI_ERROR .
+  methods CHECK_CONFIGURATION
+    raising
+      CX_BAPI_ERROR .
+  type-pools ABAP .
+  methods IS_INUSE
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_MODEL
+*&quot;* do not include other source files here!!!
+
+  class-data COLLECTION type ref to CL_OBJECT_COLLECTION .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_MODEL). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_model_data  IMPORTING i_model  TYPE zwm_epcklst_model
+                             EXPORTING e_code   TYPE zwm_epcklst_cmcd
+                                       e_inuse  TYPE zwm_epcklst_inuse
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_SOURCE_DATA
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_CMD
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the related MODEL information.
+*--------------------------------------------------------------------*
+* -&gt; I_MODEL  Packing List Source.
+* &lt;- E_CODE   Packing List Source Code.
+* &lt;- E_INUSE  Use indicator.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_model_data.
+
+    SELECT code inuse
+      FROM zwm_tpcklst_cmd
+      INTO (e_code, e_inuse)
+        UP TO 1 ROWS
+     WHERE model = i_model.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_model_data
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <typeUsage CLSNAME="ZCL_WM_PCKLST_MODEL" TYPEGROUP="ABAP" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+  <forwardDeclaration>ABAP</forwardDeclaration>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CODE" VERSION="1" LANGU="E" DESCRIPT="Car+Model Code" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CMCD" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="COLLECTION" VERSION="1" LANGU="E" DESCRIPT="List of sources" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="3" TYPE="CL_OBJECT_COLLECTION" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="INUSE" VERSION="1" LANGU="E" DESCRIPT="Packing List Data Model - Use indicator" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_INUSE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CHECK_CONFIGURATION" VERSION="1" LANGU="E" DESCRIPT="Checks the existence of model configuration." EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150610" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CHECK_CONFIGURATION" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD CHECK_CONFIGURATION.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  TRY .
+      me-&gt;set_attributes( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="CONSTRUCTOR" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <source>METHOD CONSTRUCTOR.
+  me-&gt;model = i_model.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the numeric code related to the model (variant)." EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" SCONAME="R_CODE" VERSION="1" LANGU="E" DESCRIPT="Packing List Source Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CODE"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_CODE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD GET_CODE.
+  DATA  lx_error TYPE REF TO cx_bapi_error.
+
+  IF me-&gt;code IS INITIAL.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDIF.
+  r_code = me-&gt;code.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" DESCRIPT="Database mediator." CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>METHOD GET_DB.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of this class" EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDBY="RQUADROS" CHANGEDON="20150609" MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="I_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model (Car) Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_MODEL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="RO_MODEL" VERSION="1" LANGU="E" DESCRIPT="Model" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_WM_PCKLST_MODEL"/>
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="GET_INSTANCE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD get_instance.
+  DATA: lo_iterator TYPE REF TO cl_object_collection_iterator,
+        lo_instance TYPE REF TO zcl_wm_pcklst_model,
+        lx_error    TYPE REF TO cx_bapi_error.
+
+  lo_iterator = collection-&gt;get_iterator( ).
+  WHILE lo_iterator-&gt;has_next( ) = abap_true.
+    lo_instance ?= lo_iterator-&gt;get_next( ).
+    IF lo_instance-&gt;model  = i_model.
+      EXIT.
+    ENDIF.
+    FREE lo_instance.
+  ENDWHILE.
+  FREE lo_iterator.
+
+  IF lo_instance IS NOT INITIAL.
+    ro_model = lo_instance.
+    RETURN.
+  ENDIF.
+
+  CREATE OBJECT lo_instance
+    EXPORTING
+      i_model = i_model.
+
+  TRY .
+      lo_instance-&gt;check_configuration( ).
+    CATCH cx_bapi_error INTO lx_error.
+      RAISE EXCEPTION lx_error.
+  ENDTRY.
+
+  collection-&gt;add( lo_instance ).
+
+  ro_model = lo_instance.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="IS_INUSE" VERSION="1" LANGU="E" DESCRIPT="Returns TRUE if the model is in use." EXPOSURE="2" STATE="1" EDITORDER="7 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="IS_INUSE" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150610" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+   <source>METHOD is_inuse.
+  r_boolean = abap_false.
+
+  IF me-&gt;inuse = abap_false.
+    TRY .
+        me-&gt;set_attributes( ).
+      CATCH cx_bapi_error.
+        RETURN.
+    ENDTRY.
+  ENDIF.
+  r_boolean = me-&gt;inuse.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_MODEL" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150609" CHANGEDON="00000000"/>
+   <source>METHOD SET_ATTRIBUTES.
+  DATA: lo_db       TYPE REF TO lcl_db,
+        lv_code     TYPE zwm_epcklst_code,
+        lv_cinbd    TYPE zwm_epcklst_cinbd,
+        lw_return   TYPE bapiret2,
+        lt_return   TYPE bapiret2_t,
+        ls_message  TYPE string.
+
+  CREATE OBJECT lo_db.
+  TRY .
+      lo_db-&gt;get_model_data(
+        EXPORTING
+          i_model = me-&gt;model
+        IMPORTING
+          e_code  = me-&gt;code
+          e_inuse = me-&gt;inuse ).
+    CATCH cx_sy_sql_error.
+      FREE lo_db.
+      MESSAGE e058 WITH me-&gt;model INTO ls_message.
+      lw_return-id         = sy-msgid.
+      lw_return-type       = sy-msgty.
+      lw_return-number     = sy-msgno.
+      lw_return-message    = ls_message.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v3 = sy-msgv3.
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_ITEM" VERSION="1" LANGU="E" DESCRIPT="Packing List Item" UUID="0050560000471EE583F9E131E15244FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_ITEM definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!
+
+  data IDNLF type IDNLF read-only .
+  data MATNR type MATNR read-only .
+  data MEINS type MEINS read-only .
+  data MENGE type MENGE_D read-only .
+  data VBELN type VBELN_VL read-only .
+  data CHKST type ZWM_EPCKLST_CHK read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !I_IDNLF type IDNLF
+      !I_MATNR type MATNR
+      !I_MEINS type MEINS
+      !I_MENGE type MENGE_D
+      !I_VBELN type VBELN_VL
+      !I_CHKST type ZWM_EPCKLST_CHK .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_ITEM
+*&quot;* do not include other source files here!!!</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CHKST" VERSION="1" LANGU="E" DESCRIPT="Packing List Item Checking Status" EXPOSURE="2" STATE="1" EDITORDER="6 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CHK" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="IDNLF" VERSION="1" LANGU="E" DESCRIPT="Material Number Used by Vendor" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="IDNLF" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MATNR" VERSION="1" LANGU="E" DESCRIPT="Material Number" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MATNR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MEINS" VERSION="1" LANGU="E" DESCRIPT="Base Unit of Measure" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MEINS" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="MENGE" VERSION="1" LANGU="E" DESCRIPT="Quantity" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MENGE_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" EXPOSURE="2" STATE="1" EDITORDER="5 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="VBELN_VL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_IDNLF" VERSION="1" LANGU="E" DESCRIPT="Material Number Used by Vendor" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="IDNLF"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MATNR" VERSION="1" LANGU="E" DESCRIPT="Material Number" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MATNR"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MEINS" VERSION="1" LANGU="E" DESCRIPT="Base Unit of Measure" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEINS"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_MENGE" VERSION="1" LANGU="E" DESCRIPT="Quantity" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" CMPTYPE="1" MTDTYPE="2" EDITORDER="5 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="VBELN_VL"/>
+   <parameter CLSNAME="ZCL_WM_PCKLST_ITEM" CMPNAME="CONSTRUCTOR" SCONAME="I_CHKST" VERSION="1" LANGU="E" DESCRIPT="Packing List Item Checking Status" CMPTYPE="1" MTDTYPE="2" EDITORDER="6 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150611" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZWM_EPCKLST_CHK"/>
+   <source>method CONSTRUCTOR.
+  me-&gt;idnlf = i_idnlf.
+  me-&gt;matnr = i_matnr.
+  me-&gt;meins = i_meins.
+  me-&gt;menge = i_menge.
+  me-&gt;vbeln = i_vbeln.
+  me-&gt;chkst = i_chkst.
+endmethod.</source>
+  </method>
+ </CLAS>
+ <CLAS CLSNAME="ZCL_WM_PCKLST_INBDL" VERSION="1" LANGU="E" DESCRIPT="Packing List Inbound Delivery" UUID="0050560000471EE5858E3DF8FB3804FF" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDBY="RQUADROS" CHANGEDON="20150617" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZWM02" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <publicSection>class ZCL_WM_PCKLST_INBDL definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_WM_PCKLST_INBDL
+*&quot;* do not include other source files here!!!
+
+  data VBELN type VBELN_VL read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !P_VBELN type VBELN_VL .</publicSection>
+  <protectedSection>protected section.
+*&quot;* protected components of class ZCL_WM_PCKLST_INBDL
+*&quot;* do not include other source files here!!!</protectedSection>
+  <privateSection>private section.
+*&quot;* private components of class ZCL_WM_PCKLST_INBDL
+*&quot;* do not include other source files here!!!
+
+  data CRSYS type ZWM_EPCKLST_CRSYS .
+
+  methods SET_ATTRIBUTES
+    raising
+      CX_BAPI_ERROR .
+  methods GET_DB
+    returning
+      value(RO_OBJECT) type ref to OBJECT .</privateSection>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+* OVERVIEW: Objects of this class mediates database queries. It aims
+* to isolate this development from external dependencies,as
+* might be desirable in tests.
+* The instances of this object is provided by the private
+* method GET_DB of the main class (ZCL_WM_PCKLST_INBDL). By
+* redefining the method GET_DB one can provide appropriated
+* stubs, which must redefine the desired methods ofLCL_DB,
+* instead of accessing the actual database tables
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_creation_mode IMPORTING i_vbeln  TYPE vbeln_vl
+                        RETURNING value(r_crsys) TYPE zwm_epcklst_crsys
+                             RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_SOURCE_DATA
+*--------------------------------------------------------------------*
+* EFFECTS.: If no related record is found in table ZWM_TPCKLST_INBD
+* returns exception type CX_SY_SQL_ERROR, otherwise returns
+* the related creation mode.
+*--------------------------------------------------------------------*
+* -&gt; I_VBELN  Inbound Delivery.
+* &lt;- R_CRSYS  Indicator of Inb. Delivery creation in the load.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_creation_mode.
+
+    SELECT crsys
+      FROM zwm_tpcklst_inbd
+      INTO r_crsys
+        UP TO 1 ROWS
+     WHERE inbdl = i_vbeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_source_data
+ENDCLASS.                    &quot;lcl_db IMPLEMENTATION</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="CRSYS" VERSION="1" LANGU="E" DESCRIPT="Packing List Load - Inb.Delivery created in the load" EXPOSURE="0" STATE="1" EDITORDER="2 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZWM_EPCKLST_CRSYS" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="VBELN_VL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="CONSTRUCTOR" SCONAME="P_VBELN" VERSION="1" LANGU="E" DESCRIPT="Delivery" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="VBELN_VL"/>
+   <source>method CONSTRUCTOR.
+  me-&gt;vbeln = p_vbeln.
+endmethod.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="GET_DB" VERSION="1" LANGU="E" DESCRIPT="Returns an instance of database access mediator." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="GET_DB" SCONAME="RO_OBJECT" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="OBJECT"/>
+   <source>METHOD get_db.
+  DATA  lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  IF lo_db IS BOUND.
+    lo_db = lo_db.
+  ENDIF.
+  FREE lo_db.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="SET_ATTRIBUTES" VERSION="1" LANGU="E" DESCRIPT="Sets the attributes of the object." EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_WM_PCKLST_INBDL" CMPNAME="SET_ATTRIBUTES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="E" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 " AUTHOR="RQUADROS" CREATEDON="20150616" CHANGEDON="00000000"/>
+   <source>METHOD set_attributes.
+  DATA: lo_db       TYPE REF TO lcl_db,
+        lw_return   TYPE bapiret2,
+        lt_return   TYPE bapiret2_t,
+        ls_message  TYPE string.
+
+  lo_db ?= me-&gt;get_db( ).
+  TRY .
+      lo_db-&gt;get_creation_mode(
+        EXPORTING
+          i_vbeln  = me-&gt;vbeln
+        RECEIVING
+          r_crsys  = me-&gt;crsys ).
+    CATCH cx_sy_sql_error.
+      FREE lo_db.
+      MESSAGE e047 WITH me-&gt;vbeln INTO ls_message.
+      lw_return-id         = sy-msgid.
+      lw_return-type       = sy-msgty.
+      lw_return-number     = sy-msgno.
+      lw_return-message    = ls_message.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v3 = sy-msgv3.
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+  ENDTRY.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+ <PROG NAME="ZBRWMR008" VARCL="X" SUBC="1" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" RSTAT="K" RMAND="100" RLOAD="E" FIXPT="X" SDATE="20150601" STIME="212238" IDATE="20150528" ITIME="122537" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="I" KEY="001" ENTRY="Picking List Generation" LENGTH="30 "/>
+    <textElement ID="I" KEY="H01" ENTRY="Variant" LENGTH="10 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Mark the boxes to which the picking list must" LENGTH="50 "/>
+    <textElement ID="I" KEY="M02" ENTRY="be created." LENGTH="15 "/>
+    <textElement ID="I" KEY="M03" ENTRY="There are no incomplete boxes for the current" LENGTH="48 "/>
+    <textElement ID="I" KEY="M04" ENTRY=" selection." LENGTH="15 "/>
+    <textElement ID="R" ENTRY="Picking List Generation" LENGTH="23 "/>
+    <textElement ID="S" KEY="P_CHARG" ENTRY="        Batch" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_CMODL" ENTRY="        Car Model" LENGTH="17 "/>
+    <textElement ID="S" KEY="P_COLOR" ENTRY="        Color" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_MATNR" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MENGE" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MODEL" ENTRY="        Variant" LENGTH="15 "/>
+    <textElement ID="S" KEY="P_PKMTN" ENTRY="D       ." LENGTH="18 "/>
+   </language>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="001" ENTRY="Geração de Picking List" LENGTH="30 "/>
+    <textElement ID="I" KEY="H01" ENTRY="Variante" LENGTH="10 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Marque as caixas para as quais a picking list deve" LENGTH="50 "/>
+    <textElement ID="I" KEY="M02" ENTRY="ser criada." LENGTH="15 "/>
+    <textElement ID="I" KEY="M03" ENTRY="Não caixas incompletas na atual" LENGTH="45 "/>
+    <textElement ID="I" KEY="M04" ENTRY="seleção." LENGTH="15 "/>
+    <textElement ID="R" ENTRY="Geração de Picking List" LENGTH="70 "/>
+    <textElement ID="S" KEY="P_CHARG" ENTRY="        Lote" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_CMODL" ENTRY="        Modelo de Carro" LENGTH="23 "/>
+    <textElement ID="S" KEY="P_COLOR" ENTRY="        Cor" LENGTH="13 "/>
+    <textElement ID="S" KEY="P_MODEL" ENTRY="        Variante" LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MATNR" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_MENGE" ENTRY="D       ." LENGTH="16 "/>
+    <textElement ID="S" KEY="P_PKMTN" ENTRY="D       ." LENGTH="18 "/>
+   </language>
+  </textPool>
+  <source>REPORT ZBRWMR008 .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_TOP" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150512" STIME="225624" IDATE="20150512" ITIME="225624" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_TOP" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_TOP .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_C01" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150514" STIME="132220" IDATE="20150514" ITIME="132220" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_C01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_C01 .</source>
+ </PROG>
+ <PROG NAME="ZBRWMR008_F01" VARCL="X" SUBC="I" CNAM="RQUADROS" CDAT="20150607" UNAM="RQUADROS" UDAT="20150607" VERN="    1" LEVL="702" RSTAT="K" RMAND="100" RLOAD="E" SDATE="20150601" STIME="212238" IDATE="20150601" ITIME="212238" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRWMR005_F01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*** INCLUDE ZBRWMR008_F01 .</source>
+ </PROG>
+ <TABL TABNAME="ZWM_SPCKLST_ITM" DDLANGUAGE="E" TABCLASS="INTTAB" DATMIN="0000000000" DATMAX="0000000000" DATAVG="0000000000" DDTEXT="Packing List Management - Box Item" AUTHCLASS="00" AS4USER="RQUADROS" AS4DATE="20150616" AS4TIME="193146" PROZPUFF="000" EXCLASS="3">
+  <dd09l AS4VERS="0000" SCHFELDANZ="000" AS4DATE="00000000" AS4TIME="000000"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="IDNLF" DDLANGUAGE="E" POSITION="0001" ROLLNAME="IDNLF" ADMINFIELD="0" INTTYPE="C" INTLEN="000070" DOMNAME="IDNEX" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="22" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000035" OUTPUTLEN="000035" DECIMALS="000000" MASK="  CHARE" MASKLEN="0000" DDTEXT="Material Number Used by Vendor" REPTEXT="Vendor Material Number" SCRTEXT_S="Vend. Mat." SCRTEXT_M="Vendor Mat. No." SCRTEXT_L="Vendor Material No." DOMNAME3L="IDNEX" DEPTH="00" COMPTYPE="E" DEFFDNAME="VEND_MAT" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MATNR" DDLANGUAGE="E" POSITION="0002" ROLLNAME="MATNR" ADMINFIELD="0" INTTYPE="C" INTLEN="000036" DOMNAME="MATNR" ROUTPUTLEN="000000" MEMORYID="MAT" LOGFLAG="X" HEADLEN="18" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000018" OUTPUTLEN="000018" DECIMALS="000000" ENTITYTAB="MARA" CONVEXIT="MATN1" MASK="  CHARE" MASKLEN="0000" DDTEXT="Material Number" REPTEXT="Material" SCRTEXT_S="Material" SCRTEXT_M="Material" SCRTEXT_L="Material" DOMNAME3L="MATNR" SHLPORIGIN="D" SHLPNAME="S_MAT1" SHLPFIELD="MATNR" DEPTH="00" COMPTYPE="E" DEFFDNAME="MATERIAL" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MEINS" DDLANGUAGE="E" POSITION="0003" ROLLNAME="MEINS" ADMINFIELD="0" INTTYPE="C" INTLEN="000006" DOMNAME="MEINS" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="03" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="UNIT" LENG="000003" OUTPUTLEN="000003" DECIMALS="000000" LOWERCASE="X" ENTITYTAB="T006" CONVEXIT="CUNIT" MASK="  UNITE" MASKLEN="0000" DDTEXT="Base Unit of Measure" REPTEXT="BUn" SCRTEXT_S="Unit" SCRTEXT_M="Base Unit" SCRTEXT_L="Base Unit of Measure" DOMNAME3L="MEINS" DEPTH="00" COMPTYPE="E" DEFFDNAME="BASE_UOM" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="MENGE" DDLANGUAGE="E" POSITION="0004" ROLLNAME="MENGE_D" ADMINFIELD="0" INTTYPE="P" INTLEN="000007" REFTABLE="ZWM_SPCKLST_ITM" REFFIELD="MEINS" DOMNAME="MENG13" ROUTPUTLEN="000000" LOGFLAG="X" HEADLEN="17" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="QUAN" LENG="000013" OUTPUTLEN="000017" DECIMALS="000003" MASK="  QUANE" MASKLEN="0000" DDTEXT="Quantity" REPTEXT="Quantity" SCRTEXT_S="Quantity" SCRTEXT_M="Quantity" SCRTEXT_L="Quantity" DOMNAME3L="MENG13" DEPTH="00" COMPTYPE="E" DEFFDNAME="QUANTITY" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="LENUM" DDLANGUAGE="E" POSITION="0005" ROLLNAME="LENUM" ADMINFIELD="0" INTTYPE="C" INTLEN="000040" DOMNAME="LENUM" ROUTPUTLEN="000000" MEMORYID="LEN" HEADLEN="20" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000020" OUTPUTLEN="000020" DECIMALS="000000" ENTITYTAB="LEIN" CONVEXIT="LENUM" MASK="  CHARE" MASKLEN="0000" DDTEXT="Storage Unit Number" REPTEXT="Storage Unit" SCRTEXT_S="Stor.Unit" SCRTEXT_M="Storage Unit" SCRTEXT_L="Storage Unit" DOMNAME3L="LENUM" DEPTH="00" COMPTYPE="E" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="VBELN" DDLANGUAGE="E" POSITION="0006" ROLLNAME="VBELN_VL" ADMINFIELD="0" INTTYPE="C" INTLEN="000020" DOMNAME="VBELN" ROUTPUTLEN="000000" MEMORYID="VL" LOGFLAG="X" HEADLEN="20" SCRLEN1="10" SCRLEN2="15" SCRLEN3="20" DTELMASTER="D" DATATYPE="CHAR" LENG="000010" OUTPUTLEN="000010" DECIMALS="000000" ENTITYTAB="VBUK" CONVEXIT="ALPHA" MASK="  CHARE" MASKLEN="0000" DDTEXT="Delivery" REPTEXT="Delivery" SCRTEXT_S="Delivery" SCRTEXT_M="Delivery" SCRTEXT_L="Delivery" DOMNAME3L="VBELN" DEPTH="00" COMPTYPE="E" DEFFDNAME="DELIV_NUMB" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+  <dd03p TABNAME="ZWM_SPCKLST_ITM" FIELDNAME="CHKST" DDLANGUAGE="E" POSITION="0007" ROLLNAME="ZWM_EPCKLST_CHK" ADMINFIELD="0" INTTYPE="C" INTLEN="000002" DOMNAME="ZWM_DPCKLST_CHK" ROUTPUTLEN="000000" HEADLEN="34" SCRLEN1="10" SCRLEN2="20" SCRLEN3="34" DTELMASTER="E" DATATYPE="CHAR" LENG="000001" OUTPUTLEN="000001" DECIMALS="000000" VALEXI="X" MASK="  CHARE" MASKLEN="0000" DDTEXT="Packing List Item Checking Status" REPTEXT="Packing List Item Checking Status" SCRTEXT_S="Chk.Status" SCRTEXT_M="Item Checking Status" SCRTEXT_L="Packing List Item Checking Status" DOMNAME3L="ZWM_DPCKLST_CHK" SHLPORIGIN="F" DEPTH="00" COMPTYPE="E" EXCLASS="0" DBPOSITION="0000" OUTPUTSTYLE="00" STRORLOCPOS="00"/>
+ </TABL>
+ <TTYP TYPENAME="ZWM_TTCKLST_ITM" DDLANGUAGE="E" ROWTYPE="ZWM_SPCKLST_ITM" ROWKIND="S" DATATYPE="STRU" LENG="000000" DECIMALS="000000" ACCESSMODE="T" KEYDEF="D" KEYKIND="N" KEYFDCOUNT="0000" AS4USER="RQUADROS" AS4DATE="20150616" AS4TIME="193147" DDTEXT="Packing List Management - Box Items" TYPELEN="000182" CTLENG="000000" CTDECIMALS="000000" OCCURS="00000"/>
+</nugget>
+

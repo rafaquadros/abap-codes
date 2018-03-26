@@ -1,0 +1,33 @@
+begin_method getapprovers changing container.
+CONSTANTS lc_type TYPE otype VALUE 'US'.
+DATA:
+      getapprovers     TYPE swhactor-objid OCCURS 0,
+      lt_doc_lines     TYPE swfborrtab,
+      lt_approvers     TYPE STANDARD TABLE OF actorid,
+      lv_fundctr       TYPE fistl.
+FIELD-SYMBOLS: <lo_item>     TYPE swc_object,
+               <lw_approver> TYPE actorid.
+
+swc_get_property self 'DocLines' object-doclines.
+
+LOOP AT object-doclines ASSIGNING <lo_item>.
+  swc_get_property <lo_item> 'Approvers' lt_approvers.
+  IF lt_approvers IS INITIAL.
+    swc_get_property <lo_item> 'FundsCenter' lv_fundctr.
+    exit_return 9001 lv_fundctr space space space.
+  ELSE.
+    APPEND LINES OF lt_approvers TO getapprovers.
+    CLEAR lt_approvers.
+  ENDIF.
+ENDLOOP.
+IF getapprovers[] IS INITIAL.
+  exit_return 9002 space space space space.
+ENDIF.
+SORT getapprovers.
+DELETE ADJACENT DUPLICATES FROM getapprovers.
+LOOP AT getapprovers ASSIGNING <lw_approver>.
+  CONCATENATE lc_type <lw_approver> INTO <lw_approver>.
+ENDLOOP.
+
+swc_set_table container result getapprovers.
+end_method.

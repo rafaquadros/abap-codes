@@ -1,0 +1,2695 @@
+<?xml version="1.0" encoding="utf-16"?>
+<CLAS CLSNAME="ZCL_GTDEVRR2R3301" VERSION="1" LANGU="E" DESCRIPT="Vertex fields filler" UUID="4EB955B60DE50450E10080000A010BAA" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="EXRQUADR" CREATEDON="20111108" CHANGEDON="20120921" CHGDANYON="00000000" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" MSG_ID="ZGLRR" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+ <types CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="TYR_KSCHL" VERSION="1" LANGU="E" DESCRIPT="Range of condition types" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20120202" CHANGEDBY="EXRQUADR" CHANGEDON="20130304" TYPTYPE="4" SRCROW1="6 " SRCCOLUMN1="4 " SRCROW2="6 " SRCCOLUMN2="32 " TYPESRC_LENG="31 " TYPESRC="TYR_KSCHL TYPE RANGE OF kschl
+"/>
+ <types CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="TY_ME" VERSION="1" LANGU="E" DESCRIPT="Type of ZCL_GTDEVRR2R3301" EXPOSURE="0" STATE="1" EDITORDER="2 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" TYPTYPE="3" TYPE="ZCL_GTDEVRR2R3301" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <types CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="TYT_LIST" VERSION="1" LANGU="E" DESCRIPT="List of instances" EXPOSURE="0" STATE="1" EDITORDER="3 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130304" TYPTYPE="4" SRCROW1="9 " SRCCOLUMN1="4 " SRCROW2="9 " SRCCOLUMN2="40 " TYPESRC_LENG="39 " TYPESRC="tyt_list TYPE STANDARD TABLE OF ty_me
+"/>
+ <types CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="TYT_PARTNERS" VERSION="1" LANGU="E" DESCRIPT="Partners" EXPOSURE="0" STATE="1" EDITORDER="4 " AUTHOR="EXRQUADR" CREATEDON="20120214" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" TYPTYPE="4" SRCROW1="11 " SRCCOLUMN1="4 " SRCROW2="11 " SRCCOLUMN2="47 " TYPESRC_LENG="46 " TYPESRC="TYT_PARTNERS TYPE STANDARD TABLE OF MEPO1224
+"/>
+ <publicSection>class ZCL_GTDEVRR2R3301 definition
+  public
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_GTDEVRR2R3301
+*&quot;* do not include other source files here!!!
+
+  data ACTIV type PSG_ACTIN read-only .
+  constants C_VAR_NAME type RVARI_VNAM value &apos;GTDEVRR2R3301&apos;. &quot;#EC NOTEXT
+  constants C_EXIT_ID type SOBJ_NAME value &apos;GTDEVRR2R3301&apos;. &quot;#EC NOTEXT
+  constants C_CLNAME type SEOCLSNAME value &apos;ZCL_GTDEVRR2R3301&apos;. &quot;#EC NOTEXT
+  data COMP_CODE type TAX_COMP_CODE read-only .
+  data DOC_NUMBER type TAX_DOC_NUMBER read-only .
+  data POS_NO type TAX_POSNR read-only .
+  data TAX_TYPE type MWART read-only .
+
+  class-methods CLASS_CONSTRUCTOR .
+  class-methods SET_VERTEX_FIELDS
+    importing
+      !I_T007A type T007A
+      !I_TTXD type TTXD
+      !I_TAX_HEADER_INPUT type EXTAX_DOC
+      !I_TAX_ITEM_INPUT type EXTAX_ITEM_IN
+      !I_INPUT_USER type TAX_USER_PRICING
+    changing
+      !CH_USER_CHANGED_FIELDS type TAX_ALLOWED_FIELDS .
+  methods CONSTRUCTOR
+    importing
+      value(P_COMP_CODE) type TAX_COMP_CODE
+      value(P_DOC_NUMBER) type TAX_DOC_NUMBER
+      value(P_POS_NO) type TAX_POSNR
+      value(P_TAX_TYPE) type MWART
+      value(PW_T007A) type T007A .
+  type-pools ABAP .
+  class-methods IS_VALID_CONTEXT
+    importing
+      value(P_REPID) type SYREPID
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .</publicSection>
+ <protectedSection>protected section.
+*&quot;* protected components of class ZCL_GTDEVRR2R3301
+*&quot;* do not include other source files here!!!</protectedSection>
+ <privateSection>private section.
+*&quot;* private components of class ZCL_GTDEVRR2R3301
+*&quot;* do not include other source files here!!!
+
+  types:
+    TYR_KSCHL TYPE RANGE OF kschl .
+  types TY_ME type ref to ZCL_GTDEVRR2R3301 .
+  types:
+    tyt_list TYPE STANDARD TABLE OF ty_me .
+  types:
+    TYT_PARTNERS TYPE STANDARD TABLE OF MEPO1224 .
+
+  class-data R_CRD_AUART type ZRGLRRT_CRD_AUART .
+  class-data T_LIST type TYT_LIST .
+  class-data O_TVARV type ref to ZCL_GLIT_TVARV .
+  type-pools ABAP .
+  class-data T_CALLSTACK type ABAP_CALLSTACK .
+
+  class-methods GET_SHIP_FROM_JURISDICT_CODE
+    importing
+      value(P_EBELN) type EBELN optional
+      value(P_EBELP) type EBELP optional
+    returning
+      value(R_TXJCD_SF) type TXJCD_SF .
+  class-methods IS_CONDITION_RANGE_VALID
+    importing
+      !PR_KSCHL type TYR_KSCHL
+    returning
+      value(R_BOOLEAN) type ABAP_BOOL .
+  class-methods ADD_INSTANCE
+    importing
+      value(P_COMP_CODE) type TAX_COMP_CODE
+      value(P_DOC_NUMBER) type TAX_DOC_NUMBER
+      value(P_POS_NO) type TAX_POSNR
+      value(P_TAX_TYPE) type MWART
+      value(PW_T007A) type T007A
+    returning
+      value(RO_INSTANCE) type ref to ZCL_GTDEVRR2R3301 .
+  class-methods GET_MATCHED_INSTANCE
+    importing
+      !P_COMP_CODE type TAX_COMP_CODE
+      !P_DOC_NUMBER type TAX_DOC_NUMBER
+      !P_POS_NO type TAX_POSNR
+      !P_TAX_TYPE type MWART
+    returning
+      value(RO_INSTANCE) type ref to ZCL_GTDEVRR2R3301
+    raising
+      ZCX_INSTANCE_NOT_FOUND .
+  class-methods GET_FUNC_AREA
+    importing
+      value(P_KOSTL) type KOSTL
+    changing
+      value(C_FKBER) type FKBER .
+  class-methods GET_PO_FREIGHT
+    importing
+      value(P_EBELN) type EBELN optional
+      value(P_EBELP) type EBELP optional
+    returning
+      value(R_FREIGHT_AM) type ETDFRTAMOUNT .
+  class-methods GET_SO_FREIGHT
+    importing
+      value(P_KPOSN) type KPOSN
+    returning
+      value(R_FREIGHT_AM) type ETDFRTAMOUNT .
+  class-methods GET_POSTING_DATE
+    returning
+      value(R_BUDAT) type BUDAT .
+  class-methods GET_ACCP_INCOTERM1
+    importing
+      value(P_EBELN) type EBELN optional
+    returning
+      value(R_INCO1) type INCO1 .
+  class-methods GET_ACCP_ACC_ASST_CATEGORY
+    importing
+      value(P_EBELN) type EBELN optional
+      value(P_EBELP) type EBELP optional
+    returning
+      value(R_KNTTP) type KNTTP .
+  class-methods GET_SALES_FREIGHT_FLAG
+    importing
+      !P_EBELN type EBELN
+      !P_EBELP type EBELP
+      !P_POS_NO type TAX_POSNR
+    returning
+      value(R_SALES_FREIGHT_FLAG) type CHAR1 .
+  class-methods GET_PO_ITEM_MATKL
+    importing
+      !P_EBELN type EBELN
+      !P_EBELP type EBELP
+      !P_POS_NO type TAX_POSNR
+    returning
+      value(R_MATKL) type MATKL .
+  class-methods GET_GL_ACCOUNT
+    importing
+      value(P_EBELN) type EBELN optional
+      value(P_EBELP) type EBELP
+    returning
+      value(R_SAKTO) type SAKNR .
+  class-methods GET_SALE_ORDER_TYPE
+    importing
+      !P_VBELN type VBELN optional
+      !P_POSNR type POSNR optional
+    returning
+      value(R_AUART) type AUART .
+  class-methods GET_SALE_ORDER_NUMBER
+    importing
+      !P_VBELN type VBELN optional
+      !P_POSNR type POSNR optional
+    returning
+      value(R_VBELV) type VBELV .
+  class-methods GET_SALES_GL_ACCOUNT
+    importing
+      value(P_VBELN) type VBELN
+      value(P_POSNR) type POSNR
+    returning
+      value(R_SAKNR) type SAKNR .
+  class-methods GET_FI_GL_ACCOUNT
+    importing
+      value(P_POSNR) type TAX_POSNR
+    returning
+      value(R_HKONT) type HKONT .
+  class-methods GET_PO_TYPE
+    importing
+      value(P_EBELN) type EBELN optional
+    returning
+      value(R_BSART) type ESART .
+  class-methods GET_MIRO_FREIGHT
+    importing
+      value(P_WAERS) type WAERS
+      value(P_EBELN) type EBELN
+      value(P_EBELP) type EBELP
+    returning
+      value(R_FREIGHT_AM) type ETDFRTAMOUNT .
+  class-methods GET_INVOICE_FREIGHT
+    importing
+      value(P_WAERS) type WAERS
+      value(P_POSNR) type POSNR
+      value(P_VRKME) type VRKME
+      value(P_LFIMG) type LFIMG
+    returning
+      value(R_FREIGHT_AM) type ETDFRTAMOUNT .
+  class-methods GET_SA_KOSTL
+    returning
+      value(R_KOSTL) type KOSTL .
+  class-methods GET_SA_AUFNR
+    returning
+      value(R_AUFNR) type AUFNR .
+  class-methods GET_SA_PS_PSP_PNR
+    returning
+      value(R_PS_PSP_PNR) type COBL-PS_PSP_PNR .
+  class-methods GET_SALE_ORDER_ACC_ASS
+    importing
+      value(P_EBELN) type EBELN
+      value(P_EBELP) type EBELP
+    exporting
+      value(E_KOSTL) type KOSTL
+      value(E_AUFNR) type AUFNR
+      value(E_PROJK) type PS_PSP_PNR .
+  class-methods GET_ASSET_ACC_ASS
+    importing
+      value(P_BUKRS) type BUKRS
+      value(P_EBELN) type EBELN
+      value(P_EBELP) type EBELP
+    exporting
+      value(E_KOSTL) type KOSTL
+      value(E_AUFNR) type AUFNR
+      value(E_PROJK) type PS_PSP_PNR .
+  class-methods GET_PO_ITEM_CATEGORY
+    returning
+      value(R_PSTYP) type PSTYP .
+  class-methods GET_INVOICE_CONDITION_TYPE
+    importing
+      value(P_POSNR) type TAX_POSNR
+    returning
+      value(R_KSCHL) type KSCHL .
+  class-methods GET_ORDER_COST_CENTER
+    importing
+      value(P_AUFNR) type AUFNR
+    returning
+      value(R_KOSTL) type KOSTL .
+  class-methods GET_WBS_COST_CENTER
+    importing
+      value(P_PROJK) type PS_PSP_PNR
+    returning
+      value(R_KOSTL) type KOSTL .
+  class-methods SET_CALLSTACK .
+  class-methods GET_MASTER_MATERIAL_GROUP
+    importing
+      value(P_MATNR) type MATNR
+    returning
+      value(R_MATKL) type MATKL .
+  class-methods GET_CRDM_TAX_DATE_ORDER
+    importing
+      value(P_TAX_DATE) type ETDTXDAT
+    returning
+      value(R_TAX_DATE) type ETDTXDAT .
+  class-methods GET_CRDM_TAX_DATE_INVOICE
+    importing
+      value(P_TAX_DATE) type ETDTXDAT
+    returning
+      value(R_TAX_DATE) type ETDTXDAT .
+  class-methods GET_ORDER_DATE
+    importing
+      value(P_TAX_DATE) type ETDTXDAT
+    returning
+      value(R_TAX_DATE) type ETDTXDAT .
+  class-methods GET_BILL_DATE
+    importing
+      value(P_TAX_DATE) type ETDTXDAT
+    returning
+      value(R_TAX_DATE) type ETDTXDAT .
+  class-methods GET_PLANT_JURISDICTION_CODE
+    importing
+      value(P_WERKS) type WERKS_D
+    returning
+      value(R_TXJCD_SF) type TXJCD_SF .
+  class-methods GET_JC_ORIGIN_POINT
+    importing
+      value(P_POSNR) type TAX_POSNR
+    returning
+      value(R_TXJCD_POO) type TXJCD_POO .
+  class-methods GET_SUPPLYING_PLANT_JC
+    importing
+      value(P_EBELN) type EBELN
+    returning
+      value(R_TXJCD) type TXJCD .</privateSection>
+ <localImplementation>*&quot;* local class implementation for public class
+*&quot;* use this source file for the implementation part of
+*&quot;* local helper classes
+*{   INSERT         GE1K949620                                        1
+*--------------------------------------------------------------------*
+* CLASS LCL_DB
+*         PURPOSE: Intermediates database accesses.
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+*--------------------------------------------------------------------*
+* METHOD get_vbkd_bstdk
+*--------------------------------------------------------------------*
+* REQUIRES: A valid sales document must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related Customer purchase order date.
+*--------------------------------------------------------------------*
+* -&gt;P_VBELN  Sales and Distribution Document Number
+* &lt;-R_BSTDK  Customer purchase order date
+*--------------------------------------------------------------------*
+             get_vbkd_bstdk IMPORTING VALUE(p_vbeln) TYPE vbeln
+                            RETURNING VALUE(r_bstdk) TYPE bstdk
+                            RAISING   cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_vbrk_fkdat
+*--------------------------------------------------------------------*
+* REQUIRES: A valid sales invoice number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related Billing date for billing
+*           index and printout.
+*--------------------------------------------------------------------*
+* -&gt;P_VBELN  Invoice number
+* &lt;-R_FKDAT  Billing date for billing index and printout.
+*--------------------------------------------------------------------*
+             get_vbrk_fkdat IMPORTING VALUE(p_vbeln) TYPE vbeln
+                            RETURNING VALUE(r_fkdat) TYPE fkdat
+                            RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_vbak
+*--------------------------------------------------------------------*
+* REQUIRES: A valid sales order number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related VBAK (header data) content.
+*--------------------------------------------------------------------*
+* -&gt;P_VBELN  Invoice number
+* &lt;-R_VBAK   Sales Document: Header Data.
+*--------------------------------------------------------------------*
+             get_vbak       IMPORTING VALUE(p_vbeln) TYPE vbeln
+                            RETURNING VALUE(rw_vbak) TYPE vbak
+                            RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_shipment_sale_document
+*--------------------------------------------------------------------*
+* REQUIRES: A valid shipment number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related sale document.
+*--------------------------------------------------------------------*
+* -&gt;P_FKNUM  Shipment Cost Number
+* &lt;-R_VBELN  Sales and Distribution Document Number.
+*--------------------------------------------------------------------*
+          get_shipment_sale_document IMPORTING VALUE(p_fknum) TYPE fknum
+                                     RETURNING VALUE(r_vbeln) TYPE vbeln
+                                     RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_delivery_shipto
+*--------------------------------------------------------------------*
+* REQUIRES: A valid delivery number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related shipto partner code.
+*--------------------------------------------------------------------*
+* -&gt;P_VBELN  Delivery Number
+* &lt;-R_KUNWE  Shipto partner code.
+*--------------------------------------------------------------------*
+             get_delivery_shipto IMPORTING VALUE(p_vbeln) TYPE vbeln
+                                 RETURNING VALUE(r_kunwe) TYPE kunwe
+                                 RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_customer_jurisdic_code
+*--------------------------------------------------------------------*
+* REQUIRES: A valid customer number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related jurisdiction code.
+*--------------------------------------------------------------------*
+* -&gt;P_KUNNR  Customer Number
+* &lt;-R_TXJCD  Tax Jurisdiction.
+*--------------------------------------------------------------------*
+         get_customer_jurisdic_code IMPORTING VALUE(p_kunnr) TYPE kunnr
+                                    RETURNING VALUE(r_txjcd) TYPE txjcd
+                                    RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_shipment_from_entrysheet
+*--------------------------------------------------------------------*
+* REQUIRES: Valid entry sheet number must be provided.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related shipment.
+*--------------------------------------------------------------------*
+* -&gt;P_LBLNI  Entry Sheet Number
+* &lt;-R_FKNUM  Shipment Cost Number.
+*--------------------------------------------------------------------*
+        get_shipment_from_entrysheet IMPORTING VALUE(p_lblni) TYPE lblni
+                                     RETURNING VALUE(r_fknum) TYPE fknum
+                                     RAISING cx_sy_sql_error,
+*--------------------------------------------------------------------*
+* METHOD get_po_supplying_plant
+*--------------------------------------------------------------------*
+* REQUIRES: Valid PO number must be informed.
+* EFFECTS.: If the search fails, returns exception type CX_SY_SQL_ERROR,
+*           otherwise returns the related supplying plant.
+*--------------------------------------------------------------------*
+* -&gt;P_EBELN  Purchasing Document Number
+* &lt;-R_RESWK  Supplying (Issuing) Plant in Stock Transport Order.
+*--------------------------------------------------------------------*
+  get_po_supplying_plant IMPORTING VALUE(p_ebeln) TYPE ebeln
+                         RETURNING VALUE(r_reswk) TYPE reswk
+                         RAISING cx_sy_sql_error.
+ENDCLASS.
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_vbkd_bstdk.
+    SELECT bstdk FROM vbkd UP TO 1 ROWS
+      into r_bstdk
+     WHERE vbeln = p_vbeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_vbrk_fkdat.
+    SELECT fkdat FROM vbrk UP TO 1 ROWS
+      INTO r_fkdat
+     WHERE vbeln = p_vbeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_vbak.
+    SELECT * FROM vbak UP TO 1 ROWS
+      INTO rw_vbak
+     WHERE vbeln = p_vbeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_shipment_sale_document.
+    DATA lv_knumv TYPE knumv.
+
+    SELECT a~knumv b~vbeln
+      FROM vfkp as a
+     INNER JOIN vfsi as b
+        on a~knumv = b~knumv
+        UP TO 1 ROWS
+      INTO (lv_knumv, r_vbeln)
+     WHERE fknum = p_fknum.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_delivery_shipto.
+    SELECT kunnr FROM likp UP TO 1 ROWS
+      INTO r_kunwe
+     WHERE vbeln = p_vbeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_customer_jurisdic_code.
+    SELECT txjcd FROM kna1 UP TO 1 ROWS
+      INTO r_txjcd
+     WHERE kunnr = p_kunnr.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_shipment_from_entrysheet.
+    SELECT fknum FROM essr UP TO 1 ROWS
+      INTO R_fknum
+     WHERE lblni EQ p_lblni.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+  METHOD get_po_supplying_plant.
+    SELECT reswk FROM ekko UP TO 1 ROWS
+      INTO r_reswk
+     WHERE ebeln = p_ebeln.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+*
+*}   INSERT</localImplementation>
+ <localTypes>*&quot;* use this source file for any type declarations (class
+*&quot;* definitions, interfaces or data types) you need for method
+*&quot;* implementation or private method&apos;s signature</localTypes>
+ <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class
+DEFINE m_msg_invalid_format.
+  if p_final_check is initial.
+    set cursor field &apos;INVFO-XBLNR&apos;.
+    message e030 with &amp;1.
+  else.
+    m_raise_exception 030 &amp;1 space space space.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_msg_invalid_sizes.
+  if p_final_check is initial.
+    set cursor field &apos;INVFO-XBLNR&apos;.
+    message e033 with &amp;1 &amp;2 &amp;3.
+  else.
+    m_raise_exception 033 &amp;1 &amp;2 &amp;3 space.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_raise_exception.
+  message e&amp;1 into lvc_dummy with &amp;2 &amp;3 &amp;4 &amp;5.
+  lw_error-msgty = sy-msgty.
+  lw_error-msgid = sy-msgid.
+  lw_error-msgno = sy-msgno.
+  lw_error-msgv1 = sy-msgv1.
+  lw_error-msgv2 = sy-msgv2.
+  lw_error-msgv3 = sy-msgv3.
+  lw_error-msgv4 = sy-msgv4.
+  append lw_error to lt_error.
+  raise exception  type zcx_gtdevrr2r1890_error
+    exporting
+      at_errprot = lt_error.
+END-OF-DEFINITION.
+*{   INSERT         GE1K949620                                        1
+DEFINE m_db_return.
+  free lo_db.
+  RETURN.
+END-OF-DEFINITION.
+*
+*}   INSERT</localMacros>
+ <textPool/>
+ <classDocumentation/>
+ <typeUsage CLSNAME="ZCL_GTDEVRR2R3301" TYPEGROUP="ABAP" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+ <typeUsage CLSNAME="ZCL_GTDEVRR2R3301" TYPEGROUP="MRM" VERSION="1" TPUTYPE="0" IMPLICIT="X"/>
+ <forwardDeclaration>ABAP</forwardDeclaration>
+ <forwardDeclaration>MRM</forwardDeclaration>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ACTIV" VERSION="1" LANGU="E" DESCRIPT="Active/Inactive" EXPOSURE="2" STATE="1" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="PSG_ACTIN" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="COMP_CODE" VERSION="1" LANGU="E" DESCRIPT="Company code using tax interface" EXPOSURE="2" STATE="1" EDITORDER="5 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TAX_COMP_CODE" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="C_CLNAME" VERSION="1" LANGU="E" DESCRIPT="Object Type Name" EXPOSURE="2" STATE="1" EDITORDER="4 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="2" ATTVALUE="&apos;ZCL_GTDEVRR2R3301&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="SEOCLSNAME" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="C_EXIT_ID" VERSION="1" LANGU="E" DESCRIPT="Object Name in Object Directory" EXPOSURE="2" STATE="1" EDITORDER="3 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="2" ATTVALUE="&apos;GTDEVRR2R3301&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="SOBJ_NAME" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="C_VAR_NAME" VERSION="1" LANGU="E" DESCRIPT="ABAP: Name of Variant Variable" EXPOSURE="2" STATE="1" EDITORDER="2 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="2" ATTVALUE="&apos;GTDEVRR2R3301&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="RVARI_VNAM" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="DOC_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Tax document number" EXPOSURE="2" STATE="1" EDITORDER="6 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TAX_DOC_NUMBER" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="O_TVARV" VERSION="1" LANGU="E" DESCRIPT="Get TVARV according to ID" EXPOSURE="0" STATE="1" EDITORDER="3 " AUTHOR="EXRQUADR" CREATEDON="20111122" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="3" TYPE="ZCL_GLIT_TVARV" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" EXPOSURE="2" STATE="1" EDITORDER="7 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TAX_POSNR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="R_CRD_AUART" VERSION="1" LANGU="E" DESCRIPT="Vertex Allowed Credit Memo Order Type Range" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20121117" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZRGLRRT_CRD_AUART" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="TAX_TYPE" VERSION="1" LANGU="E" DESCRIPT="Tax Type" EXPOSURE="2" STATE="1" EDITORDER="8 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="MWART" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="T_CALLSTACK" VERSION="1" LANGU="E" DESCRIPT="ABAP Call Stack" EXPOSURE="0" STATE="1" EDITORDER="4 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ABAP_CALLSTACK" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="T_LIST" VERSION="1" LANGU="E" DESCRIPT="List of instances" EXPOSURE="0" STATE="1" EDITORDER="2 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TYT_LIST" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Adds an instance to the intances list." EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="P_COMP_CODE" VERSION="1" LANGU="E" DESCRIPT="Company code using tax interface" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_COMP_CODE"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="P_DOC_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Tax document number" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_DOC_NUMBER"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="P_POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="P_TAX_TYPE" VERSION="1" LANGU="E" DESCRIPT="Tax Type" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="MWART"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="PW_T007A" VERSION="1" LANGU="E" DESCRIPT="Tax Keys" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="T007A"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="ADD_INSTANCE" SCONAME="RO_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Vertex fields filler" CMPTYPE="1" MTDTYPE="0" EDITORDER="6 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_GTDEVRR2R3301"/>
+  <source>METHOD add_instance.
+  DATA lo_instance TYPE REF TO zcl_gtdevrr2r3301.
+
+  TRY .
+      ro_instance =
+           zcl_gtdevrr2r3301=&gt;get_matched_instance(
+            p_comp_code  = p_comp_code
+            p_doc_number = p_doc_number
+            p_pos_no     = p_pos_no
+            p_tax_type   = p_tax_type ).
+    CATCH zcx_instance_not_found.
+      CREATE OBJECT lo_instance
+        EXPORTING
+          p_comp_code  = p_comp_code
+          p_doc_number = p_doc_number
+          p_pos_no     = p_pos_no
+          p_tax_type   = p_tax_type
+          pw_t007a     = pw_t007a.
+      IF lo_instance IS NOT INITIAL.
+        APPEND lo_instance TO t_list.
+        ro_instance = lo_instance.
+      ENDIF.
+  ENDTRY.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CLASS_CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CLASS_CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111122" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="2" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <source>method CLASS_CONSTRUCTOR.
+*{   INSERT         GE1K946466                                        1
+  DATA lw_crd_auart TYPE ZGLRRS_CRD_AUART.
+*}   INSERT
+  CREATE OBJECT o_tvarv
+    EXPORTING
+      im_id = c_var_name.
+*{   INSERT         GE1K946466                                        2
+  lw_crd_auart-SIGN   = &apos;I&apos;.
+  lw_crd_auart-option = &apos;EQ&apos;.
+  select auart FROM ZGLRRT_CRD_AUART
+    into lw_crd_auart-low.
+    APPEND lw_crd_auart to r_crd_auart.
+  ENDSELECT.
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="2" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" SCONAME="P_COMP_CODE" VERSION="1" LANGU="E" DESCRIPT="Company code using tax interface" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_COMP_CODE"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" SCONAME="P_DOC_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Tax document number" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_DOC_NUMBER"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" SCONAME="P_POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" SCONAME="P_TAX_TYPE" VERSION="1" LANGU="E" DESCRIPT="Tax Type" CMPTYPE="1" MTDTYPE="2" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="MWART"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="CONSTRUCTOR" SCONAME="PW_T007A" VERSION="1" LANGU="E" DESCRIPT="Tax Keys" CMPTYPE="1" MTDTYPE="2" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="T007A"/>
+  <source>METHOD constructor.
+  CONSTANTS: lc_market(2) TYPE c VALUE &apos;GL&apos;,
+             lc_fname     TYPE fieldname VALUE &apos;BUKRS&apos;.
+  DATA: lv_value   TYPE fieldvalue,
+        lv_market  TYPE zglit_market,
+        lv_include TYPE sobj_name.
+
+  me-&gt;comp_code  = p_comp_code.
+  me-&gt;doc_number = p_doc_number.
+  me-&gt;pos_no     = p_pos_no.
+  me-&gt;tax_type   = p_tax_type..
+
+  CONCATENATE lc_market p_comp_code(2) INTO lv_market.
+  lv_value       = p_comp_code.
+  lv_include     = c_clname.
+  CALL FUNCTION &apos;ZGLIT_EXIT_CONTROL&apos;
+    EXPORTING
+      market         = lv_market
+      exit_id        = c_exit_id
+      include_name   = lv_include
+      field_name     = lc_fname
+      field_value    = lv_value
+    IMPORTING
+      active         = me-&gt;activ
+    EXCEPTIONS
+      data_not_found = 1
+      OTHERS         = 2.
+  IF sy-subrc &lt;&gt; 0.
+    RETURN.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_ACC_ASST_CATEGORY" VERSION="1" LANGU="E" DESCRIPT="Returns the account assignment category for accounts payable" EXPOSURE="0" STATE="1" EDITORDER="10 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111123" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_ACC_ASST_CATEGORY" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_ACC_ASST_CATEGORY" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_ACC_ASST_CATEGORY" SCONAME="R_KNTTP" VERSION="1" LANGU="E" DESCRIPT="Account Assignment Category" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111123" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="KNTTP"/>
+  <source>METHOD get_accp_acc_asst_category.
+  CONSTANTS: lc_knttp_po TYPE string VALUE &apos;(SAPLMEPO)KOMP-KNTTP&apos;,
+             lc_knttp_sa TYPE string VALUE &apos;(SAPMM06E)KOMP-KNTTP&apos;.
+  FIELD-SYMBOLS &lt;lfs_knttp&gt; TYPE knttp.
+
+
+  IF p_ebeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+       is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_knttp_po) TO &lt;lfs_knttp&gt;.
+    IF &lt;lfs_knttp&gt; IS ASSIGNED.
+      IF &lt;lfs_knttp&gt; IS NOT INITIAL.
+        r_knttp = &lt;lfs_knttp&gt;.
+      ELSE.
+        UNASSIGN &lt;lfs_knttp&gt;.
+        ASSIGN (lc_knttp_sa) TO &lt;lfs_knttp&gt;.
+        IF &lt;lfs_knttp&gt; IS ASSIGNED.
+          IF &lt;lfs_knttp&gt; IS NOT INITIAL.
+            r_knttp = &lt;lfs_knttp&gt;.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ELSE.
+      ASSIGN (lc_knttp_sa) TO &lt;lfs_knttp&gt;.
+      IF &lt;lfs_knttp&gt; IS ASSIGNED.
+        IF &lt;lfs_knttp&gt; IS NOT INITIAL.
+          r_knttp = &lt;lfs_knttp&gt;.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    SELECT knttp FROM ekpo UP TO 1 ROWS
+      INTO r_knttp
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_INCOTERM1" VERSION="1" LANGU="E" DESCRIPT="Returns incoterm 1 for accounts payable." EXPOSURE="0" STATE="1" EDITORDER="9 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111123" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_INCOTERM1" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ACCP_INCOTERM1" SCONAME="R_INCO1" VERSION="1" LANGU="E" DESCRIPT="Incoterms (Part 1)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111123" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="INCO1"/>
+  <source>METHOD get_accp_incoterm1.
+  CONSTANTS: lc_inco1_po TYPE string VALUE &apos;(SAPLMEPO)KOMK-INCO1&apos;,
+             lc_inco1_sa TYPE string VALUE &apos;(SAPMM06E)KOMK-INCO1&apos;.
+  FIELD-SYMBOLS &lt;lfs_inco1&gt; TYPE inco1.
+
+
+  IF p_ebeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+       is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_inco1_po) TO &lt;lfs_inco1&gt;.
+    IF &lt;lfs_inco1&gt; IS ASSIGNED.
+      r_inco1 = &lt;lfs_inco1&gt;.
+    ELSE.
+      ASSIGN (lc_inco1_sa) TO &lt;lfs_inco1&gt;.
+      IF &lt;lfs_inco1&gt; IS ASSIGNED.
+        r_inco1 = &lt;lfs_inco1&gt;.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    SELECT inco1 FROM ekko UP TO 1 ROWS
+      INTO r_inco1
+     WHERE ebeln = p_ebeln.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" VERSION="1" LANGU="E" DESCRIPT="Returns the account assignment of an asset." EXPOSURE="0" STATE="1" EDITORDER="25 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="P_BUKRS" VERSION="1" LANGU="E" DESCRIPT="Company Code" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="BUKRS"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="E_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="E_AUFNR" VERSION="1" LANGU="E" DESCRIPT="Order Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="AUFNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ASSET_ACC_ASS" SCONAME="E_PROJK" VERSION="1" LANGU="E" DESCRIPT="Work Breakdown Structure Element (WBS Element)" CMPTYPE="1" MTDTYPE="0" EDITORDER="6 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="PS_PSP_PNR"/>
+  <source>METHOD get_asset_acc_ass.
+  CONSTANTS: lc_knt_po  TYPE string VALUE &apos;(SAPLMEPO)KNT[]&apos;,
+             lc_knt_sa  TYPE string VALUE &apos;(SAPMM06E)KNT[]&apos;.
+  DATA: lt_ekkn TYPE ty_ekkn,
+        dref    TYPE REF TO data.
+  FIELD-SYMBOLS: &lt;lfs_knt&gt;   TYPE mmpur_ekknu,
+                 &lt;lfs_ekknu&gt; TYPE ekknu.
+
+  IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+     is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_knt_po) TO &lt;lfs_knt&gt;.
+  IF &lt;lfs_knt&gt; IS NOT ASSIGNED.
+    ASSIGN (lc_knt_sa) TO &lt;lfs_knt&gt;.
+  ELSEIF &lt;lfs_knt&gt; IS INITIAL.
+    ASSIGN (lc_knt_sa) TO &lt;lfs_knt&gt;.
+  ENDIF.
+  IF &lt;lfs_knt&gt; IS NOT ASSIGNED.
+    SELECT * FROM ekkn
+      INTO TABLE lt_ekkn
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+    IF sy-subrc = 0.
+      CREATE DATA dref TYPE mmpur_ekknu.
+      ASSIGN dref-&gt;* TO &lt;lfs_knt&gt;.
+      &lt;lfs_knt&gt; = lt_ekkn.
+    ENDIF.
+  ENDIF.
+
+  READ TABLE &lt;lfs_knt&gt; WITH KEY ebeln = p_ebeln
+                                ebelp = p_ebelp
+   ASSIGNING &lt;lfs_ekknu&gt;.
+* Begin of Modification Takechi - 19.04.2012
+* CD 7000006354 e CR numero 8000013711.
+* Ticket 2417269.
+  IF sy-subrc IS INITIAL.
+* End of Modification Takechi - 19.04.2012
+
+    IF &lt;lfs_ekknu&gt;-anln1 IS NOT INITIAL.
+      SELECT kostl caufn ps_psp_pnr2 FROM anlz UP TO 1 ROWS
+        INTO (e_kostl, e_aufnr, e_projk)
+       WHERE bukrs =  p_bukrs
+         AND anln1 =  &lt;lfs_ekknu&gt;-anln1
+         AND anln2 =  &lt;lfs_ekknu&gt;-anln2
+         AND bdatu &gt;= sy-datlo.
+      ENDSELECT.
+    ENDIF.
+* Begin of Modification Takechi - 19.04.2012
+  ENDIF.
+* End of Modification Takechi - 19.04.2012
+
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_BILL_DATE" VERSION="1" LANGU="E" DESCRIPT="Returns the Billing date (2936385)." EXPOSURE="0" STATE="1" EDITORDER="35 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_BILL_DATE" SCONAME="P_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_BILL_DATE" SCONAME="R_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <source>method GET_BILL_DATE.
+*{   INSERT         GE1K949767                                        1
+  CONSTANTS lc_fkdat TYPE string VALUE &apos;(SAPLV60A)VBRK-FKDAT&apos;.
+  FIELD-SYMBOLS &lt;l_fkdat&gt; TYPE audat.
+
+  r_tax_date = p_tax_date.
+  IF is_valid_context( &apos;SAPLV60A&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_fkdat) TO &lt;l_fkdat&gt;.
+  IF &lt;l_fkdat&gt; IS ASSIGNED.
+    r_tax_date = &lt;l_fkdat&gt;.
+  ENDIF.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_INVOICE" VERSION="1" LANGU="E" DESCRIPT="Returns the tax date for an Invoice (GTDEVCRR2R7919)" EXPOSURE="0" STATE="1" EDITORDER="33 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_INVOICE" SCONAME="P_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_INVOICE" SCONAME="R_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <source>method GET_CRDM_TAX_DATE_INVOICE.
+*{   INSERT         GE1K949835                                        1
+  CONSTANTS lc_komfk TYPE string VALUE &apos;(SAPLV60A)XKOMFK&apos;.
+  DATA: lv_fkdat TYPE fkdat,
+        lv_bstdk TYPE bstdk,
+        lw_vbak  TYPE vbak,
+        lo_db    TYPE REF TO lcl_db.
+  FIELD-SYMBOLS: &lt;lw_komfk&gt; TYPE komfk,
+  &lt;lw_vbfa&gt;  TYPE vbfa.
+
+* Database mediator instance
+  CREATE OBJECT lo_db.
+
+  r_tax_date = p_tax_date.
+  IF is_valid_context( &apos;SAPLV60A&apos; ) = abap_false.
+    m_db_return.
+  ENDIF.
+
+  ASSIGN (lc_komfk) TO &lt;lw_komfk&gt;.
+  IF &lt;lw_komfk&gt; IS ASSIGNED.
+    TRY .
+      lw_vbak = lo_db-&gt;get_vbak( &lt;lw_komfk&gt;-vbeln ).
+    CATCH cx_sy_sql_error. &quot; it is not a sales order that is being
+      &quot; invoiced
+      m_db_return.
+    ENDTRY.
+  ENDIF.
+  CASE lw_vbak-vgtyp.
+  WHEN &apos;M&apos;.
+    TRY .
+      lv_fkdat = lo_db-&gt;get_vbrk_fkdat( lw_vbak-vgbel ).
+    CATCH cx_sy_sql_error.
+      m_db_return.
+    ENDTRY.
+    IF lv_fkdat IS NOT INITIAL.
+      r_tax_date = lv_fkdat.
+    ENDIF.
+  WHEN &apos;C&apos;.
+    TRY .
+      lv_bstdk = lo_db-&gt;get_vbkd_bstdk( lw_vbak-vgbel ).
+    CATCH cx_sy_sql_error.
+      m_db_return.
+    ENDTRY.
+    IF lv_bstdk IS NOT INITIAL.
+      r_tax_date = lv_bstdk.
+    ENDIF.
+  ENDCASE.
+  m_db_return.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_ORDER" VERSION="1" LANGU="E" DESCRIPT="Returns the tax date for a Sale Order (GTDEVCRR2R7919)" EXPOSURE="0" STATE="1" EDITORDER="32 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_ORDER" SCONAME="P_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_CRDM_TAX_DATE_ORDER" SCONAME="R_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20121122" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <source>method GET_CRDM_TAX_DATE_ORDER.
+*{   INSERT         GE1K949835                                        1
+  CONSTANTS: lc_bstdk      TYPE string VALUE &apos;(SAPMV45A)VBKD-BSTDK&apos;,
+  lc_bstdk_bapi TYPE string VALUE &apos;(SAPLV45A)VBKD-BSTDK&apos;,
+  lc_vbak       TYPE string VALUE &apos;(SAPMV45A)VBAK&apos;,
+  lc_vbak_bapi  TYPE string VALUE &apos;(SAPLV45A)VBAK&apos;.
+  DATA: ls_bstdk TYPE string,
+        ls_vbak  TYPE string,
+        lv_bstdk TYPE bstdk,
+        lv_fkdat TYPE fkdat.
+  FIELD-SYMBOLS: &lt;lv_bstdk&gt; TYPE bstdk,
+  &lt;lw_vbak&gt; TYPE vbak.
+
+  r_tax_date = p_tax_date.
+  CASE abap_true.
+  WHEN is_valid_context( &apos;SAPMV45A&apos; ). &quot;Called from VA0*
+    ls_bstdk = lc_bstdk.
+    ls_vbak  = lc_vbak.
+  WHEN is_valid_context( &apos;SAPLV45A&apos; ). &quot;Called from BAPI
+    ls_bstdk = lc_bstdk_bapi.
+    ls_vbak  = lc_vbak_bapi.
+  WHEN OTHERS.
+    RETURN.
+  ENDCASE.
+  ASSIGN: (ls_vbak)  TO &lt;lw_vbak&gt;,
+          (ls_bstdk) TO &lt;lv_bstdk&gt;.
+  IF &lt;lw_vbak&gt; IS ASSIGNED.
+    IF &lt;lw_vbak&gt;-vgbel IS NOT INITIAL.
+      CASE &lt;lw_vbak&gt;-vgtyp.
+      WHEN &apos;M&apos;. &quot;Billing document
+        SELECT fkdat FROM vbrk UP TO 1 ROWS
+          INTO lv_fkdat
+         WHERE vbeln = &lt;lw_vbak&gt;-vgbel.
+        ENDSELECT.
+        IF sy-subrc = 0 AND lv_fkdat IS NOT INITIAL.
+          r_tax_date = lv_fkdat.
+        ELSE.
+          IF &lt;lv_bstdk&gt; IS ASSIGNED.
+            IF &lt;lv_bstdk&gt; IS NOT INITIAL.
+              r_tax_date = &lt;lv_bstdk&gt;.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      WHEN &apos;C&apos;. &quot;Sales order
+        SELECT bstdk FROM vbkd UP TO 1 ROWS
+          INTO lv_bstdk
+          WHERE vbeln = &lt;lw_vbak&gt;-vgbel.
+        ENDSELECT.
+        IF sy-subrc = 0 AND lv_bstdk IS NOT INITIAL.
+          r_tax_date = lv_bstdk.
+        ELSE.
+          IF &lt;lv_bstdk&gt; IS ASSIGNED.
+            IF &lt;lv_bstdk&gt; IS NOT INITIAL.
+              r_tax_date = &lt;lv_bstdk&gt;.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      WHEN OTHERS.
+          IF &lt;lv_bstdk&gt; IS ASSIGNED.
+            IF &lt;lv_bstdk&gt; IS NOT INITIAL.
+              r_tax_date = &lt;lv_bstdk&gt;.
+            ENDIF.
+          ENDIF.
+      ENDCASE.
+    ENDIF.
+  ENDIF.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FI_GL_ACCOUNT" VERSION="1" LANGU="E" DESCRIPT="Returns current FI document G/L Account." EXPOSURE="0" STATE="1" EDITORDER="17 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111208" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FI_GL_ACCOUNT" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FI_GL_ACCOUNT" SCONAME="R_HKONT" VERSION="1" LANGU="E" DESCRIPT="General Ledger Account" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111208" CHANGEDBY="EXRQUADR" CHANGEDON="20120315" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="HKONT"/>
+  <source>METHOD get_fi_gl_account.
+  CONSTANTS lc_bseg TYPE string VALUE &apos;(SAPLTAX1)TBSEG[]&apos;.
+  DATA lv_buzei TYPE buzei.
+  FIELD-SYMBOLS: &lt;lt_bseg&gt; TYPE bseg_t,
+                 &lt;lw_bseg&gt; TYPE bseg.
+
+  IF is_valid_context( &apos;SAPLTAX1&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_bseg) TO &lt;lt_bseg&gt;.
+  IF &lt;lt_bseg&gt; IS ASSIGNED.
+    lv_buzei = p_posnr.
+    READ TABLE &lt;lt_bseg&gt; ASSIGNING &lt;lw_bseg&gt;
+     WITH KEY buzei = lv_buzei.
+    IF sy-subrc = 0.
+      r_hkont = &lt;lw_bseg&gt;-hkont.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FUNC_AREA" VERSION="1" LANGU="E" DESCRIPT="Returns the functional area." EXPOSURE="0" STATE="1" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111121" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FUNC_AREA" SCONAME="P_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111121" CHANGEDBY="EXRQUADR" CHANGEDON="20120305" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_FUNC_AREA" SCONAME="C_FKBER" VERSION="1" LANGU="E" DESCRIPT="Functional Area" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111121" CHANGEDBY="EXRQUADR" CHANGEDON="20120308" PARDECLTYP="2" PARPASSTYP="0" TYPTYPE="1" TYPE="FKBER"/>
+  <source>METHOD get_func_area.
+  SELECT func_area FROM csks UP TO 1 ROWS
+    INTO c_fkber
+   WHERE kostl = p_kostl.
+  ENDSELECT.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_GL_ACCOUNT" VERSION="1" LANGU="E" DESCRIPT="Returns the G/L account number for a purchasing order item." EXPOSURE="0" STATE="1" EDITORDER="13 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_GL_ACCOUNT" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_GL_ACCOUNT" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_GL_ACCOUNT" SCONAME="R_SAKTO" VERSION="1" LANGU="E" DESCRIPT="G/L Account Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="SAKNR"/>
+  <source>METHOD get_gl_account.
+  CONSTANTS: lc_ekkn_po TYPE string VALUE &apos;(SAPLMEPO)EKKN&apos;,
+             lc_ekkn_sa TYPE string VALUE &apos;(SAPMM06E)EKKN&apos;,
+             lc_knt_po  TYPE string VALUE &apos;(SAPLMEPO)KNT[]&apos;,
+             lc_knt_sa  TYPE string VALUE &apos;(SAPMM06E)KNT[]&apos;.
+  FIELD-SYMBOLS: &lt;lfs_ekkn&gt;  TYPE ekkn,
+                 &lt;lfs_knt&gt;   TYPE mmpur_ekknu,
+                 &lt;lfs_ekknu&gt; TYPE ekknu.
+
+
+  IF p_ebeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false OR
+       is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN: (lc_ekkn_po) TO &lt;lfs_ekkn&gt;,
+            (lc_knt_po)  TO &lt;lfs_knt&gt;.
+    IF &lt;lfs_ekkn&gt; IS ASSIGNED.
+      IF &lt;lfs_ekkn&gt;-sakto IS NOT INITIAL.
+        r_sakto = &lt;lfs_ekkn&gt;-sakto.
+        RETURN.
+      ENDIF.
+    ELSE.
+      ASSIGN (lc_ekkn_sa) TO &lt;lfs_ekkn&gt;.
+      IF &lt;lfs_ekkn&gt; IS ASSIGNED.
+        IF &lt;lfs_ekkn&gt;-sakto IS NOT INITIAL.
+          r_sakto = &lt;lfs_ekkn&gt;-sakto.
+          RETURN.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+    IF &lt;lfs_knt&gt; IS ASSIGNED.
+      READ TABLE &lt;lfs_knt&gt; WITH KEY ebelp = p_ebelp
+       ASSIGNING &lt;lfs_ekknu&gt;.
+      IF sy-subrc = 0.
+        r_sakto = &lt;lfs_ekknu&gt;-sakto.
+      ENDIF.
+    ELSE.
+      ASSIGN (lc_knt_sa)  TO &lt;lfs_knt&gt;.
+      IF &lt;lfs_knt&gt; IS ASSIGNED.
+        READ TABLE &lt;lfs_knt&gt; WITH KEY ebelp = p_ebelp
+         ASSIGNING &lt;lfs_ekknu&gt;.
+        IF sy-subrc = 0.
+          r_sakto = &lt;lfs_ekknu&gt;-sakto.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    SELECT sakto FROM ekkn UP TO 1 ROWS
+      INTO r_sakto
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_CONDITION_TYPE" VERSION="1" LANGU="E" DESCRIPT="Returns the condition type of a given AP invoice item." EXPOSURE="0" STATE="1" EDITORDER="27 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120307" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_CONDITION_TYPE" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120307" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_CONDITION_TYPE" SCONAME="R_KSCHL" VERSION="1" LANGU="E" DESCRIPT="Condition Type" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120307" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="KSCHL"/>
+  <source>METHOD get_invoice_condition_type.
+  CONSTANTS: lc_rseg TYPE string VALUE &apos;(SAPLMR1M)YDRSEG[]&apos;,
+* MOD-001 - Fernando Shimada - 21/07/2012 - Begin.
+*{   REPLACE        GE1K947145                                        1
+*\             lc_bapi_item TYPE string VALUE &apos;(ZGLOCR_FREIGHT_PROCESSING)I_BAPI_ITEM[]&apos;.
+             lc_bapi_item TYPE string VALUE &apos;(ZGLOCR_FREIGHT_PROCESSING)I_BAPI_ITEM[]&apos;,
+             lc_type      TYPE string VALUE &apos;MMCR_DRSEG&apos;,
+             lc_type_bp   TYPE string VALUE &apos;DRSEG&apos;.
+*}   REPLACE
+* MOD-001 - Fernando Shimada - 21/07/2012 - End.
+*{   INSERT         GE1K947145                                        4
+  DATA: dref TYPE REF TO data,
+        lt_drseg TYPE mr_drseg.
+*}   INSERT
+
+  FIELD-SYMBOLS: &lt;lfs_rseg&gt;  TYPE STANDARD TABLE,
+*{   REPLACE        GE1K947145                                        5
+*\                 &lt;lfs_line&gt;  TYPE mmcr_drseg,
+                 &lt;lfs_line&gt;  TYPE any,
+*}   REPLACE
+  &lt;lfs_kschl&gt; TYPE kschl,
+* MOD-001 - Fernando Shimada - 21/07/2012 - Begin.
+                 &lt;lfs_bapi_item&gt;  TYPE STANDARD TABLE,
+                 &lt;lfs_line_item&gt;  TYPE bapi_incinv_create_item.
+* MOD-001 - Fernando Shimada - 21/07/2012 - End.
+
+*{   DELETE         GE1K947145                                        7
+*\  IF is_valid_context( &apos;SAPLMR1M&apos; ) = abap_false.
+*\  RETURN.
+*\  ENDIF.
+*}   DELETE
+
+
+*{   REPLACE        GE1K947145                                        6
+*\  ASSIGN (lc_rseg) TO &lt;lfs_rseg&gt;.
+  CASE abap_true.
+    WHEN is_valid_context( &apos;SAPLMR1M&apos; ).
+      ASSIGN (lc_rseg) TO &lt;lfs_rseg&gt;.
+      CREATE DATA dref TYPE (lc_type).
+    WHEN is_valid_context( &apos;SAPLMRM_BAPI&apos; ).
+* Data exported to memory in the ZCL_IM_CL_R2R_7919 implementation of
+* BADI EXTENSION_US_TAXES, method MM_DATA_FOR_TAX_SYSTEM.
+      IMPORT mt_drseg TO lt_drseg FROM MEMORY ID &apos;ZGLRR_VERTEX_DATA&apos;.
+      ASSIGN lt_drseg TO &lt;lfs_rseg&gt;.
+      CREATE DATA dref TYPE (lc_type_bp).
+    WHEN OTHERS.
+      RETURN.
+  ENDCASE.
+  ASSIGN dref-&gt;* TO &lt;lfs_line&gt;.
+*}   REPLACE
+  IF &lt;lfs_rseg&gt; IS ASSIGNED.
+    READ TABLE &lt;lfs_rseg&gt; INDEX p_posnr
+     ASSIGNING &lt;lfs_line&gt;.
+    IF sy-subrc = 0.
+      ASSIGN COMPONENT &apos;KSCHL&apos; OF STRUCTURE &lt;lfs_line&gt; TO &lt;lfs_kschl&gt;.
+      IF sy-subrc = 0.
+        r_kschl = &lt;lfs_kschl&gt;.
+      ENDIF.
+* MOD-001 - Fernando Shimada - 21/07/2012 - Begin.
+    ELSE.
+      ASSIGN (lc_bapi_item) TO &lt;lfs_bapi_item&gt;.
+      IF &lt;lfs_bapi_item&gt; IS ASSIGNED.
+        READ TABLE &lt;lfs_bapi_item&gt; INDEX p_posnr
+         ASSIGNING &lt;lfs_line_item&gt;.
+        IF sy-subrc = 0.
+          ASSIGN COMPONENT &apos;COND_TYPE&apos; OF STRUCTURE &lt;lfs_line_item&gt; TO &lt;lfs_kschl&gt;.
+          IF sy-subrc = 0.
+            r_kschl = &lt;lfs_kschl&gt;.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+* MOD-001 - Fernando Shimada - 21/07/2012 - End.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" VERSION="1" LANGU="E" DESCRIPT="Returns the freight value for sales invoices." EXPOSURE="0" STATE="1" EDITORDER="20 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111218" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" SCONAME="P_WAERS" VERSION="1" LANGU="E" DESCRIPT="Currency Key" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111219" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="WAERS"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Item number of the SD document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111219" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" SCONAME="P_VRKME" VERSION="1" LANGU="E" DESCRIPT="Sales unit" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111219" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="VRKME"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" SCONAME="P_LFIMG" VERSION="1" LANGU="E" DESCRIPT="Actual quantity delivered (in sales units)" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111219" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="LFIMG"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_INVOICE_FREIGHT" SCONAME="R_FREIGHT_AM" VERSION="1" LANGU="E" DESCRIPT="Freight Amount (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111218" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDFRTAMOUNT"/>
+  <source>METHOD get_invoice_freight.
+  CONSTANTS lc_xvbfa TYPE string VALUE &apos;(SAPLV60A)XVBFA[]&apos;.
+  TYPES: BEGIN OF ly_vtfa,
+          vbeln TYPE vbeln,
+          posnn TYPE posnr,
+         END OF ly_vtfa,
+         BEGIN OF ly_shipm_costs,
+           waers TYPE waers_p,
+           netwr TYPE netwr_p,
+           rebel TYPE rebel,
+           repos TYPE repos_p,
+         END OF ly_shipm_costs.
+  DATA: lw_comwa       TYPE vbco6,
+        lt_vbfa        TYPE vbfa_t,
+        lt_vtfa        TYPE STANDARD TABLE OF ly_vtfa,
+        lw_vtfa        TYPE ly_vtfa,
+        lt_shipm_costs TYPE STANDARD TABLE OF ly_shipm_costs,
+        lv_netwr       TYPE netwr_essr.
+  FIELD-SYMBOLS: &lt;lfs_xvbfa&gt;       TYPE sa_xvbfa,
+                 &lt;lfs_vbfa&gt;        TYPE vbfavb,
+                 &lt;lfs_vbfat&gt;       TYPE vbfa,
+                 &lt;lfs_shipm_costs&gt; TYPE ly_shipm_costs.
+
+  IF is_valid_context( &apos;SAPLV60A&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_xvbfa) TO &lt;lfs_xvbfa&gt;.
+  IF &lt;lfs_xvbfa&gt; IS NOT ASSIGNED.
+    RETURN.
+  ENDIF.
+
+  READ TABLE &lt;lfs_xvbfa&gt; WITH KEY vbtyp_v = &apos;J&apos;
+                                  posnv   = p_posnr
+  ASSIGNING &lt;lfs_vbfa&gt;.
+  IF sy-subrc &lt;&gt; 0.
+    RETURN.
+  ENDIF.
+
+  lw_comwa-vbeln = &lt;lfs_vbfa&gt;-vbelv.
+  lw_comwa-posnr = &lt;lfs_vbfa&gt;-posnv.
+  CALL FUNCTION &apos;RV_ORDER_FLOW_INFORMATION&apos;
+    EXPORTING
+      comwa         = lw_comwa
+    TABLES
+      vbfa_tab      = lt_vbfa
+    EXCEPTIONS
+      no_vbfa       = 1
+      no_vbuk_found = 2
+      OTHERS        = 3.
+  IF sy-subrc &lt;&gt; 0.
+    RETURN.
+  ENDIF.
+
+  READ TABLE lt_vbfa WITH KEY vbtyp_n = &apos;8&apos; &quot; Looking for shipment
+   ASSIGNING &lt;lfs_vbfat&gt;.
+  IF sy-subrc &lt;&gt; 0.
+    RETURN.
+  ENDIF.
+
+  SELECT vbeln posnn FROM vtfa &quot; Looking for Shipment costs documents
+    INTO TABLE lt_vtfa
+   WHERE vbelv = &lt;lfs_vbfat&gt;-vbeln
+     AND vbtyp_n = &apos;a&apos;.
+  IF sy-subrc &lt;&gt; 0 OR lt_vtfa IS INITIAL.
+    RETURN.
+  ENDIF.
+* Getting freight costs
+  SELECT p~waers n~netwr n~rebel n~repos
+    FROM vfkp AS p
+   INNER JOIN vfkn AS n
+      ON p~fknum = n~fknum
+     AND p~fkpos = n~fkpos
+    INTO TABLE lt_shipm_costs
+     FOR ALL ENTRIES IN lt_vtfa
+   WHERE p~fknum = lt_vtfa-vbeln
+     AND p~fkpos = lt_vtfa-posnn.
+  IF sy-subrc &lt;&gt; 0 OR lt_shipm_costs IS INITIAL.
+    RETURN.
+  ENDIF.
+  LOOP AT lt_shipm_costs ASSIGNING &lt;lfs_shipm_costs&gt;
+    WHERE rebel = &lt;lfs_vbfa&gt;-vbelv
+      AND repos = &lt;lfs_vbfa&gt;-posnv
+      AND waers = p_waers.
+    r_freight_am = r_freight_am + &lt;lfs_shipm_costs&gt;-netwr.
+  ENDLOOP.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_JC_ORIGIN_POINT" VERSION="1" LANGU="E" DESCRIPT='Returns the jurisd. code &quot;Point of order origin&quot; (2869154).' EXPOSURE="0" STATE="1" EDITORDER="37 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130206" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_JC_ORIGIN_POINT" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130211" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_JC_ORIGIN_POINT" SCONAME="R_TXJCD_POO" VERSION="1" LANGU="E" DESCRIPT='Jurisdiction code &quot;Point of order origin&quot;' CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130206" CHANGEDBY="EXRQUADR" CHANGEDON="20130211" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="TXJCD_POO"/>
+  <source>method GET_JC_ORIGIN_POINT.
+*{   INSERT         GE1K949772                                        1
+  CONSTANTS: lc_rseg      TYPE string VALUE &apos;(SAPLMR1M)YDRSEG[]&apos;,
+             lc_type      TYPE string VALUE &apos;MMCR_DRSEG&apos;,
+             lc_type_bp   TYPE string VALUE &apos;DRSEG&apos;.
+
+  DATA: dref        TYPE REF TO DATA,
+        dref2       TYPE REF TO data,
+        lt_drseg    TYPE mr_drseg,
+        lv_shipment TYPE fknum,
+        lv_delivery TYPE vbeln,
+        lv_shipto   TYPE KUNWE,
+        ls_type     TYPE string,
+        lo_db       TYPE REF TO lcl_db.
+  FIELD-SYMBOLS: &lt;lfs_rseg&gt;       TYPE STANDARD TABLE,
+                 &lt;lt_rseg&gt;        TYPE STANDARD TABLE,
+                 &lt;lfs_line&gt;       TYPE ANY,
+                 &lt;entry_sheet&gt;    TYPE lfbnr,
+                 &lt;marked&gt;         TYPE selkz.
+
+  CASE abap_true.
+  WHEN is_valid_context( &apos;SAPLMRM_BAPI&apos; ).
+* Data exported to memory in the ZCL_IM_CL_R2R_7919 implementation of
+* BADI EXTENSION_US_TAXES, method MM_DATA_FOR_TAX_SYSTEM.
+    IMPORT mt_drseg TO lt_drseg FROM MEMORY ID &apos;ZGLRR_VERTEX_DATA&apos;.
+    ASSIGN lt_drseg TO &lt;lfs_rseg&gt;.
+    ls_type = lc_type_bp.
+  WHEN is_valid_context( &apos;SAPLMR1M&apos; ).
+    ASSIGN (lc_rseg) TO &lt;lfs_rseg&gt;.
+    ls_type = lc_type.
+  WHEN OTHERS.
+    RETURN.
+  ENDCASE.
+
+  IF &lt;lfs_rseg&gt; IS ASSIGNED.
+    CREATE DATA: dref  TYPE (ls_type),
+                 dref2 TYPE TABLE OF (ls_type).
+    ASSIGN: dref-&gt;*  TO &lt;lfs_line&gt;,
+            dref2-&gt;* to &lt;lt_rseg&gt;.
+    LOOP AT &lt;lfs_rseg&gt; ASSIGNING &lt;lfs_line&gt;.
+      ASSIGN COMPONENT &apos;SELKZ&apos; OF STRUCTURE &lt;lfs_line&gt; TO &lt;marked&gt;.
+      IF &lt;marked&gt; is ASSIGNED.
+        IF &lt;marked&gt; = abap_true.
+          APPEND &lt;lfs_line&gt; to &lt;lt_rseg&gt;.
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+    READ TABLE &lt;lt_rseg&gt; INDEX p_posnr ASSIGNING &lt;lfs_line&gt;.
+    IF sy-subrc = 0.
+      ASSIGN COMPONENT &apos;LFBNR&apos; OF STRUCTURE &lt;lfs_line&gt; to &lt;entry_sheet&gt;.
+      IF &lt;entry_sheet&gt; is ASSIGNED.
+        create OBJECT lo_db.
+        TRY .
+     lv_shipment = lo_db-&gt;get_shipment_from_entrysheet( &lt;entry_sheet&gt; ).
+         lv_delivery = lo_db-&gt;get_shipment_sale_document( lv_shipment ).
+          lv_shipto   = lo_db-&gt;get_delivery_shipto( lv_delivery ).
+          r_txjcd_poo = lo_db-&gt;get_customer_jurisdic_code( lv_shipto ).
+        CATCH cx_sy_sql_error.
+          CLEAR r_txjcd_poo.
+        ENDTRY.
+        free lo_db.
+      ENDIF.
+    endif.
+  ENDIF.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MASTER_MATERIAL_GROUP" VERSION="1" LANGU="E" DESCRIPT="Returns the material group from Material Master" EXPOSURE="0" STATE="1" EDITORDER="31 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MASTER_MATERIAL_GROUP" SCONAME="P_MATNR" VERSION="1" LANGU="E" DESCRIPT="Material Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="MATNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MASTER_MATERIAL_GROUP" SCONAME="R_MATKL" VERSION="1" LANGU="E" DESCRIPT="Material Group" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="MATKL"/>
+  <source>METHOD get_master_material_group.
+  SELECT matkl FROM mara UP TO 1 ROWS
+    INTO r_matkl
+   WHERE matnr = p_matnr.
+  ENDSELECT.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Returns the instance that matches the processing item." EXPOSURE="0" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="P_COMP_CODE" VERSION="1" LANGU="E" DESCRIPT="Company code using tax interface" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_COMP_CODE"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="P_DOC_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Tax document number" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_DOC_NUMBER"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="P_POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="P_TAX_TYPE" VERSION="1" LANGU="E" DESCRIPT="Tax Type" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111111" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MWART"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="RO_INSTANCE" VERSION="1" LANGU="E" DESCRIPT="Vertex fields filler" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZCL_GTDEVRR2R3301"/>
+  <exception CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MATCHED_INSTANCE" SCONAME="ZCX_INSTANCE_NOT_FOUND" VERSION="1" LANGU="E" DESCRIPT="Instance not found" MTDTYPE="0" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20111110" CHANGEDBY="EXRQUADR" CHANGEDON="20120214"/>
+  <source>METHOD get_matched_instance.
+  DATA lo_instance TYPE REF TO zcl_gtdevrr2r3301.
+
+  LOOP AT t_list INTO lo_instance.
+    IF lo_instance-&gt;comp_code  = p_comp_code  AND
+       lo_instance-&gt;doc_number = p_doc_number AND
+       lo_instance-&gt;pos_no     = p_pos_no     AND
+       lo_instance-&gt;tax_type   = p_tax_type.
+      ro_instance = lo_instance.
+      RETURN.
+    ENDIF.
+  ENDLOOP.
+  IF ro_instance IS INITIAL.
+    RAISE EXCEPTION TYPE zcx_instance_not_found.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MIRO_FREIGHT" VERSION="1" LANGU="E" DESCRIPT="Returns the freight value." EXPOSURE="0" STATE="1" EDITORDER="19 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MIRO_FREIGHT" SCONAME="P_WAERS" VERSION="1" LANGU="E" DESCRIPT="Currency Key" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="WAERS"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MIRO_FREIGHT" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MIRO_FREIGHT" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_MIRO_FREIGHT" SCONAME="R_FREIGHT_AM" VERSION="1" LANGU="E" DESCRIPT="Freight Amount (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDFRTAMOUNT"/>
+  <source>METHOD get_miro_freight.
+  DATA  lv_netwr TYPE netwr_essr.
+
+  SELECT SUM( netwr ) FROM essr
+    into r_freight_am
+   WHERE ebeln = p_ebeln
+     AND ebelp = p_ebelp
+     AND knttp = &apos;Y&apos;
+     AND waers = p_waers.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_COST_CENTER" VERSION="1" LANGU="E" DESCRIPT="Returns the cost center of an internal order." EXPOSURE="0" STATE="1" EDITORDER="28 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_COST_CENTER" SCONAME="P_AUFNR" VERSION="1" LANGU="E" DESCRIPT="Order Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="AUFNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_COST_CENTER" SCONAME="R_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <source>METHOD get_order_cost_center.
+  DATA lv_aufnr TYPE aufnr.
+
+  SELECT kostv anfaufnr FROM coas UP TO 1 ROWS
+    INTO (r_kostl, lv_aufnr)
+   WHERE aufnr = p_aufnr.
+  ENDSELECT.
+  IF lv_aufnr IS NOT INITIAL.
+    SELECT kostv FROM coas UP TO 1 ROWS
+      INTO r_kostl
+     WHERE aufnr = p_aufnr.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_DATE" VERSION="1" LANGU="E" DESCRIPT="Returns the Sale Order Date (2936385)." EXPOSURE="0" STATE="1" EDITORDER="34 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_DATE" SCONAME="P_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_ORDER_DATE" SCONAME="R_TAX_DATE" VERSION="1" LANGU="E" DESCRIPT="Tax date (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130110" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDTXDAT"/>
+  <source>method GET_ORDER_DATE.
+*{   INSERT         GE1K949767                                        1
+  CONSTANTS: lc_audat      TYPE string VALUE &apos;(SAPMV45A)VBAK-AUDAT&apos;,
+  lc_audat_bapi TYPE string VALUE &apos;(SAPLV45A)VBAK-AUDAT&apos;.
+  DATA: lv_audat TYPE string.
+  FIELD-SYMBOLS &lt;l_audat&gt; TYPE audat.
+
+  r_tax_date = p_tax_date.
+  CASE abap_true.
+  WHEN is_valid_context( &apos;SAPMV45A&apos; ). &quot;Called from VA0*
+    lv_audat = lc_audat.
+  WHEN is_valid_context( &apos;SAPLV45A&apos; ). &quot;Called from BAPI
+    lv_audat = lc_audat_bapi.
+  WHEN OTHERS.
+    RETURN.
+  ENDCASE.
+
+  ASSIGN (lv_audat) TO &lt;l_audat&gt;.
+  IF &lt;l_audat&gt; IS ASSIGNED.
+    r_tax_date = &lt;l_audat&gt;.
+  ENDIF.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PLANT_JURISDICTION_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the jurisdiction code of a given plant (2869154)." EXPOSURE="0" STATE="1" EDITORDER="36 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130205" CHANGEDBY="EXRQUADR" CHANGEDON="20130205" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PLANT_JURISDICTION_CODE" SCONAME="P_WERKS" VERSION="1" LANGU="E" DESCRIPT="Plant" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130205" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="WERKS_D"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PLANT_JURISDICTION_CODE" SCONAME="R_TXJCD_SF" VERSION="1" LANGU="E" DESCRIPT='Jurisdiction code &quot;Ship-from&quot;' CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130205" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="TXJCD_SF"/>
+  <source>method GET_PLANT_JURISDICTION_CODE.
+*{   INSERT         GE1K949772                                        1
+  IF p_werks is INITIAL.
+    RETURN.
+  ENDIF.
+
+  SELECT txjcd FROM t001w UP TO 1 ROWS
+    INTO r_txjcd_sf
+   WHERE werks = p_werks.
+  ENDSELECT.
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_POSTING_DATE" VERSION="1" LANGU="E" DESCRIPT="Returns the posting date" EXPOSURE="0" STATE="1" EDITORDER="8 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111122" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_POSTING_DATE" SCONAME="R_BUDAT" VERSION="1" LANGU="E" DESCRIPT="Posting Date in the Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111122" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="BUDAT"/>
+  <source>METHOD get_posting_date.
+  CONSTANTS lc_budat TYPE string VALUE &apos;(SAPLTAX1)BKPF-BUDAT&apos;.
+  FIELD-SYMBOLS &lt;lfs_budat&gt; TYPE budat.
+
+  IF is_valid_context( &apos;SAPLTAX1&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_budat) to &lt;lfs_budat&gt;.
+  IF &lt;lfs_budat&gt; is ASSIGNED.
+    r_budat = &lt;lfs_budat&gt;.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_FREIGHT" VERSION="1" LANGU="E" DESCRIPT="Returns the freight value." EXPOSURE="0" STATE="1" EDITORDER="6 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111211" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_FREIGHT" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111213" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_FREIGHT" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111213" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_FREIGHT" SCONAME="R_FREIGHT_AM" VERSION="1" LANGU="E" DESCRIPT="Freight Amount (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111211" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDFRTAMOUNT"/>
+  <source>METHOD get_po_freight.
+  CONSTANTS lc_xkomvt TYPE string VALUE &apos;(SAPLMEPO)TKOMV[]&apos;.
+  FIELD-SYMBOLS: &lt;lfs_xkomv&gt; TYPE komv_tab,
+                 &lt;lfs_komv&gt;  TYPE komv.
+  DATA:  lr_kschl TYPE RANGE OF kschl,
+         dref     TYPE REF TO data,
+         lv_knumv TYPE knumv.
+
+
+  IF p_ebeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_xkomvt) TO &lt;lfs_xkomv&gt;.
+    IF &lt;lfs_xkomv&gt; IS NOT ASSIGNED.
+      RETURN.
+    ENDIF.
+  ELSE.
+    SELECT knumv FROM ekko UP TO 1 ROWS
+      INTO lv_knumv
+     WHERE ebeln = p_ebeln.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      CREATE DATA dref TYPE komv_tab.
+      ASSIGN dref-&gt;* TO &lt;lfs_xkomv&gt;.
+      IF &lt;lfs_xkomv&gt; IS ASSIGNED.
+        SELECT * FROM konv
+          INTO TABLE &lt;lfs_xkomv&gt;
+         WHERE knumv = lv_knumv
+           AND kposn = p_ebelp.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+  IF &lt;lfs_xkomv&gt; IS NOT ASSIGNED.
+    RETURN.
+  ENDIF.
+
+  o_tvarv-&gt;get_multiple(
+    EXPORTING
+      im_param = &apos;FREIGHTCND&apos;
+    IMPORTING
+      ex_value = lr_kschl ).
+  IF is_condition_range_valid( lr_kschl ) = abap_false .
+    RETURN.
+  ENDIF.
+
+  LOOP AT &lt;lfs_xkomv&gt; ASSIGNING &lt;lfs_komv&gt; WHERE kschl IN lr_kschl.
+    CHECK &lt;lfs_komv&gt;-kposn = p_ebelp.
+    IF &lt;lfs_komv&gt;-kwert IS NOT INITIAL.
+      r_freight_am = r_freight_am + &lt;lfs_komv&gt;-kwert.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_CATEGORY" VERSION="1" LANGU="E" DESCRIPT="Returns the item category of a PO&apos;s item." EXPOSURE="0" STATE="1" EDITORDER="26 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_CATEGORY" SCONAME="R_PSTYP" VERSION="1" LANGU="E" DESCRIPT="Item Category in Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="PSTYP"/>
+  <source>METHOD get_po_item_category.
+  CONSTANTS: lc_ekpo_po TYPE string VALUE &apos;(SAPLMEPO)EKPO&apos;,
+             lc_ekpo_sa TYPE string VALUE &apos;(SAPMM06E)EKPO&apos;.
+  FIELD-SYMBOLS &lt;lfs_ekpo&gt;  TYPE ekpo.
+
+  IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+     is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+  ASSIGN (lc_ekpo_po) TO &lt;lfs_ekpo&gt;.
+  IF &lt;lfs_ekpo&gt; IS ASSIGNED.
+    IF &lt;lfs_ekpo&gt; IS NOT INITIAL.
+      r_pstyp = &lt;lfs_ekpo&gt;-pstyp.
+    ELSE.
+      ASSIGN (lc_ekpo_sa) TO &lt;lfs_ekpo&gt;.
+      IF &lt;lfs_ekpo&gt; IS ASSIGNED.
+        r_pstyp = &lt;lfs_ekpo&gt;-pstyp.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    ASSIGN (lc_ekpo_sa) TO &lt;lfs_ekpo&gt;.
+    IF &lt;lfs_ekpo&gt; IS ASSIGNED.
+      r_pstyp = &lt;lfs_ekpo&gt;-pstyp.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_MATKL" VERSION="1" LANGU="E" DESCRIPT="Returns the material group of a purchasing order item." EXPOSURE="0" STATE="1" EDITORDER="12 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_MATKL" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_MATKL" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_MATKL" SCONAME="P_POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120425" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_ITEM_MATKL" SCONAME="R_MATKL" VERSION="1" LANGU="E" DESCRIPT="Material Group" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111201" CHANGEDBY="TCTAKECH" CHANGEDON="20120425" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="MATKL"/>
+  <source>METHOD get_po_item_matkl.
+
+  CONSTANTS lc_rseg1 TYPE string VALUE &apos;(SAPLMR1M)YDRSEG[]&apos;.
+  FIELD-SYMBOLS: &lt;lfs_rseg1&gt;  TYPE STANDARD TABLE,
+                 &lt;lfs_line1&gt;  TYPE mmcr_drseg,
+                 &lt;lfs_matkl1&gt; TYPE matkl.
+
+  UNASSIGN: &lt;lfs_rseg1&gt;,
+            &lt;lfs_line1&gt;,
+            &lt;lfs_matkl1&gt;.
+
+* Begin of Modification Takechi - 25.04.2012
+* GTDEVCRR2R7913_GTDEVRR2R3301
+  DATA: v_pstyp TYPE ekpo-pstyp,
+        v_lebre TYPE ekpo-lebre.
+
+  CLEAR: v_lebre,
+         v_pstyp.
+
+  SELECT SINGLE pstyp
+      INTO v_pstyp
+      FROM ekpo
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+
+  IF sy-subrc IS INITIAL.
+    IF v_pstyp EQ &apos;9&apos;. &quot;Service
+
+      IF is_valid_context( &apos;SAPLMR1M&apos; ) = abap_false.
+        RETURN.
+      ENDIF.
+
+      ASSIGN (lc_rseg1) TO &lt;lfs_rseg1&gt;.
+
+* Defect 8837
+* The user-exit did not pass the transaction to Vertex properly for the scenario were
+* “Service-Based IV” is not flagged. The user-exit should only pass one line item, and
+* the product class should be the material group specified on the PO line item. In the
+* test in GE8, three line items were passed to Vertex, not one.
+      SELECT SINGLE lebre
+         INTO v_lebre
+         FROM ekpo
+        WHERE ebeln = p_ebeln
+          AND ebelp = p_ebelp.
+      IF v_lebre IS INITIAL.
+        SELECT SINGLE matkl
+          FROM ekpo
+          INTO r_matkl
+         WHERE ebeln = p_ebeln
+           AND ebelp = p_ebelp.
+      ELSE.
+        IF &lt;lfs_rseg1&gt; IS ASSIGNED.
+          READ TABLE &lt;lfs_rseg1&gt; INDEX p_pos_no
+           ASSIGNING &lt;lfs_line1&gt;.
+          IF sy-subrc = 0.
+            ASSIGN COMPONENT &apos;MATKL&apos; OF STRUCTURE &lt;lfs_line1&gt; TO &lt;lfs_matkl1&gt;.
+            IF sy-subrc = 0.
+              r_matkl = &lt;lfs_matkl1&gt;.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ELSE.
+* End of Modification Takechi - 25.04.2012
+      SELECT matkl FROM ekpo UP TO 1 ROWS
+        INTO r_matkl
+       WHERE ebeln = p_ebeln
+         AND ebelp = p_ebelp.
+      ENDSELECT.
+    ENDIF.
+* Begin of Modification Takechi - 25.04.2012
+* GTDEVCRR2R7913_GTDEVRR2R3301
+  ENDIF.
+* End of Modification Takechi - 25.04.2012
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_TYPE" VERSION="1" LANGU="E" DESCRIPT="Returns the PO type." EXPOSURE="0" STATE="1" EDITORDER="18 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111209" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_TYPE" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111209" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_PO_TYPE" SCONAME="R_BSART" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Type" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111209" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ESART"/>
+  <source>METHOD get_po_type.
+  CONSTANTS: lc_bsart_po TYPE string VALUE &apos;(SAPLMEPO)EKKO-BSART&apos;,
+             lc_bsart_sa TYPE string VALUE &apos;(SAPMM06E)EKKO-BSART&apos;.
+  FIELD-SYMBOLS &lt;lfs_bsart&gt; TYPE esart.
+
+  IF p_ebeln IS INITIAL.
+    IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+       is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_bsart_po) TO &lt;lfs_bsart&gt;.
+    IF &lt;lfs_bsart&gt; IS ASSIGNED.
+      IF &lt;lfs_bsart&gt; IS NOT INITIAL.
+        r_bsart = &lt;lfs_bsart&gt;.
+      ELSE.
+        ASSIGN (lc_bsart_sa) TO &lt;lfs_bsart&gt;.
+        IF &lt;lfs_bsart&gt; IS ASSIGNED.
+          r_bsart = &lt;lfs_bsart&gt;.
+        ENDIF.
+      ENDIF.
+    ELSE.
+      ASSIGN (lc_bsart_sa) TO &lt;lfs_bsart&gt;.
+      IF &lt;lfs_bsart&gt; IS ASSIGNED.
+        r_bsart = &lt;lfs_bsart&gt;.
+      ENDIF.
+    ENDIF.
+  ELSE.
+    SELECT bsart FROM ekko UP TO 1 ROWS
+      INTO r_bsart
+     WHERE ebeln = p_ebeln.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_FREIGHT_FLAG" VERSION="1" LANGU="E" DESCRIPT="Returns Sales Related Freight Flag - USER_DATA" EXPOSURE="0" STATE="1" EDITORDER="11 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120525" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_FREIGHT_FLAG" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120525" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_FREIGHT_FLAG" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120525" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_FREIGHT_FLAG" SCONAME="P_POS_NO" VERSION="1" LANGU="E" DESCRIPT="Tax document item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120525" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_FREIGHT_FLAG" SCONAME="R_SALES_FREIGHT_FLAG" VERSION="1" LANGU="E" DESCRIPT="Sales Related Freight Flag" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="TCTAKECH" CREATEDON="20120525" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="CHAR1"/>
+  <source>METHOD get_sales_freight_flag.
+*{   REPLACE        GE1K951676                                        1
+*\
+*\  CONSTANTS lc_rseg2 TYPE string VALUE &apos;(SAPLMR1M)YDRSEG[]&apos;.
+*\
+*\  FIELD-SYMBOLS: &lt;lfs_rseg2&gt;  TYPE STANDARD TABLE,
+*\                 &lt;lfs_line2&gt;  TYPE mmcr_drseg,
+*\                 &lt;lfs_lfbnr2&gt; TYPE lfbnr.
+*\
+*\  UNASSIGN: &lt;lfs_rseg2&gt;,
+*\            &lt;lfs_line2&gt;,
+*\            &lt;lfs_lfbnr2&gt;.
+*\
+*\  DATA: lv_lebre2 TYPE ekpo-lebre,
+*\        lv_fknum  TYPE essr-fknum,
+*\        lv_lblni2 TYPE essr-lblni,
+*\        wa_likp   TYPE likp,
+*\        lv_vbund  TYPE kna1-vbund.
+*\
+*\  CLEAR: lv_lebre2,
+*\         lv_lblni2,
+*\         wa_likp,
+*\         lv_vbund,
+*\         lv_fknum.
+*\
+*\  IF is_valid_context( &apos;SAPLMR1M&apos; ) = abap_false.
+*\    RETURN.
+*\  ENDIF.
+*\
+*\  ASSIGN (lc_rseg2) TO &lt;lfs_rseg2&gt;.
+*\
+*\  SELECT SINGLE lebre
+*\      INTO lv_lebre2
+*\      FROM ekpo
+*\     WHERE ebeln = p_ebeln
+*\       AND ebelp = p_ebelp.
+*\
+*\  IF sy-subrc IS INITIAL.
+*\    IF lv_lebre2 IS INITIAL.
+*\* Cesar defined a business rule for the scenario of foreign carrier (flag “S-Based IV” NOT flagged)
+*\* on Freight Autopay: for all occurrences of this scenario the user-exit should send to Vertex the
+*\* information of Final Customer (Sales Related Freight Flag - USER_DATA (positions 5-10) = Y).
+*\* Consider that first you need check if the MIRO is for a Freight Autopay purchase order,
+*\* conditions: IF the PO Item Category = D and the Invoice line item has Freight Cost,
+*\* you can assume that it is related to freight service.
+*\      SELECT fknum
+*\             INTO lv_fknum
+*\             FROM essr
+*\             UP TO 1 ROWS
+*\             WHERE ebeln EQ p_ebeln AND
+*\                   ebelp EQ p_ebelp.
+*\      ENDSELECT.
+*\
+*\      IF NOT lv_fknum IS INITIAL.
+*\        r_sales_freight_flag = &apos;Y&apos;.
+*\      ENDIF.
+*\    ELSE.
+*\      IF &lt;lfs_rseg2&gt; IS ASSIGNED.
+*\        READ TABLE &lt;lfs_rseg2&gt; INDEX p_pos_no
+*\         ASSIGNING &lt;lfs_line2&gt;.
+*\        IF sy-subrc = 0.
+*\          ASSIGN COMPONENT &apos;LFBNR&apos; OF STRUCTURE &lt;lfs_line2&gt; TO &lt;lfs_lfbnr2&gt;.
+*\          IF sy-subrc = 0.
+*\* Get the Entry-Sheet
+*\            lv_lblni2 = &lt;lfs_lfbnr2&gt;.
+*\* Get the Delivery
+*\            CALL FUNCTION &apos;ZGLRA_DELIVERY_FROM_E_SHEET&apos;
+*\              EXPORTING
+*\                im_lblni       = lv_lblni2
+*\              IMPORTING
+*\                ex_likp        = wa_likp
+*\              EXCEPTIONS
+*\                data_not_found = 1
+*\                OTHERS         = 2.
+*\            IF sy-subrc &lt;&gt; 0.
+*\* Implement suitable error handling here
+*\            ELSE.
+*\              SELECT SINGLE vbund
+*\                     INTO lv_vbund
+*\                     FROM kna1
+*\                     WHERE kunnr EQ wa_likp-kunnr.
+*\              IF sy-subrc IS INITIAL.
+*\* If Trading Partner is blank (it is a final customer), the value of “Y” should be passed in positions 5-10 of the USER_DATA field.
+*\                IF lv_vbund IS INITIAL.
+*\                  r_sales_freight_flag = &apos;Y&apos;.
+*\                ENDIF.
+*\              ENDIF.
+*\            ENDIF.
+*\          ENDIF.
+*\        ENDIF.
+*\      ENDIF.
+*\    ENDIF.
+*\  ENDIF.
+  CONSTANTS: lc_rseg      TYPE string VALUE &apos;(SAPLMR1M)YDRSEG[]&apos;,
+             lc_type      TYPE string VALUE &apos;MMCR_DRSEG&apos;,
+             lc_type_bp   TYPE string VALUE &apos;DRSEG&apos;.
+
+  DATA: lv_lebre  TYPE ekpo-lebre,
+        lv_fknum  TYPE essr-fknum,
+        lv_lblni  TYPE essr-lblni,
+        lw_likp   TYPE likp,
+        lv_vbund  TYPE kna1-vbund,
+        dref      TYPE REF TO DATA,
+        dref2     TYPE REF TO data,
+        lt_drseg  TYPE mr_drseg,
+        ls_type   TYPE string.
+
+  FIELD-SYMBOLS: &lt;lfs_rseg&gt;       TYPE STANDARD TABLE,
+                 &lt;lt_rseg&gt;        TYPE STANDARD TABLE,
+                 &lt;lfs_line&gt;       TYPE ANY,
+                 &lt;entry_sheet&gt;    TYPE lfbnr,
+                 &lt;marked&gt;         TYPE selkz.
+
+  CASE abap_true.
+  WHEN is_valid_context( &apos;SAPLMRM_BAPI&apos; ).
+* Data exported to memory in the ZCL_IM_CL_R2R_7919 implementation of
+* BADI EXTENSION_US_TAXES, method MM_DATA_FOR_TAX_SYSTEM.
+    IMPORT mt_drseg TO lt_drseg FROM MEMORY ID &apos;ZGLRR_VERTEX_DATA&apos;.
+    ASSIGN lt_drseg TO &lt;lfs_rseg&gt;.
+    ls_type = lc_type_bp.
+  WHEN is_valid_context( &apos;SAPLMR1M&apos; ).
+    ASSIGN (lc_rseg) TO &lt;lfs_rseg&gt;.
+    ls_type = lc_type.
+  WHEN OTHERS.
+    RETURN.
+  ENDCASE.
+
+  SELECT SINGLE lebre
+    INTO lv_lebre
+    FROM ekpo
+   WHERE ebeln = p_ebeln
+     AND ebelp = p_ebelp.
+
+  IF sy-subrc IS INITIAL.
+    IF &lt;lfs_rseg&gt; IS ASSIGNED.
+      CREATE DATA: dref  TYPE (ls_type),
+                   dref2 TYPE TABLE OF (ls_type).
+      ASSIGN: dref-&gt;*  TO &lt;lfs_line&gt;,
+              dref2-&gt;* TO &lt;lt_rseg&gt;.
+      LOOP AT &lt;lfs_rseg&gt; ASSIGNING &lt;lfs_line&gt;.
+        ASSIGN COMPONENT &apos;SELKZ&apos; OF STRUCTURE &lt;lfs_line&gt; TO &lt;marked&gt;.
+        IF &lt;marked&gt; IS ASSIGNED.
+          IF &lt;marked&gt; = abap_true.
+            APPEND &lt;lfs_line&gt; TO &lt;lt_rseg&gt;.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+      READ TABLE &lt;lt_rseg&gt; INDEX p_pos_no ASSIGNING &lt;lfs_line&gt;.
+      IF sy-subrc = 0.
+        ASSIGN COMPONENT &apos;LFBNR&apos; OF STRUCTURE &lt;lfs_line&gt;
+        TO &lt;entry_sheet&gt;.
+        IF sy-subrc = 0.
+          IF lv_lebre IS INITIAL.
+* Cesar defined a business rule for the scenario of foreign carrier
+* (flag “S-Based IV” NOT flagged) on Freight Autopay: for all
+* occurrences of this scenario the user-exit should send to Vertex the
+* information of Final Customer (Sales Related Freight Flag - USER_DATA
+* (positions 5-10) = Y).
+* Consider that first you need check if the MIRO is for a Freight
+* Autopay purchase order, conditions: IF the PO Item Category = D and
+* the Invoice line item has Freight Cost, you can assume that it is
+* related to freight service.
+            SELECT fknum
+              INTO lv_fknum
+              FROM essr
+                UP TO 1 ROWS
+             WHERE lblni = &lt;entry_sheet&gt;.
+            ENDSELECT.
+
+            IF NOT lv_fknum IS INITIAL.
+              r_sales_freight_flag = &apos;Y&apos;.
+            ENDIF.
+          ELSE.
+* Get the Entry-Sheet
+            lv_lblni = &lt;entry_sheet&gt;.
+* Get the Delivery
+            CALL FUNCTION &apos;ZGLRA_DELIVERY_FROM_E_SHEET&apos;
+            EXPORTING
+              im_lblni       = lv_lblni
+            IMPORTING
+              ex_likp        = lw_likp
+            EXCEPTIONS
+              data_not_found = 1
+              OTHERS         = 2.
+            IF sy-subrc &lt;&gt; 0.
+* Implement suitable error handling here
+            ELSE.
+              SELECT SINGLE vbund
+              INTO lv_vbund
+              FROM kna1
+              WHERE kunnr EQ lw_likp-kunnr.
+              IF sy-subrc IS INITIAL.
+* If Trading Partner is blank (it is a final customer), the value of
+*  “Y” should be passed in positions 5-10 of the USER_DATA field.
+                IF lv_vbund IS INITIAL.
+                  r_sales_freight_flag = &apos;Y&apos;.
+                ENDIF.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+*}   REPLACE
+  ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_GL_ACCOUNT" VERSION="1" LANGU="E" DESCRIPT="Returns the Sales Invoice G/L Account." EXPOSURE="0" STATE="1" EDITORDER="16 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111208" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_GL_ACCOUNT" SCONAME="P_VBELN" VERSION="1" LANGU="E" DESCRIPT="Sales and Distribution Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111208" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="VBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_GL_ACCOUNT" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Item number of the SD document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120311" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="POSNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALES_GL_ACCOUNT" SCONAME="R_SAKNR" VERSION="1" LANGU="E" DESCRIPT="G/L Account Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111208" CHANGEDBY="EXRQUADR" CHANGEDON="20120311" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="SAKNR"/>
+  <source>METHOD get_sales_gl_account.
+  CONSTANTS: lc_vbrk      TYPE string VALUE &apos;(SAPLV60A)VBRK&apos;,
+             lc_xvbrp     TYPE string VALUE &apos;(SAPLV60A)XVBRP[]&apos;,
+             lc_procedure TYPE string VALUE &apos;(SAPLV60A)TVFK-KALSMC&apos;,
+             lc_xkomv     TYPE string VALUE &apos;(SAPLV61A)XKOMV[]&apos;.
+  DATA: my_xkomv TYPE komv_tab,
+        lw_komv  TYPE komv,
+        lt_komv  TYPE komv_tab.
+  FIELD-SYMBOLS: &lt;lfs_vbrk&gt;      TYPE vbrk,
+                 &lt;lfs_xvbrp&gt;     TYPE tab_vbrpvb,
+                 &lt;lw_xvbrp&gt;      TYPE vbrpvb,
+                 &lt;lfs_procedure&gt; TYPE kalsmc,
+                 &lt;lfs_xkomv&gt;     TYPE tax_xkomv_tab,
+                 &lt;lfs_wkomv&gt;     TYPE komv_index,
+                 &lt;lfs_komv&gt;      TYPE komv,
+                 &lt;lfs_xvbpa&gt;     TYPE vbpavb_tab.
+
+  IF is_valid_context( &apos;SAPLV60A&apos; ) = abap_false or
+     is_valid_context( &apos;SAPLV61A&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN: (lc_vbrk)      TO &lt;lfs_vbrk&gt;,
+          (lc_xvbrp)     TO &lt;lfs_xvbrp&gt;,
+          (lc_procedure) TO &lt;lfs_procedure&gt;,
+          (lc_xkomv)     TO &lt;lfs_xkomv&gt;.
+
+  IF &lt;lfs_vbrk&gt;      IS ASSIGNED AND
+     &lt;lfs_xvbrp&gt;     IS ASSIGNED AND
+     &lt;lfs_procedure&gt; IS ASSIGNED AND
+     &lt;lfs_xkomv&gt;     IS ASSIGNED.
+    LOOP AT &lt;lfs_xkomv&gt; ASSIGNING &lt;lfs_wkomv&gt;.
+      MOVE-CORRESPONDING &lt;lfs_wkomv&gt; TO lw_komv.
+      APPEND lw_komv TO my_xkomv.
+    ENDLOOP.
+    READ TABLE &lt;lfs_xvbrp&gt; ASSIGNING &lt;lw_xvbrp&gt;
+     WITH KEY vbeln = p_vbeln
+              posnr = p_posnr.
+    IF sy-subrc = 0 AND &lt;lw_xvbrp&gt; IS ASSIGNED.
+      CALL FUNCTION &apos;RV_INVOICE_ACCOUNT_DETERM&apos;
+        EXPORTING
+          document_internal   = p_vbeln
+          invoice_header      = &lt;lfs_vbrk&gt;
+          invoice_item        = &lt;lw_xvbrp&gt;
+          procedure           = &lt;lfs_procedure&gt;
+          protocol            = space
+        TABLES
+          tkomv               = my_xkomv[]
+        EXCEPTIONS
+          account_missing     = 1
+          rr_account_miss_def = 2
+          rr_account_miss_unb = 3
+          OTHERS              = 4.
+      IF sy-subrc &gt; 1.
+        RETURN.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+  LOOP AT my_xkomv[] ASSIGNING &lt;lfs_komv&gt;.
+    IF &lt;lfs_komv&gt;-sakn1 IS NOT INITIAL.
+      r_saknr = &lt;lfs_komv&gt;-sakn1.
+      RETURN.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" VERSION="1" LANGU="E" DESCRIPT="Returns the account assignment of related sale order item." EXPOSURE="0" STATE="1" EDITORDER="24 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120306" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" SCONAME="E_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" SCONAME="E_AUFNR" VERSION="1" LANGU="E" DESCRIPT="Order Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="AUFNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_ACC_ASS" SCONAME="E_PROJK" VERSION="1" LANGU="E" DESCRIPT="Work Breakdown Structure Element (WBS Element)" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120305" CHANGEDBY="EXRQUADR" CHANGEDON="20120306" PARDECLTYP="1" PARPASSTYP="0" TYPTYPE="1" TYPE="PS_PSP_PNR"/>
+  <source>METHOD get_sale_order_acc_ass.
+  CONSTANTS: lc_knt_po  TYPE string VALUE &apos;(SAPLMEPO)KNT[]&apos;,
+             lc_knt_sa  TYPE string VALUE &apos;(SAPMM06E)KNT[]&apos;.
+  DATA: lv_bdatu TYPE bdatu,
+        lt_ekkn TYPE ty_ekkn,
+        dref    TYPE REF TO data.
+  FIELD-SYMBOLS: &lt;lfs_knt&gt;   TYPE mmpur_ekknu,
+                 &lt;lfs_ekknu&gt; TYPE ekknu.
+
+  IF is_valid_context( &apos;SAPLMEPO&apos; ) = abap_false AND
+     is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_knt_po) TO &lt;lfs_knt&gt;.
+  IF &lt;lfs_knt&gt; IS NOT ASSIGNED.
+    ASSIGN (lc_knt_sa) TO &lt;lfs_knt&gt;.
+  ELSEIF &lt;lfs_knt&gt; IS INITIAL.
+    ASSIGN (lc_knt_sa) TO &lt;lfs_knt&gt;.
+  ENDIF.
+  IF &lt;lfs_knt&gt; IS NOT ASSIGNED.
+    SELECT * FROM ekkn
+      INTO TABLE lt_ekkn
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+    IF sy-subrc = 0.
+      CREATE DATA dref TYPE mmpur_ekknu.
+      ASSIGN dref-&gt;* TO &lt;lfs_knt&gt;.
+      &lt;lfs_knt&gt; = lt_ekkn.
+    ENDIF.
+  ENDIF.
+
+  READ TABLE &lt;lfs_knt&gt; WITH KEY ebeln = p_ebeln
+                                ebelp = p_ebelp
+   ASSIGNING &lt;lfs_ekknu&gt;.
+  IF sy-subrc = 0.
+    IF &lt;lfs_ekknu&gt;-vbeln IS NOT INITIAL.
+      SELECT kostl aufnr ps_psp_pnr FROM vbap UP TO 1 ROWS
+        INTO (e_kostl, e_aufnr, e_projk)
+       WHERE vbeln = &lt;lfs_ekknu&gt;-vbeln
+         AND posnr = &lt;lfs_ekknu&gt;-vbelp.
+      ENDSELECT.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Returns the sale order number" EXPOSURE="0" STATE="1" EDITORDER="15 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111207" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_NUMBER" SCONAME="P_VBELN" VERSION="1" LANGU="E" DESCRIPT="Sales and Distribution Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120310" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="VBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_NUMBER" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Item number of the SD document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120310" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="POSNR" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_NUMBER" SCONAME="R_VBELV" VERSION="1" LANGU="E" DESCRIPT="Originating document" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111207" CHANGEDBY="EXRQUADR" CHANGEDON="20120310" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="VBELV"/>
+  <source>METHOD get_sale_order_number.
+  CONSTANTS lc_xvbfa TYPE string VALUE &apos;(SAPLV60A)XVBFA[]&apos;.
+  DATA: lv_delivery TYPE vbelv,
+        lw_comm     TYPE vbco6,
+        lt_vbfa     TYPE vbfa_t,
+        lv_vbelv    TYPE vbelv.
+  FIELD-SYMBOLS: &lt;lfs_xvbfa&gt; TYPE sa_xvbfa,
+                 &lt;lfs_vbfa&gt;  TYPE vbfavb,
+                 &lt;l_vbfa&gt;    TYPE vbfa.
+
+  IF p_vbeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLV60A&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_xvbfa) TO &lt;lfs_xvbfa&gt;.
+    IF &lt;lfs_xvbfa&gt; IS NOT ASSIGNED.
+      RETURN.
+    ENDIF.
+
+    LOOP AT &lt;lfs_xvbfa&gt; ASSIGNING &lt;lfs_vbfa&gt; WHERE vbtyp_v = &apos;J&apos;.
+      lv_delivery = &lt;lfs_vbfa&gt;-vbelv.
+    ENDLOOP.
+    IF lv_delivery IS NOT INITIAL.
+      SELECT vbelv FROM vbfa UP TO 1 ROWS
+        INTO r_vbelv
+       WHERE vbeln = lv_delivery
+         AND vbtyp_v = &apos;C&apos;.
+      ENDSELECT.
+    ENDIF.
+  ELSE.
+    lw_comm-vbeln = p_vbeln.
+    lw_comm-posnr = p_posnr.
+    CALL FUNCTION &apos;RV_ORDER_FLOW_INFORMATION&apos;
+      EXPORTING
+        comwa         = lw_comm
+      TABLES
+        vbfa_tab      = lt_vbfa
+      EXCEPTIONS
+        no_vbfa       = 1
+        no_vbuk_found = 2
+        OTHERS        = 3.
+    IF sy-subrc &lt;&gt; 0.
+      RETURN.
+    ENDIF.
+    LOOP AT lt_vbfa ASSIGNING &lt;l_vbfa&gt;
+      WHERE vbtyp_v = &apos;C&apos;.
+      r_vbelv = &lt;l_vbfa&gt;-vbelv.
+    ENDLOOP.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_TYPE" VERSION="1" LANGU="E" DESCRIPT="Returns the sale order type." EXPOSURE="0" STATE="1" EDITORDER="14 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111207" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_TYPE" SCONAME="P_VBELN" VERSION="1" LANGU="E" DESCRIPT="Sales and Distribution Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120310" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="VBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_TYPE" SCONAME="P_POSNR" VERSION="1" LANGU="E" DESCRIPT="Item number of the SD document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120310" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="POSNR" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SALE_ORDER_TYPE" SCONAME="R_AUART" VERSION="1" LANGU="E" DESCRIPT="Sales Document Type" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111207" CHANGEDBY="EXRQUADR" CHANGEDON="20120310" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="AUART"/>
+  <source>METHOD get_sale_order_type.
+  CONSTANTS lc_auart TYPE string VALUE &apos;(SAPLV61A)KOMK-AUART_SD&apos;.
+  DATA: lw_comm  TYPE vbco6,
+        lt_vbfa  TYPE vbfa_t,
+        lv_vbelv TYPE vbelv.
+  FIELD-SYMBOLS: &lt;lfs_auart&gt;  TYPE auart,
+                 &lt;l_vbfa&gt;     TYPE vbfa.
+
+
+  IF p_vbeln IS NOT SUPPLIED.
+    IF is_valid_context( &apos;SAPLV61A&apos; ) = abap_false.
+      RETURN.
+    ENDIF.
+
+    ASSIGN (lc_auart) TO &lt;lfs_auart&gt;.
+    IF &lt;lfs_auart&gt; IS NOT ASSIGNED.
+      RETURN.
+    ENDIF.
+    r_auart = &lt;lfs_auart&gt;.
+  ELSE.
+    lw_comm-vbeln = p_vbeln.
+    lw_comm-posnr = p_posnr.
+    CALL FUNCTION &apos;RV_ORDER_FLOW_INFORMATION&apos;
+      EXPORTING
+        comwa         = lw_comm
+      TABLES
+        vbfa_tab      = lt_vbfa
+      EXCEPTIONS
+        no_vbfa       = 1
+        no_vbuk_found = 2
+        OTHERS        = 3.
+    IF sy-subrc &lt;&gt; 0.
+      RETURN.
+    ENDIF.
+    LOOP AT lt_vbfa ASSIGNING &lt;l_vbfa&gt;
+      WHERE vbtyp_v = &apos;C&apos;.
+      lv_vbelv = &lt;l_vbfa&gt;-vbelv.
+    ENDLOOP.
+    SELECT auart FROM vbak UP TO 1 ROWS
+      INTO r_auart
+     WHERE vbeln = lv_vbelv.
+    ENDSELECT.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_AUFNR" VERSION="1" LANGU="E" DESCRIPT="Returns the order of an schedule agreement." EXPOSURE="0" STATE="1" EDITORDER="22 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120227" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_AUFNR" SCONAME="R_AUFNR" VERSION="1" LANGU="E" DESCRIPT="Order Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120227" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="AUFNR"/>
+  <source>method GET_SA_AUFNR.
+  CONSTANTS lc_aufnr TYPE string VALUE &apos;(SAPMM06E)COBL-AUFNR&apos;.
+  FIELD-SYMBOLS &lt;lfs_aufnr&gt; TYPE aufnr.
+
+  IF is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_aufnr) to &lt;lfs_aufnr&gt;.
+  IF &lt;lfs_aufnr&gt; is ASSIGNED.
+    r_aufnr = &lt;lfs_aufnr&gt;.
+  ENDIF.
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Returns the cost center of an schedule agreement." EXPOSURE="0" STATE="1" EDITORDER="21 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120227" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_KOSTL" SCONAME="R_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120227" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <source>METHOD get_sa_kostl.
+  CONSTANTS lc_kostl TYPE string VALUE &apos;(SAPMM06E)COBL-KOSTL&apos;.
+  FIELD-SYMBOLS &lt;lfs_kostl&gt; TYPE kostl.
+
+  IF is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_kostl) TO &lt;lfs_kostl&gt;.
+  IF &lt;lfs_kostl&gt; IS ASSIGNED.
+    r_kostl = &lt;lfs_kostl&gt;.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_PS_PSP_PNR" VERSION="1" LANGU="E" DESCRIPT="Returns the WBS of a schedule agreement" EXPOSURE="0" STATE="1" EDITORDER="23 " DISPID="0 " AUTHOR="EXDGAIGA" CREATEDON="20120229" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SA_PS_PSP_PNR" SCONAME="R_PS_PSP_PNR" VERSION="1" LANGU="E" DESCRIPT="Work Breakdown Structure Element (WBS Element)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXDGAIGA" CREATEDON="20120229" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="COBL-PS_PSP_PNR"/>
+  <source>METHOD get_sa_ps_psp_pnr.
+  CONSTANTS lc_ps_psp_pnr TYPE string VALUE &apos;(SAPMM06E)COBL-PS_PSP_PNR&apos;.
+  FIELD-SYMBOLS &lt;lfs_ps_psp_pnr&gt; TYPE cobl-ps_psp_pnr.
+
+  IF is_valid_context( &apos;SAPMM06E&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_ps_psp_pnr) TO &lt;lfs_ps_psp_pnr&gt;.
+  IF &lt;lfs_ps_psp_pnr&gt; IS ASSIGNED.
+    r_ps_psp_pnr = &lt;lfs_ps_psp_pnr&gt;.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SHIP_FROM_JURISDICT_CODE" VERSION="1" LANGU="E" DESCRIPT="Returns the ship-from jurisdiction code." EXPOSURE="0" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120214" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SHIP_FROM_JURISDICT_CODE" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120214" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SHIP_FROM_JURISDICT_CODE" SCONAME="P_EBELP" VERSION="1" LANGU="E" DESCRIPT="Item Number of Purchasing Document" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120214" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELP" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SHIP_FROM_JURISDICT_CODE" SCONAME="R_TXJCD_SF" VERSION="1" LANGU="E" DESCRIPT='Jurisdiction code &quot;Ship-from&quot;' CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120214" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="TXJCD_SF"/>
+  <source>METHOD get_ship_from_jurisdict_code.
+  DATA: lt_partners TYPE tyt_partners,
+        lw_partner  TYPE LINE OF tyt_partners,
+        lv_land1    TYPE land1.
+  DEFINE lm_get_partner_jurisdiction.
+    read table lt_partners into lw_partner with key parvw = &amp;1.
+    if sy-subrc = 0.
+      select txjcd land1 from lfa1 up to 1 rows
+        into (r_txjcd_sf, lv_land1)
+       where lifnr  = lw_partner-gparn.
+      endselect.
+      IF lv_land1 &lt;&gt; &apos;US&apos; AND
+         lv_land1 &lt;&gt; &apos;CA&apos;.
+        r_txjcd_sf = &apos;7700000000&apos;.
+        SHIFT r_txjcd_sf LEFT DELETING LEADING space.
+      ENDIF.
+      return.
+    endif.
+  END-OF-DEFINITION.
+  IF p_ebeln IS NOT SUPPLIED.
+    CALL FUNCTION &apos;MM_DISPLAY_PARTNERS&apos;
+      TABLES
+        ext_partners = lt_partners.
+  ELSE.
+    SELECT parvw lifn2 FROM ekpa
+      INTO (lw_partner-parvw, lw_partner-gparn)
+     WHERE ebeln = p_ebeln
+       AND ebelp = &apos;00000&apos;.
+      APPEND lw_partner TO lt_partners.
+    ENDSELECT.
+    SELECT parvw parnr FROM ekpa
+      INTO (lw_partner-parvw, lw_partner-gparn)
+     WHERE ebeln = p_ebeln
+       AND ebelp = p_ebelp.
+      APPEND lw_partner TO lt_partners.
+    ENDSELECT.
+  ENDIF.
+  SORT lt_partners.
+  DELETE ADJACENT DUPLICATES FROM lt_partners.
+  IF lt_partners IS NOT INITIAL.
+* Looking for Goods supplier
+    lm_get_partner_jurisdiction: &apos;WL&apos;,
+* Looking for PO Vendor
+                                &apos;LF&apos;.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SO_FREIGHT" VERSION="1" LANGU="E" DESCRIPT="Returns the freight value." EXPOSURE="0" STATE="1" EDITORDER="7 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SO_FREIGHT" SCONAME="P_KPOSN" VERSION="1" LANGU="E" DESCRIPT="Condition item number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120120" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="KPOSN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SO_FREIGHT" SCONAME="R_FREIGHT_AM" VERSION="1" LANGU="E" DESCRIPT="Freight Amount (internal representation)" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111216" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ETDFRTAMOUNT"/>
+  <source>METHOD get_so_freight.
+  CONSTANTS lc_xkomvt TYPE string VALUE &apos;(SAPLV61A)XKOMV[]&apos;.
+  FIELD-SYMBOLS: &lt;lfs_xkomv&gt; TYPE tax_xkomv_tab,
+                 &lt;lfs_komv&gt;  TYPE komv_index.
+  DATA  lr_kschl TYPE tyr_kschl.
+
+  IF is_valid_context( &apos;SAPLV61A&apos; ) = abap_false.
+    RETURN.
+  ENDIF.
+
+  ASSIGN (lc_xkomvt) TO &lt;lfs_xkomv&gt;.
+  IF &lt;lfs_xkomv&gt; IS NOT ASSIGNED.
+    RETURN.
+  ENDIF.
+
+  o_tvarv-&gt;get_multiple(
+    EXPORTING
+      im_param = &apos;FREIGHTCND&apos;
+    IMPORTING
+      ex_value = lr_kschl ).
+  IF is_condition_range_valid( lr_kschl ) = abap_false .
+    RETURN.
+  ENDIF.
+
+  LOOP AT &lt;lfs_xkomv&gt; ASSIGNING &lt;lfs_komv&gt; WHERE kschl IN lr_kschl.
+    CHECK &lt;lfs_komv&gt;-kposn = p_kposn.
+    IF &lt;lfs_komv&gt;-kwert IS NOT INITIAL.
+      r_freight_am = r_freight_am + &lt;lfs_komv&gt;-kwert.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SUPPLYING_PLANT_JC" VERSION="1" LANGU="E" DESCRIPT="Returns the Supplying plant jurisd. code (2869154)." EXPOSURE="0" STATE="1" EDITORDER="38 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130304" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SUPPLYING_PLANT_JC" SCONAME="P_EBELN" VERSION="1" LANGU="E" DESCRIPT="Purchasing Document Number" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130304" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="EBELN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_SUPPLYING_PLANT_JC" SCONAME="R_TXJCD" VERSION="1" LANGU="E" DESCRIPT="Tax Jurisdiction" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130304" CHANGEDBY="EXRQUADR" CHANGEDON="20130304" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="TXJCD"/>
+  <source>method GET_SUPPLYING_PLANT_JC.
+*{   INSERT         GE1K952660                                        1
+  DATA: lv_RESWK TYPE RESWK,
+        lo_db    TYPE REF TO lcl_db.
+
+  create OBJECT lo_db.
+
+  TRY .
+    lv_RESWK = lo_db-&gt;get_po_supplying_plant( p_ebeln = p_ebeln ).
+  CATCH cx_sy_sql_error.
+    RETURN.
+  ENDTRY.
+
+  r_txjcd = get_plant_jurisdiction_code( lv_RESWK ).
+*
+*}   INSERT
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_WBS_COST_CENTER" VERSION="1" LANGU="E" DESCRIPT="Returns the cost center of a WBS." EXPOSURE="0" STATE="1" EDITORDER="29 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_WBS_COST_CENTER" SCONAME="P_PROJK" VERSION="1" LANGU="E" DESCRIPT="Work Breakdown Structure Element (WBS Element)" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="PS_PSP_PNR"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="GET_WBS_COST_CENTER" SCONAME="R_KOSTL" VERSION="1" LANGU="E" DESCRIPT="Cost Center" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120308" CHANGEDBY="EXRQUADR" CHANGEDON="20120308" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="KOSTL"/>
+  <source>METHOD get_wbs_cost_center.
+  SELECT akstl FROM prps UP TO 1 ROWS
+    INTO r_kostl
+   WHERE pspnr = p_projk.
+  ENDSELECT.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_CONDITION_RANGE_VALID" VERSION="1" LANGU="E" DESCRIPT="Returns true for a valid condition range and false otherwise" EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120202" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_CONDITION_RANGE_VALID" SCONAME="PR_KSCHL" VERSION="1" LANGU="E" DESCRIPT="Range of condition types" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120202" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TYR_KSCHL"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_CONDITION_RANGE_VALID" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120202" CHANGEDBY="EXRQUADR" CHANGEDON="20120214" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+  <source>METHOD is_condition_range_valid.
+  DATA: lw_kschl TYPE LINE OF tyr_kschl,
+        li_lines TYPE i.
+
+  IF pr_kschl[] IS INITIAL.
+    r_boolean = abap_false.
+    RETURN.
+  ELSE.
+    DESCRIBE TABLE pr_kschl LINES li_lines.
+    IF li_lines = 1.
+      READ TABLE pr_kschl INTO lw_kschl INDEX 1.
+      IF lw_kschl-sign   = &apos;I&apos;    AND
+         lw_kschl-option = &apos;EQ&apos;   AND
+         lw_kschl-low IS  INITIAL AND
+         lw_kschl-high IS INITIAL.
+        r_boolean = abap_false.
+        RETURN.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+  r_boolean = abap_true.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_VALID_CONTEXT" VERSION="1" LANGU="E" DESCRIPT="Returns true if call pile is in a valid context." EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120313" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_VALID_CONTEXT" SCONAME="P_REPID" VERSION="1" LANGU="E" DESCRIPT="ABAP Program: Current Main Program" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120313" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="SYREPID"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="IS_VALID_CONTEXT" SCONAME="R_BOOLEAN" VERSION="1" LANGU="E" DESCRIPT="Abap boolean" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120313" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ABAP_BOOL"/>
+  <source>METHOD is_valid_context.
+  FIELD-SYMBOLS &lt;lw_stack_line&gt; TYPE abap_callstack_line.
+
+  r_boolean = abap_false.
+
+  READ TABLE t_callstack ASSIGNING &lt;lw_stack_line&gt;
+   WITH KEY mainprogram = p_repid.
+  IF sy-subrc = 0.
+    r_boolean = abap_true.
+* MOD-001 - Fernando Shimada - 21/07/2012 - Begin.
+  ELSE.
+    READ TABLE t_callstack ASSIGNING &lt;lw_stack_line&gt;
+                           WITH KEY mainprogram = &apos;ZGLOCR_FREIGHT_PROCESSING&apos;.
+    IF sy-subrc = 0.
+      r_boolean = abap_true.
+    ENDIF.
+* MOD-001 - Fernando Shimada - 21/07/2012 - End.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_CALLSTACK" VERSION="1" LANGU="E" DESCRIPT="Updates the call stack to its current status." EXPOSURE="0" STATE="1" EDITORDER="30 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20120315" CHANGEDBY="TCTAKECH" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <source>METHOD set_callstack.
+  CLEAR t_callstack.
+  CALL FUNCTION &apos;SYSTEM_CALLSTACK&apos;
+    IMPORTING
+      callstack = t_callstack.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" VERSION="1" LANGU="E" DESCRIPT="Sets VERTEX fields" EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" MTDTYPE="0" MTDDECLTYP="1" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="I_T007A" VERSION="1" LANGU="E" DESCRIPT="Tax Keys" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="T007A"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="I_TTXD" VERSION="1" LANGU="E" DESCRIPT="Description of Tax Jurisdiction Code Structure" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TTXD"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="I_TAX_HEADER_INPUT" VERSION="1" LANGU="E" DESCRIPT="external tax document header input data" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EXTAX_DOC"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="I_TAX_ITEM_INPUT" VERSION="1" LANGU="E" DESCRIPT="external document item input data" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EXTAX_ITEM_IN"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="I_INPUT_USER" VERSION="1" LANGU="E" DESCRIPT="User fields for pricing" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_USER_PRICING"/>
+  <parameter CLSNAME="ZCL_GTDEVRR2R3301" CMPNAME="SET_VERTEX_FIELDS" SCONAME="CH_USER_CHANGED_FIELDS" VERSION="1" LANGU="E" DESCRIPT="Fields that may be altered in the user exit." CMPTYPE="1" MTDTYPE="0" EDITORDER="6 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20111114" CHANGEDBY="EXRQUADR" CHANGEDON="20130110" PARDECLTYP="2" PARPASSTYP="1" TYPTYPE="1" TYPE="TAX_ALLOWED_FIELDS"/>
+  <source>*==================================================================================*
+* CHANGE HISTORY LOG                                                               *
+*----------------------------------------------------------------------------------*
+* MOD. NO.|  DATE    | NAME           | CORRECTION NUMBER  | CHANGE REFERENCE #    *
+*----------------------------------------------------------------------------------*
+* MOD-999 |DD/MM/YYYY| XXXXXXXXXXXXXX | XXXXXXXXXX         | XXXXXXXXXX            *
+*                                                                                  *
+* DESCRIPTION:                                                                     *
+*----------------------------------------------------------------------------------*
+* MOD-001 |14/02/2012| EXRQUADR       | GTDEVCRR2R7905     | GE7K905656            *
+*                                                                                  *
+* DESCRIPTION: Tax Bolt-on User-ExitT.                                             *
+*----------------------------------------------------------------------------------*
+* MOD-002 |27/02/2012| EXRQUADR       | Message 8000011347 | GE7K906971            *
+*                                                                                  *
+* DESCRIPTION: Tax Bolt-on User-ExitT.                                             *
+*----------------------------------------------------------------------------------*
+* MOD-003 |29/02/2012| EXDGAIGA       | GTDEVCRR2R7907     | GE7K906971            *
+*                                                                                  *
+* DESCRIPTION: Tax Bolt-on User-ExitT.                                             *
+*----------------------------------------------------------------------------------*
+* MOD-005 |12/12/2012| EXRQUADR      | GTDEVCRR2R7920     | HPQC #15767            *
+*                                                                                  *
+* DESCRIPTION: Tax Bolt-on User-ExitT.                                             *
+*----------------------------------------------------------------------------------*
+METHOD set_vertex_fields.
+  DATA: lo_instance TYPE REF TO zcl_gtdevrr2r3301,
+        lv_matkl    TYPE matkl,
+        lv_mtart    TYPE mtart,
+        lv_kunnr    TYPE kunnr,
+        lv_name1    TYPE name1_gp,
+        lv_fkber    TYPE fkber,
+        lv_ktokk    TYPE ktokk,
+        lv_posid    TYPE ps_posid,
+        lv_kosar    TYPE kosar,
+        lv_budat    TYPE budat,
+        lv_knttp    TYPE knttp,
+        lv_inco1    TYPE inco1,
+        lv_sakto    TYPE saknr,
+        lv_vbelv    TYPE vbelv,
+        lv_saknr    TYPE saknr,
+        lv_hkont    TYPE hkont,
+        lv_bsart    TYPE esart,
+* MOD-001, begin
+        lv_txjcd_sf TYPE txjcd_sf,
+* MOD-001, end
+*{   INSERT         GE1K949772                                        4
+        lv_txjcd_poo TYPE TXJCD_POO,
+*
+*}   INSERT
+* MOD-002, begin
+        lv_kostl    TYPE kostl,
+        lv_aufnr    TYPE aufnr,
+* MOD-002, end
+* MOD-003, begin
+        lv_projk    TYPE cobl-ps_psp_pnr,
+        lv_pstyp    TYPE pstyp,
+* MOD-003, end
+        lv_freight  TYPE etdfrtamount.
+
+* MOD-004 - TAKECHI - 24/05/2012 - BEGIN.
+  DATA: lv_trading_partner  TYPE c.
+* MOD-004 - TAKECHI - 24/05/2012 - END.
+
+  lo_instance = add_instance(
+        p_comp_code  = i_tax_header_input-comp_code
+        p_doc_number = i_tax_header_input-doc_number
+        p_pos_no     = i_tax_item_input-pos_no
+        p_tax_type   = i_t007a-mwart
+        pw_t007a     = i_t007a ) .
+
+  IF lo_instance IS INITIAL.
+    RETURN.
+  ENDIF.
+
+  IF lo_instance-&gt;activ = abap_false.
+    RETURN.
+  ENDIF.
+
+  set_callstack( ). &quot; Updates the call stack
+  ch_user_changed_fields-division      = i_tax_header_input-comp_code.
+  IF i_input_user-matkl IS NOT INITIAL.
+    ch_user_changed_fields-prod_code     = i_input_user-matkl.
+  ELSEIF i_input_user-evrtn IS NOT INITIAL.
+    lv_matkl = get_po_item_matkl(
+                 p_ebeln = i_input_user-evrtn
+                 p_ebelp = i_input_user-evrtp
+* Begin of Modification Takechi - 25.04.2012
+* GTDEVCRR2R7913_GTDEVRR2R3301
+                 p_pos_no = i_tax_item_input-pos_no
+* End of Modification Takechi - 25.04.2012
+                 ).
+    ch_user_changed_fields-prod_code = lv_matkl.
+  ELSE.
+    ch_user_changed_fields-prod_code =
+                    get_master_material_group( i_tax_item_input-matnr ).
+  ENDIF.
+  SELECT mtart FROM mara UP TO 1 ROWS
+    INTO lv_mtart
+   WHERE matnr = i_tax_item_input-matnr.
+  ENDSELECT.
+  IF sy-subrc = 0.
+    ch_user_changed_fields-group_prod_code  = lv_mtart.
+  ENDIF.
+  CONCATENATE i_tax_header_input-syst_name i_tax_header_input-client
+         INTO ch_user_changed_fields-store_code.
+* MOD-005, begin
+  ch_user_changed_fields-freight_am = i_input_user-kzwi6.
+* MOD-005, end
+  IF i_t007a-mwart = &apos;A&apos;. &quot; Accounts Receivable
+    ch_user_changed_fields-group_id(10)      = i_input_user-kunnr.
+    ch_user_changed_fields-group_id+10(8)    = i_input_user-erdat.
+*    ch_user_changed_fields-freight_am = get_invoice_freight(
+*                              p_waers = i_tax_header_input-currency
+*                              p_posnr = i_tax_item_input-pos_no
+*                              p_vrkme = i_tax_item_input-unit
+*                              p_lfimg = i_tax_item_input-quantity ).
+*    IF ch_user_changed_fields-freight_am IS INITIAL.
+*      ch_user_changed_fields-freight_am =
+*        get_so_freight( i_input_user-kposn ).
+*    ENDIF.
+    ch_user_changed_fields-accnt_cls         = i_input_user-kdgrp.
+    IF i_input_user-auart IS NOT INITIAL.
+      ch_user_changed_fields-cost_object(5)    = i_input_user-auart.
+    ELSE.
+      ch_user_changed_fields-cost_object(5) =
+       get_sale_order_type( p_vbeln = i_input_user-belnr
+                            p_posnr = i_input_user-kposn ).
+    ENDIF.
+    ch_user_changed_fields-cost_object+5(4)  = i_input_user-fkart.
+    lv_saknr = get_sales_gl_account( p_vbeln = i_input_user-belnr
+                                     p_posnr = i_input_user-kposn ).
+    ch_user_changed_fields-user_data+10(15)  = lv_saknr.
+    IF i_input_user-belnr(1) &lt;&gt; &apos;$&apos;.
+      ch_user_changed_fields-user_data+25(10) =
+       get_sale_order_number( p_vbeln = i_input_user-belnr
+                              p_posnr = i_input_user-kposn ).
+    ELSE.
+      lv_vbelv = get_sale_order_number( ).
+      ch_user_changed_fields-user_data+25(10) = lv_vbelv.
+    ENDIF.
+    ch_user_changed_fields-user_data+35(5)   = i_input_user-werks.
+    ch_user_changed_fields-user_data+45(2)   = i_t007a-mwskz.
+    ch_user_changed_fields-user_data+47(2)   = i_input_user-vsbed.
+    lv_kunnr = i_tax_item_input-accnt_no(10).
+    SELECT name1 FROM kna1 UP TO 1 ROWS
+      INTO lv_name1
+     WHERE kunnr = lv_kunnr.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      ch_user_changed_fields-user_rept_data = lv_name1.
+    ENDIF.
+*{   INSERT         GE1K946466                                        1
+    IF i_input_user-auart in r_crd_auart.
+      ch_user_changed_fields-tax_date = get_crdm_tax_date_order(
+                                      ch_user_changed_fields-tax_date ).
+      ch_user_changed_fields-tax_date = GET_CRDM_TAX_DATE_INVOICE(
+                                      ch_user_changed_fields-tax_date ).
+*    ENDIF. &lt;- GE1K949767
+*}   INSERT
+*{   INSERT         GE1K949767                                        2
+    ELSE.
+      ch_user_changed_fields-tax_date = get_order_date(
+                                      ch_user_changed_fields-tax_date ).
+      ch_user_changed_fields-tax_date = get_bill_date(
+                                      ch_user_changed_fields-tax_date ).
+    ENDIF.
+*}   INSERT
+  ELSEIF i_t007a-mwart = &apos;V&apos;. &quot; Accounts Payable
+* MOD-001, begin
+*{   REPLACE        GE1K949772                                        3
+*\    lv_txjcd_sf = get_ship_from_jurisdict_code( ).
+*\    IF lv_txjcd_sf IS INITIAL.
+*\    lv_txjcd_sf = get_ship_from_jurisdict_code(
+*\    p_ebeln = i_input_user-evrtn
+*\    p_ebelp = i_input_user-evrtp ).
+*\    ENDIF.
+    IF i_input_user-mwskz = &apos;IF&apos; or
+       i_input_user-mwskz = &apos;CF&apos;.
+      lv_txjcd_sf = get_plant_jurisdiction_code(
+                                         p_werks = i_input_user-werks ).
+      lv_txjcd_poo = get_jc_origin_point( i_tax_item_input-pos_no ).
+      IF lv_txjcd_sf is INITIAL or lv_txjcd_poo IS INITIAL.
+* Alternative procedure, when txjcd_sf or txjcd_poo is not found
+        lv_txjcd_sf = get_ship_from_jurisdict_code( ).
+        IF lv_txjcd_sf IS INITIAL.
+          lv_txjcd_sf = get_ship_from_jurisdict_code(
+                                         p_ebeln = i_input_user-evrtn
+                                         p_ebelp = i_input_user-evrtp ).
+          IF lv_txjcd_sf IS INITIAL.
+            lv_txjcd_sf = get_supplying_plant_jc(
+                                         p_ebeln = i_input_user-evrtn ).
+          ENDIF.
+        ENDIF.
+        lv_txjcd_poo = get_plant_jurisdiction_code(
+                                         p_werks = i_input_user-werks ).
+      ENDIF.
+    ELSE.
+      lv_txjcd_sf = get_ship_from_jurisdict_code( ).
+      IF lv_txjcd_sf IS INITIAL.
+        lv_txjcd_sf = get_ship_from_jurisdict_code(
+                                         p_ebeln = i_input_user-evrtn
+                                         p_ebelp = i_input_user-evrtp ).
+      ENDIF.
+      lv_txjcd_poo = get_plant_jurisdiction_code(
+                                         p_werks = i_input_user-werks ).
+    ENDIF.
+*}   REPLACE
+    IF lv_txjcd_sf IS NOT INITIAL.
+      ch_user_changed_fields-txjcd_sf = lv_txjcd_sf.
+    ENDIF.
+* MOD-001, end
+*{   INSERT         GE1K949772                                        5
+    IF lv_txjcd_poo is NOT INITIAL.
+      ch_user_changed_fields-txjcd_poo = lv_txjcd_poo.
+    ENDIF.
+*
+*}   INSERT
+    ch_user_changed_fields-group_id(2)    = i_t007a-mwskz.
+    lv_budat = get_posting_date( ).
+    IF lv_budat IS NOT INITIAL.
+      ch_user_changed_fields-group_id+2(8)  = lv_budat.
+    ENDIF.
+    lv_knttp = get_accp_acc_asst_category(  ).
+    IF lv_knttp IS INITIAL.
+      lv_knttp = get_accp_acc_asst_category(
+                  p_ebeln = i_input_user-evrtn
+                  p_ebelp = i_input_user-evrtp ).
+    ENDIF.
+* MOD-002, begin
+    IF i_input_user-kostl IS NOT INITIAL.
+      lv_kostl = i_input_user-kostl.
+    ELSE.
+      lv_kostl = get_sa_kostl( ).
+    ENDIF.
+    IF i_input_user-aufnr IS NOT INITIAL .
+      lv_aufnr = i_input_user-aufnr.
+    ELSE.
+      lv_aufnr = get_sa_aufnr( ).
+    ENDIF.
+* MOD-002, end
+    &quot;WBS
+    IF i_input_user-projk IS NOT INITIAL.
+      lv_projk = i_input_user-projk.
+    ELSE.
+      lv_projk = get_sa_ps_psp_pnr( ).
+    ENDIF.
+    IF lv_knttp = &apos;M&apos;. &quot;Ind. cust. w/o KD-CO .
+      get_sale_order_acc_ass(
+         EXPORTING
+           p_ebeln = i_input_user-evrtn
+           p_ebelp = i_input_user-evrtp
+         IMPORTING
+           e_kostl = lv_kostl
+           e_aufnr = lv_aufnr
+           e_projk = lv_projk ).
+    ELSEIF lv_knttp = &apos;A&apos;. &quot;Asset
+      get_asset_acc_ass(
+         EXPORTING
+           p_bukrs = i_tax_header_input-comp_code
+           p_ebeln = i_input_user-evrtn
+           p_ebelp = i_input_user-evrtp
+         IMPORTING
+           e_kostl = lv_kostl
+           e_aufnr = lv_aufnr
+           e_projk = lv_projk ).
+    ENDIF.
+    IF lv_kostl IS INITIAL.
+      IF lv_aufnr IS NOT INITIAL.
+        lv_kostl = get_order_cost_center( lv_aufnr ).
+      ELSEIF lv_projk IS NOT INITIAL.
+        lv_kostl = get_wbs_cost_center( lv_projk ).
+      ENDIF.
+    ENDIF.
+* MOD-003, end
+    get_func_area(
+      EXPORTING
+*        p_knttp = lv_knttp &lt;- MOD-003
+*        p_kostl = i_input_user-kostl -&gt; MOD-002
+*        p_aufnr = i_input_user-aufnr &lt;- MOD-002
+* MOD-002, begin
+        p_kostl = lv_kostl
+*        p_aufnr = lv_aufnr &lt;- MOD-003
+* MOD-002, end
+* MOD-003, begin
+*        p_projk = i_input_user-projk
+*        p_projk = lv_projk &lt;- MOD-003
+      CHANGING
+        c_fkber = lv_fkber ).
+    ch_user_changed_fields-group_id+10(8) = lv_fkber.
+*    lv_freight = get_miro_freight( p_waers = i_tax_header_input-currency
+*                                   p_ebeln = i_input_user-evrtn
+*                                   p_ebelp = i_input_user-evrtp ).
+*    IF lv_freight IS NOT INITIAL.
+*      ch_user_changed_fields-freight_am = lv_freight.
+*    ELSE.
+*      ch_user_changed_fields-freight_am =
+*        get_po_freight( p_ebelp = i_input_user-kposn+1(5) ).
+*      IF ch_user_changed_fields-freight_am IS INITIAL.
+*        ch_user_changed_fields-freight_am = get_po_freight(
+*                                         p_ebeln = i_input_user-evrtn
+*                                         p_ebelp = i_input_user-evrtp ).
+*      ENDIF.
+*    ENDIF.
+    SELECT ktokk FROM lfa1 UP TO 1 ROWS
+      INTO lv_ktokk
+     WHERE lifnr = i_input_user-lifnr.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      ch_user_changed_fields-accnt_cls = lv_ktokk.
+    ENDIF.
+*    ch_user_changed_fields-cost_object      = i_input_user-kostl. &lt;- MOD-002
+* MOD-002, begin
+    ch_user_changed_fields-cost_object      = lv_kostl.
+* MOD-002, end
+
+* MOD-004 - TAKECHI - 24/05/2012 - BEGIN.
+*   ch_user_changed_fields-user_data(10)    = i_input_user-werks.
+    ch_user_changed_fields-user_data(4)    = i_input_user-werks.
+
+    CLEAR lv_trading_partner.
+
+    lv_trading_partner = get_sales_freight_flag(
+                         p_ebeln = i_input_user-evrtn
+                         p_ebelp = i_input_user-evrtp
+                         p_pos_no = i_tax_item_input-pos_no ).
+
+    ch_user_changed_fields-user_data+4(1) = lv_trading_partner.
+* MOD-004 - TAKECHI - 24/05/2012 - END.
+    lv_sakto = get_gl_account( p_ebelp = i_input_user-evrtp ).
+    IF lv_sakto IS INITIAL.
+      lv_sakto = get_gl_account( p_ebeln = i_input_user-evrtn
+                                 p_ebelp = i_input_user-evrtp ).
+    ENDIF.
+    IF lv_sakto IS NOT INITIAL.
+      ch_user_changed_fields-user_data+10(10) = lv_sakto.
+    ELSE.
+      lv_hkont = get_fi_gl_account( i_tax_item_input-pos_no ).
+      ch_user_changed_fields-user_data+10(10) = lv_hkont.
+    ENDIF.
+    SELECT posid FROM prps UP TO 1 ROWS
+      INTO lv_posid
+     WHERE pspnr = i_input_user-projk.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      CALL FUNCTION &apos;CONVERSION_EXIT_ABPSN_OUTPUT&apos;
+        EXPORTING
+          input  = lv_posid
+        IMPORTING
+          output = lv_posid.
+      ch_user_changed_fields-user_data+20(10) = lv_posid.
+    ENDIF.
+    lv_inco1 = get_accp_incoterm1( ).
+    IF lv_inco1 IS INITIAL.
+      lv_inco1 = get_accp_incoterm1(
+                  p_ebeln = i_input_user-evrtn ).
+    ENDIF.
+    ch_user_changed_fields-user_data+30(3) = lv_inco1.
+    ch_user_changed_fields-user_data+33(4) =
+     get_invoice_condition_type( i_tax_item_input-pos_no ).
+    SELECT kosar FROM csks UP TO 1 ROWS
+      INTO lv_kosar
+     WHERE kokrs  = i_input_user-kokrs
+*       AND kostl  = i_input_user-kostl &lt;- MOD-002
+* MOD-002, begin
+       AND kostl  = lv_kostl
+* MOD-002, end
+       AND datbi &gt;= sy-datum.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      ch_user_changed_fields-user_data+40(5) = lv_kosar.
+    ENDIF.
+    lv_bsart = get_po_type( i_input_user-evrtn ).
+    IF lv_bsart IS NOT INITIAL.
+      ch_user_changed_fields-user_data+40(4) = lv_bsart.
+    ENDIF.
+* MOD-003, begin
+    lv_pstyp = get_po_item_category( ).
+    IF lv_pstyp IS NOT INITIAL.
+      ch_user_changed_fields-user_data+44(1) = lv_pstyp.
+    ENDIF.
+    ch_user_changed_fields-user_data+45(1) = lv_knttp.
+* MOD-003, end
+    SELECT name1 FROM lfa1 UP TO 1 ROWS
+      INTO lv_name1
+     WHERE lifnr = i_input_user-lifnr.
+    ENDSELECT.
+    IF sy-subrc = 0.
+      ch_user_changed_fields-user_rept_data = lv_name1.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+</CLAS>

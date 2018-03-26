@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-16"?>
+<CLAS CLSNAME="ZCL_GLPM_TS91000251_EXIT" VERSION="1" LANGU="E" DESCRIPT="Exit in task TS91000251" UUID="514B9D58AD330AF0E10080000A010BAA" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="EXRQUADR" CREATEDON="20130322" CHANGEDON="00000000" CHGDANYON="00000000" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+ <implementing CLSNAME="ZCL_GLPM_TS91000251_EXIT" REFCLSNAME="IF_SWF_IFS_WORKITEM_EXIT" VERSION="1" EXPOSURE="2" STATE="1" AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" RELTYPE="1" EDITORDER="1 "/>
+ <publicSection>class ZCL_GLPM_TS91000251_EXIT definition
+  public
+  final
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_GLPM_TS91000251_EXIT
+*&quot;* do not include other source files here!!!
+
+  interfaces IF_SWF_IFS_WORKITEM_EXIT .</publicSection>
+ <protectedSection>protected section.
+*&quot;* protected components of class ZCL_GLPM_TS91000251_EXIT
+*&quot;* do not include other source files here!!!</protectedSection>
+ <privateSection>private section.
+*&quot;* private components of class ZCL_GLPM_TS91000251_EXIT
+*&quot;* do not include other source files here!!!
+
+  data AS_PROCESS_STATUS type STRING .
+
+  methods BEFORE_EXECUTION
+    importing
+      value(PO_CONTEXT) type ref to IF_WAPI_WORKITEM_CONTEXT .
+  methods AFTER_EXECUTION
+    importing
+      value(PO_CONTEXT) type ref to IF_WAPI_WORKITEM_CONTEXT .</privateSection>
+ <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+ <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+ <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+ <textPool/>
+ <classDocumentation/>
+ <attribute CLSNAME="ZCL_GLPM_TS91000251_EXIT" CMPNAME="AS_PROCESS_STATUS" VERSION="1" LANGU="E" DESCRIPT="&apos;sap.bc.bmt.wfm.process.status&apos;" EXPOSURE="0" STATE="1" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDBY="EXRQUADR" CHANGEDON="20130323" ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="STRING" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " R3RELEASE="702" TYPESRC_LENG="0 "/>
+ <interfaceMethod CLSNAME="ZCL_GLPM_TS91000251_EXIT" CPDNAME="IF_SWF_IFS_WORKITEM_EXIT~EVENT_RAISED">
+  <source>METHOD if_swf_ifs_workitem_exit~event_raised.
+  CASE im_event_name.
+    WHEN swrco_event_before_execution.
+      me-&gt;before_execution( im_workitem_context ).
+    WHEN swrco_event_after_execution.
+      me-&gt;after_execution( im_workitem_context ).
+    WHEN OTHERS.
+  ENDCASE.
+ENDMETHOD.</source>
+ </interfaceMethod>
+ <method CLSNAME="ZCL_GLPM_TS91000251_EXIT" CMPNAME="AFTER_EXECUTION" VERSION="1" LANGU="E" DESCRIPT="To me executed after an execution" EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDBY="EXRQUADR" CHANGEDON="20130323" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GLPM_TS91000251_EXIT" CMPNAME="AFTER_EXECUTION" SCONAME="PO_CONTEXT" VERSION="1" LANGU="E" DESCRIPT="Context for Work Item" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="3" TYPE="IF_WAPI_WORKITEM_CONTEXT"/>
+  <source>METHOD AFTER_EXECUTION.
+  me-&gt;before_execution( po_context ).
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GLPM_TS91000251_EXIT" CMPNAME="BEFORE_EXECUTION" VERSION="1" LANGU="E" DESCRIPT="To me executed before an execution" EXPOSURE="0" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDBY="EXRQUADR" CHANGEDON="20130323" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GLPM_TS91000251_EXIT" CMPNAME="BEFORE_EXECUTION" SCONAME="PO_CONTEXT" VERSION="1" LANGU="E" DESCRIPT="Context for Work Item" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="3" TYPE="IF_WAPI_WORKITEM_CONTEXT"/>
+  <source>METHOD before_execution.
+  CONSTANTS: lcw_relevant_type TYPE sibftypeid VALUE &apos;BUS2007&apos;,
+             lc_20wa           TYPE j_stsma VALUE &apos;20WA&apos;.
+  DATA: lo_container TYPE REF TO if_swf_ifs_parameter_container,
+        lt_names     TYPE swfdnamtab,
+        lw_type      TYPE sibfotype,
+        lw_order     TYPE swotobjid,
+        lo_order     TYPE REF TO zcl_glpm_bor_proxy,
+        lt_status    TYPE swftvalue,
+        lt_container TYPE swconttab,
+        lw_container TYPE swcont,
+        lv_sta_pfl   TYPE j_stsma.
+  FIELD-SYMBOLS  &lt;lw_name&gt;  TYPE swfdname.
+
+  lo_container = po_context-&gt;get_wi_container( ).
+
+* Lookin for de Order in the workitem container
+  lt_names = lo_container-&gt;list_names( only_objects = &apos;X&apos;).
+  LOOP AT lt_names ASSIGNING &lt;lw_name&gt;.
+    TRY .
+        lo_container-&gt;get_type(
+                       EXPORTING
+                         name = &lt;lw_name&gt;
+                       IMPORTING
+                         object_type =  lw_type ).
+        IF  lw_type-typeid = lcw_relevant_type.
+          EXIT.
+        ENDIF.
+      CATCH cx_swf_cnt_element
+            cx_swf_cnt_container.
+        CONTINUE.
+    ENDTRY.
+  ENDLOOP.
+  TRY .
+      lo_container-&gt;get(
+                     EXPORTING
+                       name = &lt;lw_name&gt;
+                     IMPORTING
+                       value = lw_order ).
+
+    CATCH cx_swf_cnt_element
+      cx_swf_cnt_container.
+      RETURN.
+  ENDTRY.
+
+* Creating a local instance of the order and puting 20WA in it
+  TRY .
+      CREATE OBJECT lo_order
+        EXPORTING
+          p_type = lw_order-objtype
+          p_key  = lw_order-objkey.
+      lt_status = lo_order-&gt;get_multiline_attribute( &apos;HighestStatusNo&apos; ).
+      lv_sta_pfl = lo_order-&gt;get_plain_attribute( &apos;StatusProfile&apos; ).
+      FIND lc_20wa IN TABLE lt_status.
+      IF sy-subrc IS NOT INITIAL.
+        lw_container-element = &apos;STATUSPROFILE&apos;.&quot; &apos;StatusProfile&apos;.
+        lw_container-elemlength = 8.
+        lw_container-value   = lv_sta_pfl.
+        APPEND lw_container TO lt_container.
+        lw_container-element = &apos;STATUS&apos;.&quot; &apos;Status&apos;.
+        lw_container-elemlength = 4.
+        lw_container-value   = lc_20WA.
+        APPEND lw_container TO lt_container.
+        lw_container-element = &apos;SAPLOGONLANGUAGEKEY&apos;.&quot;&apos;SAPLogonLanguageKey&apos;.
+        lw_container-elemlength = 1.
+        lw_container-value   = sy-langu.
+        APPEND lw_container TO lt_container.
+        lw_container-element = &apos;STATUSINACTIVE&apos;.&quot;&apos;StatusInactive&apos;.
+        lw_container-elemlength = 1.
+        lw_container-value   = space.
+        APPEND lw_container TO lt_container.
+        lo_order-&gt;cmtd_parm_noresult(
+                     EXPORTING
+                       p_name   = &apos;UserstatusSet&apos;
+                       pt_parms = lt_container ).
+      ENDIF.
+    CATCH cx_root.
+      RETURN.
+  ENDTRY.
+* Releasing objects
+  free lo_container.
+  lo_order-&gt;free( ).
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+</CLAS>

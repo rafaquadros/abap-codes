@@ -1,0 +1,41 @@
+METHOD raise_restart_object.
+  CONSTANTS: lcv_objcatec TYPE swf_clstyp VALUE 'CL',
+             lcv_objtype  TYPE sibftypeid VALUE 'ZLACMSD_CL_004',
+             lcv_event    TYPE sibfevent  VALUE 'RESTART_REQUIRED'.
+  DATA: lr_event_parameters TYPE REF TO if_swf_ifs_parameter_container,
+        lv_param_name TYPE swfdname,
+        lo_batcher TYPE REF TO zlacmsd_cl_004.
+
+* Instantiates an empty event container
+  CALL METHOD cl_swf_evt_event=>get_event_container
+    EXPORTING
+      im_objcateg  = lcv_objcatec
+      im_objtype   = lcv_objtype
+      im_event     = lcv_event
+    RECEIVING
+      re_reference = lr_event_parameters.
+* Set up the name/value pair to be added to the container
+  lv_param_name = 'RO_BATCHER'.
+  lo_batcher = ao_instance.
+  lo_batcher->clean_up_errors( ).
+* Add the name/value pair to the event container
+  TRY.
+      lr_event_parameters->set( EXPORTING name  = lv_param_name
+                                          value = lo_batcher ).
+    CATCH cx_root.
+      RAISE EXCEPTION TYPE cx_swf_evt_exception.
+  ENDTRY.
+* Raise the event passing the prepared event container
+  TRY.
+      CALL METHOD cl_swf_evt_event=>raise
+        EXPORTING
+          im_objcateg        = lcv_objcatec
+          im_objtype         = lcv_objtype
+          im_event           = lcv_event
+          im_objkey          = av_key
+          im_event_container = lr_event_parameters.
+    CATCH cx_root.
+      RAISE EXCEPTION TYPE cx_swf_evt_exception.
+  ENDTRY.
+  COMMIT WORK.
+ENDMETHOD.

@@ -1,0 +1,50 @@
+*&---------------------------------------------------------------------*
+*& Report  Z_DESKTOP_TO_SERVER
+*&
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+* REF ID  |  DATA    | DESCRIÇÃO                                       *
+*&---------------------------------------------------------------------*
+* #MD 999 |DD/MM/YYYY| XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+*&---------------------------------------------------------------------*
+
+INCLUDE: z_server_to_desktop_top                 ,   " global Data
+         z_server_to_desktop_c01                 .   " Classes
+* INCLUDE ZPFIR_008_O01                           .  " PBO-Modules
+* INCLUDE ZPFIR_008_I01                           .  " PAI-Modules
+* INCLUDE ZPFIR_008_F01                           .  " FORM-Routines
+
+AT SELECTION-SCREEN ON p_dpth.
+  IF lcl_main=>ao_desktop IS INITIAL.
+    FREE o_desktop.
+    CREATE OBJECT o_desktop
+      EXPORTING
+        p_filename = p_dpth.
+    lcl_main=>ao_desktop = o_desktop.
+    p_dpth = lcl_main=>ao_desktop->filename.
+  ENDIF.
+
+AT SELECTION-SCREEN ON p_spth.
+  IF lcl_main=>ao_server IS INITIAL.
+    FREE o_server.
+    CREATE OBJECT o_server
+      EXPORTING
+        p_filename = p_spth.
+    lcl_main=>ao_server = o_server.
+    p_spth = lcl_main=>ao_server->filename.
+  ENDIF.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_dpth.
+  FREE o_desktop.
+  p_dpth = lcl_main=>get_field_value( 'P_DPTH' ).
+  CREATE OBJECT o_desktop.
+  lcl_main=>ao_desktop = o_desktop.
+  p_dpth = lcl_main=>ao_desktop->filename.
+
+
+START-OF-SELECTION.
+  lcl_main=>get_data( ).
+
+END-OF-SELECTION.
+  lcl_main=>process_data( ).
+  lcl_main=>house_keeping( ).

@@ -1,0 +1,45 @@
+*"* use this source file for any macro definitions you need
+*"* in the implementation part of the class
+DEFINE m_raise_fm_exception.
+  message id &1
+          type &2
+          number &3
+          with &4 &5 &6 &7
+          into lvc_dummy.
+  lw_return-type       = sy-msgty.
+  lw_return-id         = sy-msgid.
+  lw_return-number     = sy-msgno.
+  lw_return-message_v1 = sy-msgv1.
+  lw_return-message_v2 = sy-msgv2.
+  lw_return-message_v3 = sy-msgv3.
+  lw_return-message_v4 = sy-msgv4.
+  append lw_return to lt_return.
+  raise exception type cx_bapi_error
+   exporting
+     status = lt_return[].
+END-OF-DEFINITION.
+DEFINE m_fill_msg.
+  lw_msg-msgty     = &1.
+  lw_msg-msgid     = &2.
+  lw_msg-msgno     = &3.
+  lw_msg-msgv1     = &4.
+  lw_msg-msgv2     = &5.
+  lw_msg-msgv3     = &6.
+  lw_msg-msgv4     = &7.
+  lw_msg-detlevel  = &8.
+END-OF-DEFINITION.
+*DEFINE m_msg_add.
+*  call function 'BAL_LOG_MSG_ADD'
+*    exporting
+*      i_log_handle     = &1
+*      i_s_msg          = &2
+*    exceptions
+*      log_not_found    = 1
+*      msg_inconsistent = 2
+*      log_is_full      = 3
+*      others           = 4.
+*  if sy-subrc <> 0.
+*    m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+*                         sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+*  endif.
+*END-OF-DEFINITION.

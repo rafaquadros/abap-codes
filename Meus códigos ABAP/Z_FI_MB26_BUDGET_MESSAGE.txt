@@ -1,0 +1,45 @@
+function z_fi_mb26_budget_message.
+*"----------------------------------------------------------------------
+*"*"Interface local:
+*"----------------------------------------------------------------------
+  data: lo_area       type ref to zsm_fi_budget,
+        lo_root       type ref to zcl_fi_budget_root,
+        lt_return     type bapiret2_tab.
+  field-symbols  <lw_return> type bapiret2.
+
+  do 3 times.
+    try.
+        lo_area = zsm_fi_budget=>attach_for_update( ).
+        exit.
+      catch cx_shm_pending_lock_removed
+            cx_shm_change_lock_active
+            cx_shm_inconsistent
+            cx_shm_no_active_version
+            cx_shm_version_limit_exceeded
+            cx_shm_exclusive_lock_active.
+        wait up to 1 seconds.
+    endtry.
+  enddo.
+  if lo_area is initial.
+    return.
+  endif.
+****Get a pointer to the Root
+  lo_root ?= lo_area->get_root( ).
+  lt_return = lo_root->get_my_budget_messages( ).
+  lo_area->set_root(  lo_root ).
+  lo_area->detach_commit( ).
+  if lt_return is not initial.
+    read table lt_return assigning <lw_return>
+      with key type = 'E'.
+    if sy-subrc = 0.
+      message
+           id <lw_return>-id
+         type <lw_return>-type
+       number <lw_return>-number
+         with <lw_return>-message_v1
+              <lw_return>-message_v2
+              <lw_return>-message_v3
+              <lw_return>-message_v4.
+    endif.
+  endif.
+endfunction.

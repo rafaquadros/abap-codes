@@ -1,0 +1,142 @@
+class ZLACMSD_CL_001 definition
+  public
+  inheriting from ZLACMSD_CL_INTERCOMP_PROCESS
+  create public
+
+  global friends ZLACMSD_CL_INTCMP_WFSTEP
+                 ZLACMSD_CL_INTERCOMP_PROCESS .
+
+*"* public components of class ZLACMSD_CL_001
+*"* do not include other source files here!!!
+public section.
+
+  types:
+    BEGIN OF cy_status,
+            creation   TYPE char01,
+            batch      TYPE zbatch,
+            pick_gic   TYPE zpick_gic,
+            pack       TYPE zpack,
+            good_issue TYPE zgood_issue,
+            bill_gic   TYPE zbill_gic,
+           END OF cy_status .
+  types:
+    cyt_dlv_crt_items TYPE STANDARD TABLE OF bapidlvreftosto .
+  types:
+    cyt_dlv_chg_items TYPE STANDARD TABLE OF bapiobdlvitemchg .
+  types:
+    cyt_sftw_data     TYPE STANDARD TABLE OF zlacmsd_e023 .
+
+  data AV_TYPE type ZLACMSD_L_DLPTY .
+  data AV_WF_ID type SWW_WIID read-only .
+
+  events SOFTWAY_DATA_INSERTED
+    exporting
+      value(RO_PROCESS) type ref to ZLACMSD_CL_001 .
+  events WORKFLOW_CANCELLED .
+  events START_REQUIRED
+    exporting
+      value(RO_PROCESS) type ref to ZLACMSD_CL_001 .
+
+  class-methods CLASS_CONSTRUCTOR .
+  methods CONSTRUCTOR
+    importing
+      !P_TYPEID type SIBFTYPEID optional
+      value(PT_XMSEG) type TY_T_MSEG
+      value(P_CANCELATION) type CHAR01 .
+  methods DEFINE_PROCESS_TYPE
+    returning
+      value(R_TYPE) type ZLACMSD_L_DLPTY .
+  class ZLACMSD_CL_INTERCOMP_PROCESS definition load .
+  methods GET_CREATOR
+    importing
+      value(PT_DLV_CRT_DATA) type CYT_DLV_CRT_ITEMS optional
+      value(PT_RELATIONSHIP) type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP optional
+    returning
+      value(RO_CREATOR) type ref to ZLACMSD_CL_003 .
+  methods GET_PICKER
+    importing
+      value(PT_VBPOK) type CYT_PICKING_ITEMS optional
+    returning
+      value(RO_PICKER) type ref to ZLACMSD_CL_002 .
+  class-methods ZM_INTERCOMPANY_PROCESS_II
+    importing
+      !P_MBLNR type MBLNR
+      !P_MJAHR type MJAHR .
+  methods GET_BATCH_DETERMINATOR
+    importing
+      value(PT_ITEM_DATA) type CYT_DLV_CHG_ITEMS optional
+    preferred parameter PT_ITEM_DATA
+    returning
+      value(RO_BATCH_DETERMINATOR) type ref to ZLACMSD_CL_004 .
+  class-methods SET_MESSAGES_PERSIST
+    importing
+      !P_INSTID type SIBFINSTID
+      !P_SEOCLSNAME type SEOCLSNAME
+      value(PT_RETURN) type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_RETURN
+    raising
+      CX_SY_SQL_ERROR .
+  class-methods RAISE_EVENT_NO_PARM
+    importing
+      !P_OBJTYPE type SIBFTYPEID
+      !P_EVENT type SIBFEVENT
+      !P_KEY type C
+    raising
+      CX_SWF_EVT_EXCEPTION .
+  class-methods RAISE_CANCELLATION
+    importing
+      !P_MBLNR type MBLNR
+      !P_MJAHR type MJAHR .
+  methods RAISE_CANCELLATION_OBJECT .
+  methods GET_CREATOR_DSD
+    importing
+      value(PT_DLV_CRT_DATA) type CYT_DLV_CRT_ITEMS optional
+      value(PT_RELATIONSHIP) type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP optional
+    returning
+      value(RO_CREATOR) type ref to ZLACMSD_CL_007 .
+  class-methods CREATE_INTERCOMP_PROCESS_II
+    importing
+      value(P_TYPEID) type SIBFTYPEID optional
+      value(PT_XMSEG) type TY_T_MSEG
+      value(P_CANCELATION) type CHAR01
+    returning
+      value(RO_INTERCOMP_PROCESS) type ref to ZLACMSD_CL_001 .
+  methods DEFINE_FIRST_STEP
+    returning
+      value(RO_STEP) type ref to ZLACMSD_CL_INTCMP_WFSTEP .
+  class-methods SHOW_MESSAGES
+    importing
+      value(P_CLNAME) type SEOCLSNAME
+      value(P_INSTID) type SIBFINSTID .
+  class-methods DISPLAY_MESSAGES
+    importing
+      !P_MBLNR type MBLNR
+      !P_MJAHR type MJAHR .
+  methods CLEAN_UP .
+  methods SET_WORKFLOW_ID
+    importing
+      value(P_WF_ID) type SWW_WIID .
+  class-methods CREATE_ASSOCIATION_PERSIST
+    importing
+      value(P_WF_ID) type SWW_WIID
+      value(PT_DELIVERIES_ITEMS) type CYT_DELIVERIES_ITEMS
+      value(PT_ID_RELATIONSHIP) type CYT_ID_RELATIONSHIP
+      value(P_DLPTY) type ZLACMSD_L_DLPTY optional
+    raising
+      CX_SY_SQL_ERROR .
+  class-methods COMPLETE_ASSOCIATION_PERSIST
+    importing
+      value(PT_DELIVERIES_ITEMS) type CYT_DELIVERIES_ITEMS
+      value(PT_ID_RELATIONSHIP) type CYT_ID_RELATIONSHIP
+    raising
+      CX_SY_SQL_ERROR .
+  class-methods RESTART_STEP
+    importing
+      !P_MBLNR type MBLNR
+      !P_MJAHR type MJAHR .
+  methods RAISE_START_REQUIRED
+    raising
+      CX_SWF_EVT_EXCEPTION .
+  class-methods CLEAN_UP_ERRORS
+    importing
+      value(P_CLNAME) type SEOCLSNAME
+      value(P_INSTID) type SIBFINSTID .

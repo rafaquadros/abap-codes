@@ -1,0 +1,359 @@
+  METHOD execute.
+    DATA: lv_ano                 TYPE        gjahr,
+          lv_edv                 TYPE        ze_sgcom_edv,
+          lv_id                  TYPE        ze_sgcom_id_interno,
+          lv_guid                TYPE        crmt_genil_object_guid,
+          lv_guid_opportunity    TYPE        crmt_doc_flow_id_wrk,
+          lv_product_guid        TYPE        comt_product_guid,
+          lv_item_guid           TYPE        crmt_object_guid,
+          lv_item_guid_bd        TYPE        sysuuid_c,
+          lv_product_id          TYPE        comt_product_id,
+          lv_product_description TYPE        comt_prshtextx,
+          lv_icms                TYPE        zdtel000065,
+          ls_message             TYPE        string,
+          lt_return              TYPE        bapiret2_t,
+          lx_error               TYPE REF TO cx_bapi_error,
+          lo_lead_status         TYPE REF TO zcl_sgcom_lead_load_status_prs,
+          lo_load_status         TYPE REF TO zcl_sgcom_opp_attach_prs,
+          lo_transaction         TYPE REF TO if_bol_transaction_context.
+    FIELD-SYMBOLS: <lw_return> TYPE bapiret2.
+
+    IF it_data IS SUPPLIED.
+      IF i_upto IS SUPPLIED.
+        me->parse_mock_data( it_data = it_data
+                             i_upto  = i_upto ).
+      ELSE.
+        me->parse_mock_data( it_data = it_data ).
+      ENDIF.
+    ELSE.
+      IF o_db IS INITIAL.
+        o_db = me->get_db( ).
+      ENDIF.
+      TRY.
+          o_db->connect_to_sgcom( ).
+          IF i_upto IS SUPPLIED.
+            me->t_data = o_db->query_products( i_upto = i_upto ).
+          ELSE.
+            me->t_data = o_db->query_products( ).
+          ENDIF.
+          o_db->disconnect_from_sgcom( ).
+        CATCH cx_bapi_error INTO lx_error.
+          RAISE EXCEPTION lx_error.
+      ENDTRY.
+    ENDIF.
+
+    IF me->t_data IS INITIAL.
+      MESSAGE e027 INTO ls_message.
+      m_raise_exception.
+    ENDIF.
+
+    IF o_api IS INITIAL.
+      o_api = me->get_api( ).
+    ENDIF.
+
+    me->o_log = cl_s_aut_bal_log=>create(
+                im_object      =  zcl_sgcom_data_load=>c_main_log_obj
+                im_subobject   =  c_sub_log_obj
+            ).
+
+    "Product
+    DATA(lo_query) = cl_crm_bol_query_service=>get_instance( iv_query_name = 'ProdAdvancedSearchProducts'  ).
+    lo_query->set_property(
+      EXPORTING
+        iv_attr_name =  'PRODUCT_ID'   " Component Name
+        iv_value     = 'PRODUTO_SGCOM'
+      ).
+    DATA(lo_result) = lo_query->get_query_result( ).
+    DATA(lo_product) = lo_result->get_current( ).
+    IF lo_product IS BOUND.
+      lo_product->get_property_as_value(
+          EXPORTING
+            iv_attr_name =  'PRODUCT_GUID'   " Component Name
+          IMPORTING
+            ev_result    =  lv_product_guid
+        ).
+      lo_product->get_property_as_value(
+        EXPORTING
+          iv_attr_name =  'PRODUCT_ID'   " Component Name
+        IMPORTING
+          ev_result    = lv_product_id
+      ).
+      DATA(lo_entity) = lo_product->get_related_entity(
+                        iv_relation_name         = 'ProductShortText'
+*                        iv_mode                  = NORMAL
+                    ).
+      lo_entity->get_property_as_value(
+        EXPORTING
+          iv_attr_name =  'SHORT_TEXT'   " Component Name
+        IMPORTING
+          ev_result    = lv_product_description
+      ).
+    ENDIF.
+
+    SORT me->t_data BY ano edv.
+    LOOP AT me->t_data ASSIGNING FIELD-SYMBOL(<lw_data>).
+      IF i_upto IS SUPPLIED.
+        IF sy-tabix > i_upto.
+          EXIT.
+        ENDIF.
+      ENDIF.
+
+      lv_ano = <lw_data>-ano.
+      lv_edv = <lw_data>-edv.
+      lv_id = <lw_data>-id_interno.
+      TRY.
+          lo_load_status = zca_sgcom_opp_attach_prs=>agent->get_persistent(
+                     i_ano                  = lv_ano
+                     i_edv                  = lv_edv
+                     i_id_interno           = lv_id
+                     i_type                 = 'I'
+                 ).
+
+          IF lo_load_status->get_status( ) <> '8'.
+            MESSAGE i048 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( ) lo_load_status->get_id_interno( )
+                              lo_load_status->get_guid( )
+               INTO ls_message.
+            o_log->add_entry(
+              EXPORTING
+                im_msgtype = sy-msgty    " Message Type
+                im_msgid   = sy-msgid    " Message Class
+                im_msgno   = sy-msgno    " Message Number
+                im_msgv1   = sy-msgv1    " Message Variable
+                im_msgv2   = sy-msgv2    " Message Variable
+                im_msgv3   = sy-msgv3    " Message Variable
+                im_msgv4   = sy-msgv4    " Message Variable
+            ).
+            CONTINUE.
+          ENDIF.
+        CATCH cx_os_object_not_found.
+          lo_load_status = zca_sgcom_opp_attach_prs=>agent->create_persistent(
+                       i_ano                 = lv_ano
+                       i_edv                 = lv_edv
+                       i_id_interno          = lv_id
+                       i_type                = 'I'
+                   ).
+      ENDTRY.
+
+      AT NEW edv."Getting the related Opportunity
+        CLEAR lv_guid_opportunity.
+        TRY.
+            lo_lead_status = zca_sgcom_lead_load_status_prs=>agent->get_persistent(
+                         i_ano                  = lv_ano
+                         i_edv                  = lv_edv
+                     ).
+            DATA(lv_lead_guid) = lo_lead_status->get_guid( ).
+          CATCH cx_os_object_not_found.
+            MESSAGE e049 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( )
+               INTO ls_message.
+            o_log->add_entry(
+              EXPORTING
+                im_msgtype = sy-msgty    " Message Type
+                im_msgid   = sy-msgid    " Message Class
+                im_msgno   = sy-msgno    " Message Number
+                im_msgv1   = sy-msgv1    " Message Variable
+                im_msgv2   = sy-msgv2    " Message Variable
+                im_msgv3   = sy-msgv3    " Message Variable
+                im_msgv4   = sy-msgv4    " Message Variable
+            ).
+            lo_load_status->set_status( i_status = '8' ).
+            CONTINUE.
+        ENDTRY.
+
+        IF lv_lead_guid IS INITIAL.
+          MESSAGE e049 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( )
+             INTO ls_message.
+          o_log->add_entry(
+            EXPORTING
+              im_msgtype = sy-msgty    " Message Type
+              im_msgid   = sy-msgid    " Message Class
+              im_msgno   = sy-msgno    " Message Number
+              im_msgv1   = sy-msgv1    " Message Variable
+              im_msgv2   = sy-msgv2    " Message Variable
+              im_msgv3   = sy-msgv3    " Message Variable
+              im_msgv4   = sy-msgv4    " Message Variable
+          ).
+          lo_load_status->set_status( i_status = '8' ).
+          CONTINUE.
+        ENDIF.
+
+        lv_guid = lv_lead_guid.
+        TRY.
+            DATA(lo_lead) = o_bol_core->get_root_entity(
+                                           iv_object_name = 'BTAdminH'
+                                           iv_object_guid = lv_guid ).
+            DATA(lo_relation) = lo_lead->get_related_entities(
+                        iv_relation_name         = 'BTHeaderDocFlowSet'
+*                        iv_child_name            =
+*                        iv_mode                  = NORMAL
+*                        iv_owned_only            = ABAP_FALSE
+                    ).
+            DATA(lo_member) = lo_relation->get_current( ).
+            lo_entity = lo_member->get_related_entity(
+                  iv_relation_name         = 'BTDocFlowCopy'
+*                  iv_mode                  = NORMAL
+              ).
+            IF lo_entity IS INITIAL.
+              MESSAGE e050 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( )
+                 INTO ls_message.
+              o_log->add_entry(
+                EXPORTING
+                  im_msgtype = sy-msgty    " Message Type
+                  im_msgid   = sy-msgid    " Message Class
+                  im_msgno   = sy-msgno    " Message Number
+                  im_msgv1   = sy-msgv1    " Message Variable
+                  im_msgv2   = sy-msgv2    " Message Variable
+                  im_msgv3   = sy-msgv3    " Message Variable
+                  im_msgv4   = sy-msgv4    " Message Variable
+              ).
+              lo_load_status->set_status( i_status = '8' ).
+              CONTINUE.
+            ENDIF.
+            lo_entity->get_property_as_value(
+              EXPORTING
+                iv_attr_name =  'OBJKEY_B'   " Component Name
+              IMPORTING
+                ev_result    = lv_guid_opportunity
+            ).
+            lv_guid = lv_guid_opportunity.
+            DATA(lo_opportunity) = o_bol_core->get_root_entity(
+                                           iv_object_name = 'BTAdminH'
+                                           iv_object_guid = lv_guid ).
+            lo_relation = lo_opportunity->get_related_entities(
+                  iv_relation_name         = 'BTHeaderItemsExt'
+*                  iv_child_name            =
+*                  iv_mode                  = NORMAL
+*                  iv_owned_only            = ABAP_FALSE
+              ).
+            DATA(lo_aggregation) = lo_relation->get_current( ).
+          CATCH cx_crm_genil_model_error.
+            MESSAGE e050 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( )
+               INTO ls_message.
+            o_log->add_entry(
+              EXPORTING
+                im_msgtype = sy-msgty    " Message Type
+                im_msgid   = sy-msgid    " Message Class
+                im_msgno   = sy-msgno    " Message Number
+                im_msgv1   = sy-msgv1    " Message Variable
+                im_msgv2   = sy-msgv2    " Message Variable
+                im_msgv3   = sy-msgv3    " Message Variable
+                im_msgv4   = sy-msgv4    " Message Variable
+            ).
+            lo_load_status->set_status( i_status = '8' ).
+            CONTINUE.
+        ENDTRY.
+      ENDAT.
+
+      "Creating items
+      TRY.
+          DATA(lo_btadmini) = lo_aggregation->create_related_entity(
+                                    iv_relation_name           = 'BTOrderItemAll'
+*                                iv_child_name              =
+*                                iv_set_defaults            = ABAP_FALSE
+                                ).
+          REPLACE: ',' IN <lw_data>-zzfld00001b WITH '.',
+                   ',' IN <lw_data>-zzfld00001d WITH '.',
+                   ',' IN <lw_data>-zzfld00001e WITH '.',
+                   ',' IN <lw_data>-zzfld00001f WITH '.',
+                   ',' IN <lw_data>-zzfld00001g WITH '.'.
+          TRY.
+              lv_icms = <lw_data>-zzfld00001b.
+            CATCH cx_sy_conversion_overflow.
+              CLEAR lv_icms.
+          ENDTRY.
+          REPLACE: ',' IN <lw_data>-zzfld00001d WITH '.',
+                   ',' IN <lw_data>-zzfld00001e WITH '.',
+                   ',' IN <lw_data>-zzfld00001f WITH '.',
+                   ',' IN <lw_data>-zzfld00001g WITH '.'.
+
+          m_set_item_attribute: 'HEADER'       lv_guid_opportunity,
+                                'PRODUCT'      lv_product_description,
+                                'ORDERED_PROD' lv_product_id,
+                                'DESCRIPTION'  lv_product_description,
+                                'ITM_LANGUAGE' 'PT',
+                                'ITM_TYPE'     'Z001',
+                                'ZZFLD00000Q'  <lw_data>-zzfld00000q,
+                                'ZZFLD00000R'  <lw_data>-zzfld00000r,
+                                'ZZFLD00000S'  <lw_data>-zzfld00000s,
+                                'ZZFLD00000T'  <lw_data>-zzfld00000t,
+                                'ZZFLD00000U'  <lw_data>-zzfld00000u,
+                                'ZZFLD00000V'  <lw_data>-zzfld00000v,
+                                'ZZFLD00000W'  <lw_data>-zzfld00000w,
+                                'ZZFLD00000X'  <lw_data>-zzfld00000x,
+                                'ZZFLD00000Y'  <lw_data>-zzfld00000y,
+                                'ZZFLD00001B'  lv_icms,
+                                'ZZFLD00001C'  <lw_data>-zzfld00001c,
+                                'ZZFLD00001D'  <lw_data>-zzfld00001d,
+                                'ZZFLD00001G'  <lw_data>-zzfld00001g,
+                                'ZZFLD000037'  <lw_data>-zzfld000037,
+                                'ZZFLD00001E'  <lw_data>-zzfld00001e,
+                                'ZZFLD00001F'  <lw_data>-zzfld00001f.
+*          lo_btadmini->set_property(
+*            EXPORTING
+*              iv_attr_name = 'HEADER'    " Component Name
+*              iv_value     = lv_guid_opportunity
+*          ).
+          o_bol_core->modify( ).
+          lo_transaction = lo_opportunity->get_transaction( ).
+          IF lo_transaction->save( ) = abap_true.
+            lo_transaction->commit(
+*              iv_keep_locks = ABAP_FALSE
+              ).
+            lo_btadmini->get_property_as_value(
+              EXPORTING
+                iv_attr_name =  'GUID'   " Component Name
+              IMPORTING
+                ev_result    = lv_item_guid
+            ).
+            lv_item_guid_bd = lv_item_guid.
+            lo_load_status->set_guid( i_guid = lv_item_guid_bd ).
+            lo_load_status->set_status( i_status = '0' ).
+            MESSAGE i052 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( ) lo_load_status->get_id_interno( )
+                              lo_load_status->get_guid( )
+               INTO ls_message.
+            o_log->add_entry(
+              EXPORTING
+                im_msgtype = sy-msgty    " Message Type
+                im_msgid   = sy-msgid    " Message Class
+                im_msgno   = sy-msgno    " Message Number
+                im_msgv1   = sy-msgv1    " Message Variable
+                im_msgv2   = sy-msgv2    " Message Variable
+                im_msgv3   = sy-msgv3    " Message Variable
+                im_msgv4   = sy-msgv4    " Message Variable
+            ).
+          ELSE.
+            MESSAGE e051 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( ) lo_load_status->get_id_interno( )
+               INTO ls_message.
+            o_log->add_entry(
+              EXPORTING
+                im_msgtype = sy-msgty    " Message Type
+                im_msgid   = sy-msgid    " Message Class
+                im_msgno   = sy-msgno    " Message Number
+                im_msgv1   = sy-msgv1    " Message Variable
+                im_msgv2   = sy-msgv2    " Message Variable
+                im_msgv3   = sy-msgv3    " Message Variable
+                im_msgv4   = sy-msgv4    " Message Variable
+            ).
+            lo_load_status->set_status( i_status = '8' ).
+*              CATCH cx_os_object_not_found.    "
+          ENDIF.
+        CATCH cx_crm_genil_duplicate_rel
+              cx_crm_genil_model_error
+              cx_sy_conversion_overflow.
+          MESSAGE e051 WITH lo_load_status->get_edv( ) lo_load_status->get_ano( ) lo_load_status->get_id_interno( )
+             INTO ls_message.
+          o_log->add_entry(
+            EXPORTING
+              im_msgtype = sy-msgty    " Message Type
+              im_msgid   = sy-msgid    " Message Class
+              im_msgno   = sy-msgno    " Message Number
+              im_msgv1   = sy-msgv1    " Message Variable
+              im_msgv2   = sy-msgv2    " Message Variable
+              im_msgv3   = sy-msgv3    " Message Variable
+              im_msgv4   = sy-msgv4    " Message Variable
+          ).
+          lo_load_status->set_status( i_status = '8' ).
+*              CATCH cx_os_object_not_found.    "
+      ENDTRY.
+    ENDLOOP.
+    COMMIT WORK.
+  ENDMETHOD.

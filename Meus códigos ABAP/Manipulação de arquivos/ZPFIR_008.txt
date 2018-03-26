@@ -1,0 +1,55 @@
+*&---------------------------------------------------------------------*
+*& Report  ZPFIR_008
+*&
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+* REF ID  |  DATA    | DESCRIÇÃO                                       *
+*&---------------------------------------------------------------------*
+* #MD 999 |DD/MM/YYYY| XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+*&---------------------------------------------------------------------*
+
+INCLUDE: zpfir_008_top                           ,   " global Data
+         zpfir_008_c01                           .   " Classes
+* INCLUDE ZPFIR_008_O01                           .  " PBO-Modules
+* INCLUDE ZPFIR_008_I01                           .  " PAI-Modules
+* INCLUDE ZPFIR_008_F01                           .  " FORM-Routines
+
+AT SELECTION-SCREEN ON p_file.
+  IF lcl_main=>ao_media IS INITIAL.
+    FREE: o_desktop, o_server.
+    IF p_desk IS NOT INITIAL.
+      CREATE OBJECT o_desktop
+        EXPORTING
+          p_filename = p_file.
+      lcl_main=>ao_media ?= o_desktop.
+      p_file = lcl_main=>ao_media->filename.
+    ELSE.
+      CREATE OBJECT o_server
+        EXPORTING
+          p_filename = p_file.
+      lcl_main=>ao_media ?= o_server.
+    ENDIF.
+  ENDIF.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+  FREE: o_desktop, o_server.
+  p_file = lcl_main=>get_field_value( 'P_FILE' ).
+  IF p_desk IS NOT INITIAL.
+    CREATE OBJECT o_desktop
+      EXPORTING
+        p_filename = p_file.
+    lcl_main=>ao_media ?= o_desktop.
+    p_file = lcl_main=>ao_media->filename.
+  ELSE.
+    CREATE OBJECT o_server
+      EXPORTING
+        p_filename = p_file.
+    lcl_main=>ao_media ?= o_server.
+  ENDIF.
+
+START-OF-SELECTION.
+  lcl_main=>get_data( ).
+
+END-OF-SELECTION.
+  lcl_main=>process_data( ).
+  lcl_main=>house_keeping( ).

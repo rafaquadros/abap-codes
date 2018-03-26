@@ -1,0 +1,49 @@
+METHOD zm_intercompany_process.
+  CONSTANTS: lcc_action(44)       TYPE c
+              VALUE '(SAPLMIGO)LCL_MIGO_GLOBALS=>KERNEL->S_ACTION',
+             lcc_control(45)      TYPE c
+              VALUE '(SAPLMIGO)LCL_MIGO_GLOBALS=>KERNEL->S_CONTROL',
+             lcc_goods_receipt(6) TYPE c VALUE 'A01R01',
+             lcc_cancellation(6)  TYPE c VALUE 'A03R02'.
+  DATA: lo_process TYPE REF TO zlacmsd_cl_intercomp_process,
+        lvc_cancellation(1) TYPE c.
+  FIELD-SYMBOLS: <lfs_action>  TYPE ANY,
+                 <lfs_control> TYPE ANY.
+
+  CHECK are_prerequisites_statisfied( ao_api ) IS NOT INITIAL.
+  CHECK pt_xmseg[] IS NOT INITIAL.
+
+  IF sy-tcode = 'MIGO'.
+    ASSIGN (lcc_action) TO <lfs_action>.
+    CHECK sy-subrc = 0.
+    lvc_cancellation = <lfs_action>(1).
+    ASSIGN (lcc_control) TO <lfs_control>.
+    CHECK sy-subrc = 0.
+    CHECK <lfs_control> CS lcc_goods_receipt  OR
+          <lfs_control> CS lcc_cancellation.
+  ENDIF.
+  IF lvc_cancellation IS INITIAL.
+    CHECK is_parcial_mode_set_up( ) IS NOT INITIAL.
+  ENDIF.
+
+  FREE ao_instance.
+
+  lo_process = zlacmsd_cl_intercomp_process=>create_intercomp_process(
+                pt_xmseg = pt_xmseg[]
+                p_cancelation = lvc_cancellation ) .
+
+  CHECK lo_process->is_intercompany( ) IS NOT INITIAL.
+
+  CASE lvc_cancellation.
+    WHEN space.
+      TRY .
+          lo_process->raise_dlv_received( ).
+        CATCH cx_swf_evt_exception.
+      ENDTRY.
+    WHEN OTHERS.
+      TRY .
+          lo_process->raise_dlv_canceled( ).
+        CATCH cx_swf_evt_exception.
+      ENDTRY.
+  ENDCASE.
+ENDMETHOD.
