@@ -1,0 +1,1429 @@
+CLASS zcl_pp_batch_controller DEFINITION
+  PUBLIC
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    INTERFACES if_salv_csqt_content_manager .
+
+    CLASS-METHODS:
+      class_constructor,
+      start_transaction .
+    METHODS main .
+  PROTECTED SECTION.
+
+    DATA r_model TYPE REF TO zcl_pp_batch_model .
+    DATA r_rules_model TYPE REF TO zcl_pp_rules_model .
+    DATA r_view TYPE REF TO cl_salv_table .
+    DATA t_settings TYPE zpptt004 .
+    DATA t_settings_del TYPE zpptt004 .
+    DATA t_rules TYPE zpptt002 .
+    DATA:
+      BEGIN OF s_status,
+        editing     TYPE abap_bool,
+        focusing    TYPE zbatch_settings_type VALUE 'C', "Initial focus is always Current
+        has_planned TYPE abap_bool,
+        has_current TYPE abap_bool,
+        has_history TYPE abap_bool,
+      END OF s_status .
+
+    METHODS get_settings
+      IMPORTING
+        !i_type        TYPE zbatch_settings_type
+      RETURNING
+        VALUE(rt_data) TYPE zpptt004 .
+    METHODS display
+      IMPORTING
+        !ir_container TYPE REF TO cl_gui_custom_container .
+    METHODS check_data .
+    METHODS set_columns_properties .
+    METHODS set_columns_order .
+    METHODS set_columns_sizes .
+    METHODS set_columns_styles .
+    METHODS set_events .
+    METHODS: set_functions,
+      set_filters.
+    METHODS set_header .
+    METHODS toggle_edition .
+    METHODS set_custom_functions
+      IMPORTING
+        !ir_functions TYPE REF TO cl_salv_functions_list .
+    METHODS on_user_command
+          FOR EVENT added_function OF cl_salv_events
+      IMPORTING
+          !e_salv_function .
+    METHODS on_after_salv_function
+          FOR EVENT after_salv_function OF cl_salv_events
+      IMPORTING
+          !e_salv_function .
+    METHODS on_link_click
+          FOR EVENT link_click OF cl_salv_events_table
+      IMPORTING
+          !row
+          !column .
+    METHODS add_empty_line .
+    METHODS delete_selected_lines .
+    METHODS save .
+    METHODS set_view .
+    METHODS set_editable_columns
+      IMPORTING
+        !i_input TYPE c OPTIONAL .
+    METHODS set_protect_columns_4curr .
+    METHODS fill_in_style_data .
+    METHODS set_statuses.
+    METHODS refresh.
+  PRIVATE SECTION.
+
+    CONSTANTS c_zppt001 TYPE sytcode VALUE 'ZPPT001' ##NO_TEXT.
+    CONSTANTS c_zppt001_a TYPE sytcode VALUE 'ZPPT001_A' ##NO_TEXT.
+
+    CLASS-DATA  m_permission_level TYPE zbatch_setup_permission_level.
+    DATA gv_del_c TYPE c .
+
+    METHODS register_data_change .
+    METHODS save_planned .
+    METHODS save_current .
+ENDCLASS.
+
+
+
+CLASS ZCL_PP_BATCH_CONTROLLER IMPLEMENTATION.
+
+
+  METHOD add_empty_line.
+
+    APPEND INITIAL LINE TO me->t_settings.
+    "me->set_columns( ).
+    me->fill_in_style_data( ).
+    me->set_editable_columns( ).
+
+  ENDMETHOD.
+
+
+  METHOD check_data.
+    DATA  l_msg TYPE string.
+
+    DATA(l_inx) = line_index( me->t_settings[ formatter = '' active = abap_true ] ).
+    IF l_inx <> 0.
+      l_msg = 'Rule & does not hold a formatter and cannot be activated.'(m01).
+      READ TABLE me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>) INDEX l_inx.
+      IF sy-subrc = 0.
+        CLEAR <ls_setting>-active.
+        REPLACE '&' WITH <ls_setting>-batch_naming INTO l_msg.
+        MESSAGE l_msg TYPE 'E'.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD class_constructor.
+
+    TRY.
+        DATA(lt_values) = lcl_api=>efg_user_auth_for_obj_get( i_object = 'ZPP_BT_STE' ).
+*                          CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        m_permission_level = lt_values[ field = 'ZPP_PER_LV' ]-von.
+      CATCH cx_bapi_error.
+        m_permission_level = '0'.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD delete_selected_lines.
+
+    DATA: l_index       TYPE sy-tabix,
+          l_deleted_cnt TYPE int4.
+
+    DATA(lt_selected) =  r_view->get_selections( )->get_selected_rows( ).
+
+* INI MOD - Denilson P.Pina - 08.02.2019
+    IF gv_del_c IS INITIAL.
+* FIM MOD - Denilson P.Pina - 08.02.2019
+
+
+      LOOP AT lt_selected ASSIGNING FIELD-SYMBOL(<l_index>).
+        l_index = <l_index> - l_deleted_cnt.
+        IF l_index > 0.
+          DELETE me->t_settings INDEX l_index.
+          ADD 1 TO l_deleted_cnt.
+        ENDIF.
+      ENDLOOP.
+
+      me->set_editable_columns( ).
+
+* INI MOD - Denilson P.Pina - 08.02.2019
+    ELSE.
+
+      LOOP AT lt_selected ASSIGNING <l_index>.
+        l_index = <l_index> - l_deleted_cnt.
+        IF l_index > 0.
+
+          DATA(ls_settings) = me->t_settings[ l_index ] .
+
+          ls_settings-deleted = abap_true.
+          CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP ls_settings-zzto TIME ZONE sy-zonlo.
+          APPEND ls_settings TO t_settings_del.
+
+          DELETE me->t_settings INDEX l_index.
+          ADD 1 TO l_deleted_cnt.
+        ENDIF.
+      ENDLOOP.
+
+      me->set_editable_columns( 'X' ).
+
+    ENDIF.
+* FIM MOD - Denilson P.Pina - 08.02.2019
+
+    me->set_filters( ).
+  ENDMETHOD.
+
+
+  METHOD display.
+
+    TRY.
+        cl_salv_table=>factory(
+        EXPORTING
+*          list_display   = if_salv_c_bool_sap=>false " ALV Displayed in List Mode
+          r_container    =  ir_container                         " Abstract Container for GUI Controls
+*          container_name =
+          IMPORTING
+            r_salv_table   =  r_view                         " Basis Class Simple ALV Tables
+          CHANGING
+            t_table        = t_settings
+        ).
+*      CATCH cx_salv_msg. " ALV: General Error Class with Message
+      CATCH cx_salv_msg INTO DATA(lx_error).
+        MESSAGE lx_error->get_text( ) TYPE 'E'.
+    ENDTRY.
+
+    set_view( ).
+
+    r_view->display( ).
+
+
+  ENDMETHOD.
+
+
+  METHOD fill_in_style_data.
+    FIELD-SYMBOLS <ls_cell_type> TYPE salv_s_int4_column.
+
+    LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      IF <ls_setting>-cell_type IS INITIAL.
+        APPEND INITIAL LINE TO <ls_setting>-cell_type ASSIGNING <ls_cell_type>.
+        <ls_cell_type>-columnname = 'ACTIVE'.
+        <ls_cell_type>-value = if_salv_c_cell_type=>checkbox.
+      ENDIF.
+      IF <ls_setting>-t_bnaming_drop IS INITIAL.
+        APPEND INITIAL LINE TO <ls_setting>-t_bnaming_drop ASSIGNING FIELD-SYMBOL(<ls_bnaming_drop>).
+        <ls_bnaming_drop>-columnname = 'BATCH_NAMING'.
+        <ls_bnaming_drop>-value = 1.
+      ENDIF.
+      IF <ls_setting>-changeable = abap_true AND s_status-focusing = 'C'.
+        <ls_setting>-button = '+'.
+
+        APPEND INITIAL LINE TO <ls_setting>-cell_type ASSIGNING <ls_cell_type>.
+        <ls_cell_type>-columnname = 'BUTTON'.
+        <ls_cell_type>-value = if_salv_c_cell_type=>button.
+      ENDIF.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD get_settings.
+    DATA: lr_formatter   TYPE REF TO zcl_pp_batch_formatter,
+          lt_settings_db TYPE zpptt001.
+
+    CASE i_type.
+      WHEN 'C'. "Current"
+        lt_settings_db = r_model->get_current( ).
+      WHEN 'P'. "Planned"
+        lt_settings_db = r_model->get_planned( ).
+      WHEN 'H'. "History"
+        lt_settings_db = r_model->get_history( ).
+    ENDCASE.
+
+    me->t_rules = r_rules_model->get_rules( ).
+    DATA(lt_texts) = r_rules_model->get_texts( ).
+
+    LOOP AT lt_settings_db ASSIGNING FIELD-SYMBOL(<ls_setting_db>).
+      APPEND INITIAL LINE TO rt_data ASSIGNING FIELD-SYMBOL(<ls_data>).
+      MOVE-CORRESPONDING <ls_setting_db> TO <ls_data>.
+
+      READ TABLE me->t_rules ASSIGNING FIELD-SYMBOL(<ls_rule>) WITH KEY rule_type = <ls_data>-rule_type.
+      IF sy-subrc = 0.
+        MOVE-CORRESPONDING <ls_rule> TO <ls_data>.
+      ENDIF.
+
+      READ TABLE lt_texts ASSIGNING FIELD-SYMBOL(<ls_texts>) WITH KEY rule_type = <ls_data>-rule_type.
+      IF sy-subrc = 0.
+        <ls_data>-naming_explanation = <ls_texts>-naming_explanation.
+      ENDIF.
+
+      CONVERT TIME STAMP <ls_data>-zzfrom TIME ZONE sy-zonlo INTO DATE DATA(l_date) TIME DATA(l_time).
+      <ls_data>-impl_term = l_date.
+
+      CONVERT DATE sy-datlo TIME <ls_data>-impl_time INTO TIME STAMP DATA(l_timestamp) TIME ZONE 'UTC'.
+      CONVERT TIME STAMP l_timestamp TIME ZONE sy-zonlo INTO DATE l_date TIME <ls_data>-impl_time.
+
+      IF <ls_data>-zzto <> me->r_model->get_highest_timestamp( ).
+        CONVERT TIME STAMP <ls_data>-zzto TIME ZONE sy-zonlo INTO DATE <ls_data>-exp_date TIME <ls_data>-exp_time.
+      ENDIF.
+
+      IF <ls_data>-mutable_part IS NOT INITIAL AND <ls_data>-formatter IS NOT INITIAL.
+        IF <ls_data>-matnr IS NOT INITIAL.
+          CREATE OBJECT lr_formatter TYPE (<ls_data>-formatter)
+              EXPORTING
+                  i_plant = <ls_data>-plant
+                  i_material = <ls_data>-matnr.
+        ELSE.
+          CREATE OBJECT lr_formatter TYPE (<ls_data>-formatter)
+              EXPORTING
+                  i_plant =  <ls_data>-plant
+                  i_material_type = <ls_data>-mtart.
+        ENDIF.
+
+        IF lr_formatter IS BOUND.
+          <ls_data>-batch_naming = lr_formatter->get_batch_template( i_mutable_part = <ls_data>-mutable_part ).
+        ENDIF.
+
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD if_salv_csqt_content_manager~fill_container_content.
+
+
+    me->display( ir_container = r_container ).
+
+  ENDMETHOD.
+
+
+  METHOD main.
+
+
+    IF me->r_model IS NOT BOUND.
+      me->r_model = NEW zcl_pp_batch_model( ).
+      me->r_rules_model = NEW zcl_pp_rules_model( ).
+    ENDIF.
+
+    set_statuses( ).
+
+    CALL FUNCTION 'SALV_CSQT_CREATE_CONTAINER'
+      EXPORTING
+        r_content_manager = me                " Parameter display
+        title             = 'Custom batch rules management'(t01).
+
+
+  ENDMETHOD.
+
+
+  METHOD on_after_salv_function.
+
+  ENDMETHOD.
+
+
+  METHOD on_link_click.
+    DATA lr_formatter TYPE REF TO zcl_pp_batch_formatter.
+
+    IF column <> 'BUTTON'.
+      RETURN.
+    ENDIF.
+
+    READ TABLE me->t_settings INDEX row ASSIGNING FIELD-SYMBOL(<ls_setting>).
+    IF sy-subrc = 0.
+      IF <ls_setting>-matnr IS NOT INITIAL.
+        CREATE OBJECT lr_formatter TYPE (<ls_setting>-formatter)
+         EXPORTING
+          i_plant = <ls_setting>-plant
+          i_material = <ls_setting>-matnr.
+      ELSEIF <ls_setting>-mtart IS NOT INITIAL.
+        CREATE OBJECT lr_formatter TYPE (<ls_setting>-formatter)
+         EXPORTING
+          i_plant = <ls_setting>-plant
+          i_material_type = <ls_setting>-mtart.
+      ELSE.
+        RETURN.
+      ENDIF.
+
+      IF lr_formatter IS NOT BOUND.
+        RETURN.
+      ENDIF.
+
+      <ls_setting>-mutable_part = lr_formatter->change_mutable_part( i_mutable_part = <ls_setting>-mutable_part ).
+      <ls_setting>-batch_naming = lr_formatter->get_batch_template( i_mutable_part = <ls_setting>-mutable_part ).
+
+      me->save( ).
+
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD on_user_command.
+    DATA  lr_grid TYPE REF TO cl_gui_alv_grid.
+
+    CASE e_salv_function.
+      WHEN 'OK'.
+        DATA(lt_texts) = me->r_rules_model->get_texts( ).
+        LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+          READ TABLE me->t_rules ASSIGNING FIELD-SYMBOL(<ls_rule>) WITH KEY batch_naming = <ls_setting>-batch_naming.
+          IF sy-subrc = 0.
+            READ TABLE lt_texts ASSIGNING FIELD-SYMBOL(<ls_text>) WITH KEY rule_type = <ls_rule>-rule_type.
+            IF sy-subrc = 0.
+              <ls_setting>-naming_explanation = <ls_text>-naming_explanation.
+            ENDIF.
+          ENDIF.
+        ENDLOOP.
+        lr_grid ?= zcl_alv_services=>get_control( ir_salv = me->r_view ).
+        lr_grid->check_changed_data(
+*          IMPORTING
+*            e_valid   =                  " Entries are Consistent
+*          CHANGING
+*            c_refresh = 'X'              " Character Field of Length 1
+        ).
+      WHEN 'ZEDIT'.
+
+        me->toggle_edition( ).
+
+      WHEN 'ZINSR'.
+        me->add_empty_line( ).
+
+      WHEN 'ZDELR'.
+        me->delete_selected_lines( ).
+
+      WHEN 'ZSAVE'.
+        me->save( ).
+
+* INI MOD - Denilson P.Pina - 08.02.2019
+        CLEAR      gv_del_c .
+* FIM MOD - Denilson P.Pina - 08.02.2019
+
+      WHEN 'ZPLAN'.
+        s_status-editing = abap_false.
+        s_status-focusing = 'P'.
+        me->t_settings = me->get_settings( i_type = s_status-focusing ).
+
+        IF t_settings IS INITIAL.
+          me->add_empty_line( ).
+        ENDIF.
+
+        me->set_view( ).
+
+        me->r_view->refresh(
+*          EXPORTING
+*            s_stable     =                         " ALV Control: Refresh Stability
+*            refresh_mode = if_salv_c_refresh=>soft " ALV: Data Element for Constants
+        ).
+      WHEN 'ZCURR'.
+* INI MOD - Denilson P.Pina - 08.02.2019
+        gv_del_c = abap_true.
+* FIM MOD - Denilson P.Pina - 08.02.2019
+        s_status-editing = abap_false.
+        s_status-focusing = 'C'.
+        me->t_settings = me->get_settings( i_type = s_status-focusing ).
+
+        me->set_view( ).
+
+        me->r_view->refresh(
+*          EXPORTING
+*            s_stable     =                         " ALV Control: Refresh Stability
+*            refresh_mode = if_salv_c_refresh=>soft " ALV: Data Element for Constants
+        ).
+      WHEN 'ZHIST'.
+
+* INI MOD - Denilson P.Pina - 08.02.2019
+        CLEAR      gv_del_c .
+* FIM MOD - Denilson P.Pina - 08.02.2019
+
+        s_status-editing = abap_false.
+        s_status-focusing = 'H'.
+        me->t_settings = me->get_settings( i_type = s_status-focusing ).
+
+        me->set_view( ).
+
+        me->r_view->refresh(
+*          EXPORTING
+*            s_stable     =                         " ALV Control: Refresh Stability
+*            refresh_mode = if_salv_c_refresh=>soft " ALV: Data Element for Constants
+        ).
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD refresh.
+
+    CLEAR me->t_settings.
+    me->get_settings( i_type = s_status-focusing ).
+    me->set_statuses( ).
+
+  ENDMETHOD.
+
+
+  METHOD register_data_change.
+    DATA  lr_grid  TYPE REF TO cl_gui_alv_grid.
+
+    lr_grid ?= zcl_alv_services=>get_control( ir_salv = me->r_view ).
+    IF lr_grid IS BOUND.
+      lr_grid->register_edit_event(
+        EXPORTING
+          i_event_id =  cl_gui_alv_grid=>mc_evt_modified                " Event ID
+*      EXCEPTIONS
+*        error      = 1                " Errors
+*        others     = 2
+      ).
+      IF sy-subrc <> 0.
+*     MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*       WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD save.
+    DATA  l_refresh TYPE abap_bool.
+
+    LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_check>).
+      DATA  lr_formatter TYPE REF TO zcl_pp_batch_formatter.
+
+      IF <ls_check> IS INITIAL.
+        DELETE me->t_settings INDEX sy-tabix.
+        CONTINUE.
+      ELSEIF <ls_check>-deleted = abap_true.
+        l_refresh = abap_true.
+      ENDIF.
+
+      IF <ls_check>-batch_naming IS INITIAL.
+        MESSAGE i039(zpp) WITH <ls_check>-plant <ls_check>-mtart <ls_check>-matnr DISPLAY LIKE 'E'.
+        RETURN.
+      ENDIF.
+
+      DATA(l_formatter) = me->t_rules[ batch_naming = <ls_check>-batch_naming ]-formatter.
+      IF l_formatter IS NOT INITIAL.
+        TRY.
+            CREATE OBJECT lr_formatter TYPE (l_formatter)
+              EXPORTING
+               i_plant         = <ls_check>-plant
+               i_material_type = <ls_check>-mtart
+               i_material      = <ls_check>-matnr.
+
+            TRY.
+                lr_formatter->check( is_entry = <ls_check> ).
+*              CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+              CATCH cx_bapi_error INTO DATA(lx_error).
+                DATA(ls_message) = lx_error->status[ type = 'E' ].
+                MESSAGE
+                    ID ls_message-id
+                  TYPE 'I'
+                NUMBER ls_message-number
+                  WITH ls_message-message_v1 ls_message-message_v2 ls_message-message_v3 ls_message-message_v4
+                  DISPLAY LIKE ls_message-type.
+                RETURN.
+            ENDTRY.
+
+          CATCH cx_sy_itab_line_not_found.
+            MESSAGE 'Checking error'(m02) TYPE 'I' DISPLAY LIKE 'E'.
+            RETURN.
+        ENDTRY.
+      ENDIF.
+
+      IF <ls_check>-impl_term IS INITIAL.
+        <ls_check>-impl_term = sy-datlo.
+      ENDIF.
+    ENDLOOP.
+
+    CASE me->s_status-focusing.
+      WHEN 'P'.
+        save_planned( ).
+      WHEN 'C'.
+        save_current( ).
+        IF l_refresh = abap_true.
+          me->t_settings = me->get_settings( i_type = me->s_status-focusing ).
+        ENDIF.
+    ENDCASE.
+
+    COMMIT WORK AND WAIT.
+
+    me->refresh( ).
+
+    SORT me->t_settings BY plant mtart matnr zzfrom active.
+    DATA(lt_texts) = me->r_rules_model->get_texts( ).
+    LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      READ TABLE lt_texts ASSIGNING FIELD-SYMBOL(<ls_text>) WITH KEY rule_type = <ls_setting>-rule_type.
+      IF sy-subrc = 0.
+        <ls_setting>-naming_explanation = <ls_text>-naming_explanation.
+      ENDIF.
+    ENDLOOP.
+
+    me->s_status-editing = abap_false.
+
+    me->set_view( ).
+
+    r_view->refresh(
+*          EXPORTING
+*            s_stable     =                         " ALV Control: Refresh Stability
+*            refresh_mode = if_salv_c_refresh=>soft " ALV: Data Element for Constants
+    ).
+
+
+  ENDMETHOD.
+
+
+  METHOD save_current.
+
+    DATA: lt_current TYPE zpptt001.
+* INI MOD - Denilson P.Pina - 08.02.2019
+    IF me->t_settings_del IS NOT INITIAL.
+      APPEND LINES OF me->t_settings_del TO me->t_settings.
+    ENDIF.
+* INI MOD - Denilson P.Pina - 08.02.2019
+
+    LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      APPEND INITIAL LINE TO lt_current ASSIGNING FIELD-SYMBOL(<ls_current>).
+      MOVE-CORRESPONDING <ls_setting> TO <ls_current>.
+
+      "Converting implementation time to UTC
+      CONVERT DATE sy-datlo TIME <ls_setting>-impl_time INTO TIME STAMP DATA(l_utc) TIME ZONE sy-zonlo.
+      CONVERT TIME STAMP l_utc TIME ZONE 'UTC' INTO DATE DATA(l_date) TIME <ls_current>-impl_time.
+    ENDLOOP.
+
+    SORT lt_current BY plant mtart matnr zzfrom.
+
+    TRY.
+        r_model->set_current( lt_current ).
+
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        READ TABLE lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>) INDEX 1.
+        IF sy-subrc = 0.
+          MESSAGE
+              ID <ls_return>-id
+            TYPE 'I'
+          NUMBER <ls_return>-number
+            WITH <ls_return>-message_v1 <ls_return>-message_v2 <ls_return>-message_v3 <ls_return>-message_v4
+          DISPLAY LIKE <ls_return>-type.
+          RETURN.
+        ENDIF.
+      CATCH zcx_pp_access_denied INTO DATA(lx_access_denied).
+        ASSIGN lx_access_denied->status[ 1 ] TO FIELD-SYMBOL(<ls_access_denied>).
+        IF <ls_access_denied> IS ASSIGNED.
+          MESSAGE
+               ID <ls_access_denied>-id
+             TYPE <ls_access_denied>-type
+           NUMBER <ls_access_denied>-number
+             WITH <ls_access_denied>-message_v1 <ls_access_denied>-message_v2 <ls_access_denied>-message_v3 <ls_access_denied>-message_v4.
+        ENDIF.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD save_planned.
+    DATA lt_planned TYPE zpptt001.
+
+    DATA(l_time) = sy-timlo.
+    LOOP AT me->t_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+
+      READ TABLE me->t_rules ASSIGNING FIELD-SYMBOL(<ls_rule>) WITH KEY batch_naming = <ls_setting>-batch_naming.
+      IF sy-subrc = 0.
+        <ls_setting>-rule_type = <ls_rule>-rule_type.
+      ENDIF.
+
+      IF <ls_setting>-matnr IS NOT INITIAL.
+        <ls_setting>-mtart = me->r_model->get_material_type( i_material = <ls_setting>-matnr ).
+      ENDIF.
+
+      IF <ls_setting>-zzfrom IS INITIAL.
+        DATA(l_date) = <ls_setting>-impl_term.
+        IF l_date < sy-datlo.
+          l_date =  sy-datlo.
+        ENDIF.
+        CONVERT DATE l_date TIME l_time INTO TIME STAMP <ls_setting>-zzfrom  TIME ZONE sy-zonlo.
+      ENDIF.
+
+      IF <ls_setting>-zzto IS INITIAL.
+        <ls_setting>-zzto = r_model->get_highest_timestamp( ).
+      ENDIF.
+
+      APPEND INITIAL LINE TO lt_planned ASSIGNING FIELD-SYMBOL(<ls_planned>).
+      MOVE-CORRESPONDING <ls_setting> TO <ls_planned>.
+
+      "Converting implementation time to UTC
+      CONVERT DATE sy-datlo TIME <ls_setting>-impl_time INTO TIME STAMP DATA(l_utc) TIME ZONE sy-zonlo.
+      CONVERT TIME STAMP l_utc TIME ZONE 'UTC' INTO DATE l_date TIME <ls_planned>-impl_time.
+
+    ENDLOOP.
+
+
+    SORT lt_planned BY plant mtart matnr zzfrom.
+    DELETE ADJACENT DUPLICATES FROM lt_planned COMPARING plant mtart matnr zzfrom.
+
+    TRY.
+        r_model->set_planned( lt_planned ).
+
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        READ TABLE lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>) INDEX 1.
+        IF sy-subrc = 0.
+          MESSAGE
+              ID <ls_return>-id
+            TYPE 'I'
+          NUMBER <ls_return>-number
+            WITH <ls_return>-message_v1 <ls_return>-message_v2 <ls_return>-message_v3 <ls_return>-message_v4
+         DISPLAY LIKE <ls_return>-type.
+          RETURN.
+        ENDIF.
+      CATCH zcx_pp_access_denied INTO DATA(lx_access_denied).
+        ASSIGN lx_access_denied->status[ 1 ] TO FIELD-SYMBOL(<ls_access_denied>).
+        IF <ls_access_denied> IS ASSIGNED.
+          MESSAGE
+               ID <ls_access_denied>-id
+             TYPE <ls_access_denied>-type
+           NUMBER <ls_access_denied>-number
+             WITH <ls_access_denied>-message_v1 <ls_access_denied>-message_v2 <ls_access_denied>-message_v3 <ls_access_denied>-message_v4.
+        ENDIF.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_order.
+
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'BATCH_NAMING'                 " ALV Control: Field Name of Internal Table Field
+        position   = 4
+    ).
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'IMPL_TIME'                 " ALV Control: Field Name of Internal Table Field
+        position   = 5
+    ).
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'IMPL_TERM'                 " ALV Control: Field Name of Internal Table Field
+        position   = 6
+    ).
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'ACTIVE'                 " ALV Control: Field Name of Internal Table Field
+        position   = 7
+    ).
+
+    IF me->s_status-focusing = 'H'.
+      r_view->get_columns( )->set_column_position(
+        EXPORTING
+          columnname = 'EXP_DATE'                 " ALV Control: Field Name of Internal Table Field
+          position   = 8
+      ).
+      r_view->get_columns( )->set_column_position(
+        EXPORTING
+          columnname = 'EXP_TIME'                 " ALV Control: Field Name of Internal Table Field
+          position   = 9
+      ).
+    ENDIF.
+
+* INI_MOD-001 - 20.01.2019 - Denilson P.Pina
+
+    r_view->get_columns( )->set_column_position(
+  EXPORTING
+    columnname = 'ZVERID'                 " ALV Control: Field Name of Internal Table Field
+    position   = 23
+).
+
+    r_view->get_columns( )->set_column_position(
+  EXPORTING
+    columnname = 'ZSUFIX'                 " ALV Control: Field Name of Internal Table Field
+    position   = 24
+).
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'DET_MANUAL'                 " ALV Control: Field Name of Internal Table Field
+        position   = 25
+    ).
+
+    r_view->get_columns( )->set_column_position(
+      EXPORTING
+        columnname = 'ACHARG'                 " ALV Control: Field Name of Internal Table Field
+        position   = 26
+    ).
+
+
+* FIM_MOD-001 - 20.01.2019 - Denilson P.Pina
+
+
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_properties.
+
+    DATA  lr_column TYPE REF TO cl_salv_column.
+
+    DATA(lr_columns) = r_view->get_columns( ).
+    m_set_technical: 'ZZFROM',
+                     'ZZTO',
+                     'RULE_TYPE',
+                     'FORMATTER',
+                     'CHANGEABLE',
+                     'MUTABLE_PART',
+                     'LAST_MUTABLE_PART',
+* INI_MOD-001 - 20.01.2019 - Denilson P.Pina
+                     'BUTTON'.
+* FIM_MOD-001 - 20.01.2019 - Denilson P.Pina
+    IF me->s_status-focusing <> 'H'. "Showing expiration only makes sense in the History view.
+      m_set_visible: 'EXP_DATE' if_salv_c_bool_sap=>false,
+                      'EXP_TIME' if_salv_c_bool_sap=>false.
+    ELSE.
+      m_set_visible: 'EXP_DATE' if_salv_c_bool_sap=>true,
+                     'EXP_TIME' if_salv_c_bool_sap=>true.
+    ENDIF.
+
+    IF me->s_status-focusing <> 'C'.
+      m_set_visible: 'BUTTON' if_salv_c_bool_sap=>false.
+    ELSE.
+      m_set_visible: 'BUTTON' if_salv_c_bool_sap=>true.
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_sizes.
+
+
+    TRY.
+        r_view->get_columns( )->get_column( columnname = 'MATNR' )->set_output_length( value = '20' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+        r_view->get_columns( )->get_column( columnname = 'NAMING_EXPLANATION' )->set_output_length( value = '40' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+        r_view->get_columns( )->get_column( columnname = 'NAMING_COMMENTS' )->set_output_length( value = '40' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+* MOD-001 - 20.01.2019 - Denilson P.Pina
+        r_view->get_columns( )->get_column( columnname = 'ZVERID' )->set_output_length( value = '20' ).
+        r_view->get_columns( )->get_column( columnname = 'ZSUFIX' )->set_output_length( value = '10' ).
+        r_view->get_columns( )->get_column( columnname = 'DET_MANUAL' )->set_output_length( value = '10' ).
+* MOD-001 - 20.01.2019 - Denilson P.Pina
+      CATCH cx_salv_not_found ##NO_HANDLER.
+
+    ENDTRY.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_styles.
+
+    DATA  lr_column TYPE REF TO cl_salv_column_list.
+
+    TRY.
+        fill_in_style_data( ).
+        r_view->get_columns( )->set_cell_type_column( value = 'CELL_TYPE' ).
+*        CATCH cx_salv_data_error. " ALV: General Error Class (Checked During Syntax Check).
+        lr_column ?= r_view->get_columns( )->get_column( columnname = 'BATCH_NAMING' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+        lr_column->set_cell_type(
+            value = if_salv_c_cell_type=>dropdown
+        ).
+        lr_column->set_dropdown_entry( value = 1 ).
+
+      CATCH cx_salv_data_error ##NO_HANDLER
+            cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        r_view->get_columns( )->set_dropdown_entry_column( value = 'T_BNAMING_DROP' ).
+*        CATCH cx_salv_data_error. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_data_error ##NO_HANDLER.
+    ENDTRY.
+
+    DATA  lt_values TYPE salv_t_value.
+
+    LOOP AT me->t_rules ASSIGNING FIELD-SYMBOL(<ls_rule>) WHERE formatter IS NOT INITIAL.
+      APPEND INITIAL LINE TO lt_values ASSIGNING FIELD-SYMBOL(<l_value>).
+      <l_value> = <ls_rule>-batch_naming.
+    ENDLOOP.
+    TRY.
+        r_view->get_functional_settings( )->get_dropdowns( )->add_dropdown(
+          EXPORTING
+            handle   =  1                " ALV Variant Management
+            t_values =  lt_values                " Contents
+*          RECEIVING
+*            value    =                  " ALV: Dropdown
+        ).
+*        CATCH cx_salv_existing. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing ##NO_HANDLER.
+    ENDTRY.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_custom_functions.
+
+    DATA: l_tooltip TYPE string,
+          l_icon    TYPE string.
+
+    m_remove_function:  'ZEDIT',
+                        'ZINSR',
+                        'ZDELR',
+                        'ZSAVE',
+                        'ZPLAN',
+                        'ZCURR',
+                        'ZHIST',
+                        'ZSETT'.
+
+    IF me->s_status-focusing <> 'H'.
+      TRY.
+          IF me->s_status-editing = abap_false.
+            l_tooltip = 'Change'(p01).
+            l_icon = '@0Z@'. "'ICON_CHANGE'.
+          ELSE.
+            l_tooltip = 'Display'(p02).
+            l_icon = '@10@'. "'ICON_DISPLAY'.
+          ENDIF.
+
+          IF m_permission_level > '0'.
+            ir_functions->add_function(
+              EXPORTING
+                name     =   'ZEDIT'               " ALV Function
+                icon     = l_icon
+*            text     =
+                tooltip  = l_tooltip
+                position = if_salv_c_function_position=>left_of_salv_functions                 " Positioning Function
+            ).
+*        CATCH cx_salv_existing.   " ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. " ALV: General Error Class (Checked During Syntax Check)
+          ENDIF.
+        CATCH cx_salv_existing  ##NO_HANDLER
+              cx_salv_not_found
+              cx_salv_wrong_call.
+      ENDTRY.
+    ENDIF.
+
+    IF me->s_status-editing = abap_true.
+      m_add_function: 'Save'(p05)        '@2L@' 'ZSAVE' if_salv_c_function_position=>left_of_salv_functions.
+      IF  me->s_status-focusing = 'P' AND m_permission_level = '5'.
+        m_add_function: 'Insert row'(p03) '@17@' 'ZINSR' if_salv_c_function_position=>left_of_salv_functions,
+                        'Delete row'(p04) '@18@' 'ZDELR' if_salv_c_function_position=>left_of_salv_functions.
+
+      ELSEIF me->s_status-focusing = 'C' AND m_permission_level = '5'.
+        m_add_function: 'Delete row'(p04) '@18@' 'ZDELR' if_salv_c_function_position=>left_of_salv_functions.
+      ENDIF.
+    ENDIF.
+
+    IF  me->s_status-focusing = 'P'.
+      m_add_function: 'Current'(p06)    '@B4@' 'ZCURR' if_salv_c_function_position=>right_of_salv_functions,
+                      'History'(p07)    '@B5@' 'ZHIST' if_salv_c_function_position=>right_of_salv_functions.
+
+    ELSEIF me->s_status-focusing = 'C'.
+      m_add_function: 'Planned'(p08)    '@B3@' 'ZPLAN' if_salv_c_function_position=>right_of_salv_functions,
+                      'History'(p07)    '@B5@' 'ZHIST' if_salv_c_function_position=>right_of_salv_functions.
+    ELSE.
+      m_add_function: 'Planned'(p08)    '@B3@' 'ZPLAN' if_salv_c_function_position=>right_of_salv_functions,
+                      'Current'(p06)    '@B4@' 'ZCURR' if_salv_c_function_position=>right_of_salv_functions.
+    ENDIF.
+
+    IF me->s_status-has_current = abap_false.
+      m_remove_function 'ZCURR'.
+    ENDIF.
+
+    IF me->s_status-has_history = abap_false.
+      m_remove_function 'ZHIST'.
+    ENDIF.
+
+    "m_add_function: 'Rules settings'(p09) '@44@' 'ZSETT'.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_editable_columns.
+
+    IF i_input IS INITIAL.
+
+      IF m_permission_level = '5'.
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'PLANT'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'MTART'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'MATNR'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'ACTIVE'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'BATCH_NAMING'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'IMPL_TERM'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'IMPL_TIME'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'NAMING_COMMENTS'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+      ENDIF.
+
+      IF m_permission_level > '0'.
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'PREFIX'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_true
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'PROD_DATE_MN'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_true
+        ).
+
+* INI_MOD-001 - 20.01.2019 - Denilson P.Pina
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ZVERID'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ZSUFIX'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ACHARG'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+* FIM_MOD-001 - 20.01.2019 - Denilson P.Pina
+      ENDIF.
+    ELSE.
+      IF m_permission_level = '5'.
+        zcl_alv_services=>set_editable(
+        EXPORTING
+          i_fieldname   = 'PLANT'
+          ir_salv_table = me->r_view
+          i_editable    = abap_false
+          i_refresh     = abap_false
+      ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'MTART'
+            ir_salv_table = me->r_view
+            i_editable    = abap_false
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'MATNR'
+            ir_salv_table = me->r_view
+            i_editable    = abap_false
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'ACTIVE'
+            ir_salv_table = me->r_view
+            i_editable    = abap_false
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'BATCH_NAMING'
+            ir_salv_table = me->r_view
+            i_editable    = abap_false
+            i_refresh     = abap_false
+        ).
+
+
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'IMPL_TERM'
+            ir_salv_table = me->r_view
+            i_editable    = abap_false
+            i_refresh     = abap_false
+        ).
+
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'IMPL_TIME'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'NAMING_COMMENTS'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_false
+        ).
+      ENDIF.
+
+      IF m_permission_level > '0'.
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'PREFIX'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_true
+        ).
+
+        zcl_alv_services=>set_editable(
+          EXPORTING
+            i_fieldname   = 'PROD_DATE_MN'
+            ir_salv_table = me->r_view
+            i_editable    = s_status-editing
+            i_refresh     = abap_true
+       ).
+
+* INI_MOD-001 - 20.01.2019 - Denilson P.Pina
+
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ZVERID'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ZSUFIX'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+        zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ACHARG'
+        ir_salv_table = me->r_view
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+      ENDIF.
+
+    ENDIF.
+
+    IF m_permission_level > '0'.
+      me->register_data_change( ).
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_events.
+
+    DATA(lr_events) = r_view->get_event( ).
+    SET HANDLER: me->on_user_command FOR lr_events,
+                 me->on_after_salv_function FOR lr_events,
+                 me->on_link_click FOR lr_events.
+
+  ENDMETHOD.
+
+
+  METHOD set_filters.
+
+    DATA(lr_filters) = r_view->get_filters( ).
+    IF lr_filters IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_filters) = lr_filters->get( ).
+    LOOP AT lt_filters ASSIGNING FIELD-SYMBOL(<ls_filter>).
+      DATA(lt_values) = <ls_filter>-r_filter->get( ).
+      LOOP AT lt_values ASSIGNING FIELD-SYMBOL(<lr_value>).
+        TRY.
+            DATA(lr_filter) = lr_filters->get_filter( columnname = <ls_filter>-columnname ).
+*                              CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+            DATA(l_sign)   = <lr_value>->get_sign( ).
+            DATA(l_option) = <lr_value>->get_option( ).
+            DATA(l_low)    = <lr_value>->get_low( ).
+            DATA(l_high)   = <lr_value>->get_high( ).
+            lr_filter->clear( ).
+            lr_filter->add_selopt(
+              EXPORTING
+                sign   = l_sign           " Selection Condition Sign
+                option = l_option         " Selection Condition Option
+                low    = l_low            " Lower Value of Selection Condition
+                high   = l_high           " Upper Value of Selection Condition
+*              RECEIVING
+*                value  =                  " ALV: Selection Options
+            ).
+*            CATCH cx_salv_data_error. " ALV: General Error Class (Checked During Syntax Check)
+          CATCH cx_salv_not_found ##NO_HANDLER. " ALV: General Error Class (Checked During Syntax Check)
+          CATCH cx_salv_data_error ##NO_HANDLER. " ALV: General Error Class (Checked During Syntax Check)
+        ENDTRY.
+      ENDLOOP.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD set_functions.
+
+
+    DATA(r_functions) = r_view->get_functions( ).
+    r_functions->set_all(
+*      value = if_salv_c_bool_sap=>true
+    ).
+    r_functions->set_export_localfile(
+*      value = if_salv_c_bool_sap=>true
+    ).
+
+    me->set_custom_functions( r_functions ).
+
+
+  ENDMETHOD.
+
+
+  METHOD set_header.
+
+    DATA  l_text     TYPE lvc_title.
+
+    CASE me->s_status-focusing.
+      WHEN 'P'.
+        l_text = 'Planned'(p08).
+      WHEN 'C'.
+        l_text = 'Current'(p06).
+      WHEN 'H'.
+        l_text = 'History'(p07).
+    ENDCASE.
+
+    DATA(lr_dsettings) = me->r_view->get_display_settings( ).
+    lr_dsettings->set_list_header( value = l_text ).
+    lr_dsettings->set_list_header_size( value = cl_salv_display_settings=>c_header_size_large ).
+
+
+  ENDMETHOD.
+
+
+  METHOD set_protect_columns_4curr.
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'PLANT'
+        ir_salv_table = me->r_view
+        i_editable    = abap_false
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'MTART'
+        ir_salv_table = me->r_view
+        i_editable    = abap_false
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'MATNR'
+        ir_salv_table = me->r_view
+        i_editable    = abap_false
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'ACTIVE'
+        ir_salv_table = me->r_view
+        i_editable    = cond #( WHEN m_permission_level = '5' then s_status-editing else abap_false )
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'BATCH_NAMING'
+        ir_salv_table = me->r_view
+        i_editable    = abap_false
+        i_refresh     = abap_false
+    ).
+
+*    zcl_alv_services=>set_editable(
+*      EXPORTING
+*        i_fieldname   = 'IMPL_TIME'
+*        ir_salv_table = me->r_view
+*        i_editable    = abap_false
+*        i_refresh     = abap_false
+*    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'IMPL_TIME'
+        ir_salv_table = me->r_view
+        i_editable    = cond #( WHEN m_permission_level = '5' then s_status-editing else abap_false )
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'IMPL_TERM'
+        ir_salv_table = me->r_view
+        i_editable    = abap_false
+        i_refresh     = abap_false
+    ). "NAMING_COMMENTS
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'NAMING_COMMENTS'
+        ir_salv_table = me->r_view
+        i_editable    = cond #( WHEN m_permission_level = '5' then s_status-editing else abap_false )
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'PREFIX'
+        ir_salv_table = me->r_view
+        i_editable    = cond #( WHEN m_permission_level > '0' then s_status-editing else abap_false )
+        i_refresh     = abap_true
+    ).
+
+  ENDMETHOD.
+
+
+  METHOD set_statuses.
+
+    me->t_settings = me->get_settings( i_type = me->s_status-focusing ).
+    me->t_rules    = r_rules_model->get_rules( ).
+    me->s_status-has_current = r_model->has_current( ).
+    me->s_status-has_planned = r_model->has_planned( ).
+    me->s_status-has_history = r_model->has_history( ).
+
+  ENDMETHOD.
+
+
+  METHOD set_view.
+
+
+    me->set_columns_properties( ).
+
+    me->set_columns_order( ).
+
+    me->set_columns_sizes( ).
+
+    me->set_columns_styles( ).
+
+    me->set_functions( ).
+
+    me->set_filters( ).
+
+    me->set_header( ).
+
+    me->set_events( ).
+
+
+  ENDMETHOD.
+
+
+  METHOD start_transaction.
+    DATA r_controller TYPE REF TO zcl_pp_batch_controller.
+
+    CASE sy-tcode.
+      WHEN c_zppt001.
+        r_controller = NEW zcl_pp_batch_controller( ).
+      WHEN c_zppt001_a.
+        r_controller ?= NEW zcl_pp_rules_controller( ).
+    ENDCASE.
+    r_controller->main( ).
+
+  ENDMETHOD.
+
+
+  METHOD toggle_edition.
+
+
+    IF me->s_status-editing = abap_false.
+      me->s_status-editing = abap_true.
+    ELSE.
+      me->s_status-editing = abap_false.
+    ENDIF.
+
+    me->set_custom_functions( ir_functions = r_view->get_functions( ) ).
+
+    me->set_editable_columns( ).
+
+    IF me->s_status-focusing = 'C'.
+      me->set_protect_columns_4curr( ).
+    ENDIF.
+
+
+  ENDMETHOD.
+ENDCLASS.

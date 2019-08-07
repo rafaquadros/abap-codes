@@ -1,0 +1,76 @@
+CLASS zcl_pp_batch_julian DEFINITION INHERITING FROM zcl_pp_batch_formatter
+  PUBLIC
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    CONSTANTS  c_rule_type_01 TYPE zbatch_rule_type VALUE '01'.
+
+    METHODS:
+      get_bath REDEFINITION,
+      get_my_rule_type REDEFINITION.
+  PROTECTED SECTION.
+    METHODS:
+      set_attributes REDEFINITION,
+      get_julian_day RETURNING VALUE(r_julian_day) TYPE string.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS zcl_pp_batch_julian IMPLEMENTATION.
+  METHOD get_bath.
+
+    CLEAR r_batch.
+
+    IF me->naming_template IS INITIAL.
+      TRY.
+          me->set_attributes( ).
+*          CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        CATCH cx_bapi_error.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+
+    IF me->batch_naming <> me->naming_template.
+      RETURN.
+    ENDIF.
+
+    r_batch = me->naming_template.
+    REPLACE 'AA' IN r_batch WITH sy-datum+2(2).
+    IF sy-subrc <> 0.
+      REPLACE 'YY' IN r_batch WITH sy-datum+2(2).
+    ENDIF.
+    REPLACE 'JJJ' IN r_batch WITH me->get_julian_day( ).
+
+  ENDMETHOD.
+
+  METHOD set_attributes.
+
+    TRY.
+        super->set_attributes( ).
+*    CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        me->set_template( i_rule_type = c_rule_type_01 ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+      CATCH cx_sql_exception  ##NO_HANDLER
+            cx_parameter_invalid.
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD get_julian_day.
+    DATA l_firstdayofyear TYPE datum VALUE 'YYYY0101'.
+
+    CLEAR r_julian_day.
+    REPLACE 'YYYY' IN l_firstdayofyear WITH sy-datum(4).
+
+    r_julian_day = sy-datum - l_firstdayofyear + 1.
+  ENDMETHOD.
+
+  METHOD get_my_rule_type.
+
+    r_rule_type = c_rule_type_01.
+  ENDMETHOD.
+
+ENDCLASS.

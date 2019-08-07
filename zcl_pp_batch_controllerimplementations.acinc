@@ -1,0 +1,48 @@
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS
+      efg_user_auth_for_obj_get IMPORTING i_object         TYPE xuobject
+                                RETURNING VALUE(rt_values) TYPE susr_t_usvalues
+                                RAISING   cx_bapi_error.
+ENDCLASS.
+
+CLASS lcl_api IMPLEMENTATION.
+  METHOD efg_user_auth_for_obj_get.
+    DATA l_message TYPE string.
+
+    CLEAR rt_values.
+    CALL FUNCTION 'EFG_USER_AUTH_FOR_OBJ_GET'
+      EXPORTING
+*       x_client       = SY-MANDT         " Client
+*       x_uname        = SY-UNAME         " User Name in User Master Record
+        x_object       = i_object         " Authorization object for restriction
+      TABLES
+        yt_usvalues    = rt_values        " Field Values
+      EXCEPTIONS
+        user_not_found = 1
+        not_authorized = 2                " No Authorization
+        internal_error = 3                " Internal Error
+        OTHERS         = 4.
+    IF sy-subrc <> 0.
+      IF sy-msgid IS NOT INITIAL.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO l_message.
+        RAISE EXCEPTION TYPE cx_bapi_error
+          EXPORTING
+            status = VALUE bapiret2_t( ( id         = sy-msgid
+                                         type       = sy-msgty
+                                         number     = sy-msgno
+                                         message    = l_message
+                                         message_v1 = sy-msgv1
+                                         message_v2 = sy-msgv2
+                                         message_v3 = sy-msgv3
+                                         message_v4 = sy-msgv4 ) ).
+      ELSE.
+        RAISE EXCEPTION TYPE cx_bapi_error.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.

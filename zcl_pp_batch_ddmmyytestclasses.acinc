@@ -1,0 +1,139 @@
+*"* use this source file for your ABAP unit test classes
+CLASS: lcl_batch_ddmmyy_cft DEFINITION DEFERRED, "conflicting settings
+       lcl_batch_ddmmyy_hrm DEFINITION DEFERRED. "harmonious settings
+
+CLASS ltc_check_settings_context DEFINITION FOR TESTING
+    RISK LEVEL HARMLESS
+    DURATION SHORT.
+
+  PRIVATE SECTION.
+    DATA: m_cut_cft TYPE REF TO lcl_batch_ddmmyy_cft,
+          m_cut_hrm TYPE REF TO lcl_batch_ddmmyy_hrm.
+
+    METHODS:
+      set_up, "Prepares the context -> Given
+      conflicting_settings FOR TESTING
+        RAISING
+          cx_bapi_error, "Plant+Material or Plant+Material Type and formatter point to different batch naming.
+      harmonious_settings FOR TESTING
+        RAISING
+          cx_bapi_error.   "Plant+Material or Plant+Material Type and formatter point to the same batch naming.
+ENDCLASS.
+
+CLASS lcl_batch_ddmmyy_cft DEFINITION INHERITING FROM zcl_pp_batch_ddmmyy FOR TESTING
+ RISK LEVEL HARMLESS
+ DURATION SHORT.
+
+  PUBLIC SECTION.
+    CONSTANTS c_ddmmyy TYPE zbatch_naming_rule VALUE 'DDMMYY'.
+
+  PROTECTED SECTION.
+    METHODS:
+      set_material_type REDEFINITION,
+      set_bath_settings REDEFINITION,
+      set_template      REDEFINITION.
+
+ENDCLASS.
+
+CLASS lcl_batch_ddmmyy_cft IMPLEMENTATION.
+
+  METHOD set_bath_settings.
+    me->batch_naming = 'LYYJJJ'.
+  ENDMETHOD.
+
+  METHOD set_material_type.
+    me->material_type = 'MTTY'.
+  ENDMETHOD.
+
+  METHOD set_template.
+    me->naming_template = c_ddmmyy.
+  ENDMETHOD.
+
+ENDCLASS.
+
+CLASS lcl_batch_ddmmyy_hrm DEFINITION INHERITING FROM lcl_batch_ddmmyy_cft FOR TESTING
+ RISK LEVEL HARMLESS
+ DURATION SHORT.
+
+  PROTECTED SECTION.
+    METHODS:
+      set_material_type REDEFINITION,
+      set_bath_settings REDEFINITION,
+      set_template      REDEFINITION.
+
+ENDCLASS.
+
+CLASS lcl_batch_ddmmyy_hrm IMPLEMENTATION.
+
+  METHOD set_bath_settings.
+    me->batch_naming = c_ddmmyy.
+  ENDMETHOD.
+
+  METHOD set_material_type.
+
+  ENDMETHOD.
+
+  METHOD set_template.
+    me->naming_template = c_ddmmyy.
+  ENDMETHOD.
+
+ENDCLASS.
+
+CLASS ltc_check_settings_context IMPLEMENTATION.
+
+  METHOD conflicting_settings.
+    "Given
+    me->set_up( ).
+
+    "When
+    TRY.
+        DATA(l_batch) = me->m_cut_cft->get_bath( ).
+*    CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+    "Then
+    cl_abap_unit_assert=>assert_initial(
+      EXPORTING
+        act              = l_batch                     " Actual data object
+*        msg              =                              " Description
+*        level            = if_aunit_constants=>critical " Severity (TOLERABLE, >CRITICAL<, FATAL)
+*        quit             = if_aunit_constants=>method   " Alter control flow/ quit test (NO, >METHOD<, CLASS)
+*      RECEIVING
+*        assertion_failed =                              " Condition was not met (and QUIT = NO)
+    ).
+
+  ENDMETHOD.
+
+  METHOD harmonious_settings.
+    "Given
+    me->set_up( ).
+
+    "When
+    TRY.
+        DATA(l_batch) = me->m_cut_hrm->get_bath( ).
+*    CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+    "Then
+    cl_abap_unit_assert=>assert_not_initial(
+      EXPORTING
+        act              = l_batch                             " Actual Data Object
+*        msg              =                              " Message in Case of Error
+*        level            = if_aunit_constants=>critical " Severity (TOLERABLE, >CRITICAL<, FATAL)
+*        quit             = if_aunit_constants=>method   " Alter control flow/ quit test (NO, >METHOD<, CLASS)
+*      RECEIVING
+*        assertion_failed =                              " Condition was not met (and QUIT = NO)
+    ).
+  ENDMETHOD.
+
+  METHOD set_up.
+
+    me->m_cut_cft = NEW lcl_batch_ddmmyy_cft( i_plant = 'PLAN' i_material = 'MATERIAL' ).
+    me->m_cut_hrm = NEW lcl_batch_ddmmyy_hrm( i_plant = 'PLAN' i_material = 'MATERIAL' ).
+  ENDMETHOD.
+
+ENDCLASS.

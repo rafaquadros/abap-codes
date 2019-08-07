@@ -1,0 +1,30 @@
+CLASS zcl_pp_batch_factory DEFINITION
+  PUBLIC
+  INHERITING FROM zcl_pp_batch_formatter
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    METHODS: get_bath REDEFINITION.
+    METHODS: get_my_rule_type REDEFINITION.
+  PROTECTED SECTION.
+    METHODS: set_template REDEFINITION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS zcl_pp_batch_factory IMPLEMENTATION.
+  METHOD get_bath.
+
+  ENDMETHOD.
+
+  METHOD set_template.
+
+  ENDMETHOD.
+
+  METHOD get_my_rule_type.
+
+  ENDMETHOD.
+
+ENDCLASS.

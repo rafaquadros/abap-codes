@@ -1,0 +1,396 @@
+CLASS zcl_pp_batch_formatter DEFINITION
+  PUBLIC
+  ABSTRACT
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    DATA: plant         TYPE werks_d READ-ONLY,
+          material      TYPE matnr READ-ONLY,
+          material_type TYPE mtart READ-ONLY.
+
+    CLASS-METHODS:  get_instance IMPORTING i_plant                   TYPE werks_d
+                                           i_material                TYPE matnr
+                                 RETURNING VALUE(rr_batch_formatter) TYPE REF TO zcl_pp_batch_formatter.
+
+    METHODS:
+      constructor IMPORTING i_plant         TYPE werks_d
+                            i_material      TYPE matnr OPTIONAL
+                            i_material_type TYPE mtart OPTIONAL,
+      check                 ABSTRACT IMPORTING is_entry TYPE zpps004
+                                     RAISING   cx_bapi_error,
+      get_batch             ABSTRACT IMPORTING i_verid        TYPE verid OPTIONAL
+                                     RETURNING VALUE(r_batch) TYPE string
+                                     RAISING   cx_bapi_error,
+      get_batch_template    ABSTRACT IMPORTING i_mutable_part        TYPE zbatch_mutable_part
+                                     RETURNING VALUE(r_batch_naming) TYPE zbatch_naming_rule,
+      set_batch_template    ABSTRACT,
+      change_mutable_part   ABSTRACT IMPORTING i_mutable_part        TYPE zbatch_mutable_part
+                                     RETURNING VALUE(r_mutable_part) TYPE zbatch_mutable_part,
+      get_reference_date     ABSTRACT RETURNING VALUE(r_date) TYPE dats,
+      get_reference_time     ABSTRACT RETURNING VALUE(r_time) TYPE tims,
+      get_production_version ABSTRACT RETURNING VALUE(r_verid) TYPE verid,
+      get_formatter RETURNING VALUE(rr_formatter) TYPE REF TO zcl_pp_batch_formatter,
+      get_my_rule_type ABSTRACT RETURNING VALUE(r_rule_type) TYPE zbatch_rule_type,
+      to_string RETURNING VALUE(r_mytext) TYPE string.
+  PROTECTED SECTION.
+    DATA: formatter         TYPE zbatch_formatter,
+          batch_naming      TYPE zbatch_naming_rule,
+          prefix            TYPE zbatch_prefix,
+          naming_template   TYPE zbatch_naming_rule, "To be populated in the children.
+          mutable_part      TYPE zbatch_mutable_part,
+          last_mutable_part TYPE zbatch_last_mutable_part,
+          implementing_time TYPE zimplementing_time,
+          reference_date    TYPE d,
+          reference_time    TYPE t,
+          since             TYPE timestamp.
+
+    METHODS:
+      set_attributes     RAISING cx_bapi_error,
+      set_material_type  RAISING cx_sql_exception
+                                 cx_parameter_invalid,
+      set_bath_settings  RAISING cx_sql_exception
+                                 cx_parameter_invalid,
+      set_template       IMPORTING i_rule_type TYPE zbatch_rule_type
+                         RAISING   cx_sql_exception     "To retrieve the template related with each child.
+                                   cx_parameter_invalid.
+  PRIVATE SECTION.
+    TYPES: BEGIN OF y_settings,
+             zzfrom            TYPE timestamp,
+             batch_naming      TYPE zbatch_naming_rule,
+             formatter         TYPE zbatch_formatter,
+             prefix            TYPE zbatch_prefix,
+             mutable_part      TYPE zbatch_mutable_part,
+             last_mutable_part TYPE zbatch_last_mutable_part,
+* INI MOD - Denilson P.Pina - 08.02.2019
+             impl_time         TYPE zimplementing_time,
+* FIM MOD - Denilson P.Pina - 08.02.2019
+           END OF y_settings.
+    METHODS:
+      query_by_material      RAISING cx_parameter_invalid
+                                     cx_sql_exception,
+      query_by_material_type RAISING cx_parameter_invalid
+                                     cx_sql_exception.
+ENDCLASS.
+
+
+
+CLASS ZCL_PP_BATCH_FORMATTER IMPLEMENTATION.
+
+
+  METHOD constructor.
+    IF i_material IS INITIAL AND i_material_type IS INITIAL.
+      RETURN.
+    ENDIF.
+    me->plant = i_plant.
+    me->material = i_material.
+    me->material_type = i_material_type.
+  ENDMETHOD.
+
+
+  METHOD get_formatter.
+    IF me->formatter IS INITIAL.
+      TRY.
+          me->set_attributes( ).
+*            CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        CATCH cx_bapi_error INTO DATA(lx_error).
+          READ TABLE lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>) INDEX 1.
+          IF sy-subrc = 0.
+            MESSAGE
+                 ID <ls_return>-id
+               TYPE <ls_return>-type
+             NUMBER <ls_return>-number
+               WITH <ls_return>-message_v1 <ls_return>-message_v2 <ls_return>-message_v3 <ls_return>-message_v4.
+          ENDIF.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+
+    IF me->formatter IS NOT INITIAL.
+      CREATE OBJECT rr_formatter TYPE (me->formatter)
+        EXPORTING
+         i_plant = me->plant
+         i_material = me->material.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_instance.
+
+    DATA(lr_factory) = NEW zcl_pp_batch_factory(
+      i_plant    = i_plant
+      i_material = i_material
+    ).
+
+    rr_batch_formatter = lr_factory->get_formatter( ).
+  ENDMETHOD.
+
+
+  METHOD query_by_material.
+
+    DATA:
+      ls_result      TYPE y_settings,
+      l_sql_material TYPE string,
+      l_current_time TYPE timestamp.
+
+    GET TIME STAMP FIELD l_current_time.
+
+    l_sql_material =   `SELECT ZZFROM, BATCH_NAMING, FORMATTER, PREFIX, MUTABLE_PART, LAST_MUTABLE_PART, IMPL_TIME ` &&
+                         `FROM ZPPT001 AS PLAN `   &&
+                         `INNER JOIN ZPPT002 AS RULE ` &&
+                           `ON RULE.MANDT = PLAN.MANDT ` &&
+                          `AND RULE.RULE_TYPE = PLAN.RULE_TYPE ` &&
+                        `WHERE PLAN.MANDT = '`   && sy-mandt && `' ` &&
+                          `AND PLANT = '`   && me->plant  && `' ` &&
+                          `AND MTART = '`   && me->material_type && `' ` && "This implies that the method set_material_type() is called before this one.
+                          `AND MATNR = '`   && me->material && `' ` &&
+                          `AND ZZFROM <= `  && l_current_time  &&
+                         ` AND ZZTO   >= `  && l_current_time  &&
+                         ` AND ACTIVE = '`  && abap_true  && `' ` &&
+                         ` AND DELETED = '` && abap_false && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_material
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param_struct(
+          EXPORTING
+            struct_ref           =  REF #( ls_result )                " Reference to Output Variable
+*            corresponding_fields =                  " List of Fields of the Output Structure
+*            lob_fields           =                  " LOB Fields
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+
+        me->batch_naming      = ls_result-batch_naming.
+        me->formatter         = ls_result-formatter.
+        me->prefix            = ls_result-prefix.
+        me->mutable_part      = ls_result-mutable_part.
+        me->last_mutable_part = ls_result-last_mutable_part.
+        CONVERT DATE sy-datlo TIME ls_result-impl_time INTO TIME STAMP DATA(l_timestamp) TIME ZONE 'UTC'. "In order to keep the UTC value of "Implementing time"
+        CONVERT TIME STAMP l_timestamp TIME ZONE sy-zonlo INTO DATE DATA(l_date) TIME me->implementing_time.
+        me->since             = ls_result-zzfrom.
+
+      CATCH cx_sql_exception INTO DATA(lx_sql_exception).
+        RAISE EXCEPTION lx_sql_exception.
+      CATCH cx_parameter_invalid INTO DATA(lx_parameter_invalid).
+        RAISE EXCEPTION lx_parameter_invalid.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD query_by_material_type.
+    DATA:
+      ls_result           TYPE y_settings,
+      l_sql_material_type TYPE string,
+      l_current_time      TYPE timestamp.
+
+    GET TIME STAMP FIELD l_current_time.
+
+    l_sql_material_type =   `SELECT ZZFROM, BATCH_NAMING, FORMATTER, PREFIX, MUTABLE_PART, LAST_MUTABLE_PART, IMPL_TIME ` &&
+                              `FROM ZPPT001 AS PLAN `   &&
+                             `INNER JOIN ZPPT002 AS RULE ` &&
+                                `ON RULE.MANDT = PLAN.MANDT ` &&
+                               `AND RULE.RULE_TYPE = PLAN.RULE_TYPE ` &&
+                             `WHERE PLAN.MANDT = '`   && sy-mandt && `' ` &&
+                               `AND PLANT = '`   && me->plant  && `' ` &&
+                               `AND MTART = '`   && me->material_type && `' ` && "This implies that the method set_material_type() is called before this one.
+                               `AND MATNR = '`   && space &&  `' ` &&
+                               `AND ZZFROM <= `  && l_current_time  &&
+                              ` AND ZZTO   >= `  && l_current_time  &&
+                              ` AND ACTIVE = '`  && abap_true  && `' ` &&
+                              ` AND DELETED = '`  && abap_false && `' `.
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_material_type
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param_struct(
+          EXPORTING
+            struct_ref           =   REF #( ls_result )               " Reference to Output Variable
+*            corresponding_fields =                  " List of Fields of the Output Structure
+*            lob_fields           =                  " LOB Fields
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+
+        me->batch_naming = ls_result-batch_naming.
+        me->formatter    = ls_result-formatter.
+        me->prefix       = ls_result-prefix.
+        me->mutable_part = ls_result-mutable_part.
+        me->last_mutable_part = ls_result-last_mutable_part.
+        me->implementing_time = ls_result-impl_time.
+        me->last_mutable_part = ls_result-last_mutable_part.
+        CONVERT DATE sy-datlo TIME ls_result-impl_time INTO TIME STAMP DATA(l_timestamp) TIME ZONE 'UTC'. "In order to keep the UTC value of "Implementing time"
+        CONVERT TIME STAMP l_timestamp TIME ZONE sy-zonlo INTO DATE DATA(l_date) TIME me->implementing_time.
+        me->since = ls_result-zzfrom.
+
+      CATCH cx_sql_exception INTO DATA(lx_sql_exception).
+        RAISE EXCEPTION lx_sql_exception.
+      CATCH cx_parameter_invalid INTO DATA(lx_parameter_invalid).
+        RAISE EXCEPTION lx_parameter_invalid.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_attributes.
+
+    TRY.
+        IF me->material IS NOT INITIAL.
+          me->set_material_type( ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        ENDIF.
+        me->set_bath_settings( ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+      CATCH cx_sql_exception  ##NO_HANDLER
+            cx_parameter_invalid.
+    ENDTRY.
+
+    me->reference_date = sy-datlo.
+    me->reference_time = sy-timlo.
+
+    GET TIME STAMP FIELD DATA(l_current_timestamp).
+    CONVERT DATE sy-datlo TIME me->implementing_time INTO TIME STAMP DATA(l_ref_timestamp) TIME ZONE sy-zonlo.
+    IF l_ref_timestamp < l_current_timestamp.
+      me->reference_date = me->reference_date + 1.
+      me->reference_time = me->implementing_time.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD set_bath_settings.
+    TRY.
+        query_by_material( ).
+        IF me->batch_naming IS INITIAL.
+          query_by_material_type( ).
+        ENDIF.
+      CATCH cx_sql_exception INTO DATA(lx_sql_exception).
+        RAISE EXCEPTION lx_sql_exception.
+      CATCH cx_parameter_invalid INTO DATA(lx_parameter_invalid).
+        RAISE EXCEPTION lx_parameter_invalid.
+    ENDTRY.
+
+    CONVERT TIME STAMP me->since TIME ZONE sy-zonlo INTO DATE DATA(l_date) TIME me->reference_time.
+
+  ENDMETHOD.
+
+
+  METHOD set_material_type.
+    DATA   l_sql_statement TYPE string.
+
+    l_sql_statement = `SELECT MTART ` &&
+                      `  FROM MARA ` &&
+                      ` WHERE MANDT = '` &&  sy-mandt && `' ` &&
+                         `AND MATNR = '` && me->material && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( me->material_type )                " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception INTO DATA(lx_sql_exception).
+        RAISE EXCEPTION lx_sql_exception.
+      CATCH cx_parameter_invalid INTO DATA(lx_parameter_invalid).
+        RAISE EXCEPTION lx_parameter_invalid.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD set_template.
+    DATA   l_sql_statement TYPE string.
+
+    l_sql_statement = `SELECT BATCH_NAMING ` &&
+                      `  FROM ZPPT002 ` &&
+                      ` WHERE MANDT = '` &&  sy-mandt && `' ` &&
+                         `AND RULE_TYPE = '` && i_rule_type && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( me->naming_template )                " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception INTO DATA(lx_sql_exception).
+        RAISE EXCEPTION lx_sql_exception.
+      CATCH cx_parameter_invalid INTO DATA(lx_parameter_invalid).
+        RAISE EXCEPTION lx_parameter_invalid.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD to_string.
+    IF me->material_type IS INITIAL.
+      TRY.
+          me->set_attributes( ).
+*            CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        CATCH cx_bapi_error INTO DATA(lx_error).
+          READ TABLE lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>) INDEX 1.
+          IF sy-subrc = 0.
+            MESSAGE
+                 ID <ls_return>-id
+               TYPE <ls_return>-type
+             NUMBER <ls_return>-number
+               WITH <ls_return>-message_v1 <ls_return>-message_v2 <ls_return>-message_v3 <ls_return>-message_v4.
+          ENDIF.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+
+    r_mytext = me->plant && '/' && me->material_type && '/' && me->material && '/' && me->batch_naming && '/' && me->formatter &&
+               '/' && me->prefix.
+  ENDMETHOD.
+ENDCLASS.
