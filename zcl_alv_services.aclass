@@ -1,0 +1,144 @@
+CLASS zcl_alv_services DEFINITION
+  PUBLIC
+  INHERITING FROM cl_salv_controller
+  FINAL
+  CREATE PRIVATE .
+
+public section.
+
+  class-methods GET_CONTROL
+    importing
+      !IR_SALV type ref to CL_SALV_MODEL_BASE
+    returning
+      value(RR_CONTROL) type ref to OBJECT .
+  class-methods SET_EDITABLE
+    importing
+      value(I_FIELDNAME) type CSEQUENCE optional
+      !IR_SALV_TABLE type ref to CL_SALV_TABLE
+      value(I_EDITABLE) type ABAP_BOOL default ABAP_TRUE
+      value(I_REFRESH) type ABAP_BOOL default ABAP_TRUE .
+protected section.
+private section.
+
+  class-methods GET_CONTROL_INTERNAL
+    importing
+      !IR_SALV type ref to CL_SALV_MODEL_BASE
+    exporting
+      !E_ADAPTER_TYPE type SALV_DE_ADAPTER_TYPE
+      !ER_CONTROL type ref to OBJECT .
+ENDCLASS.
+
+
+
+CLASS ZCL_ALV_SERVICES IMPLEMENTATION.
+
+
+  method GET_CONTROL.
+
+
+    IF rr_control IS REQUESTED.
+      get_control_internal( EXPORTING ir_salv = ir_salv IMPORTING er_control = rr_control ).
+    ENDIF.
+
+
+  endmethod.
+
+
+  method GET_CONTROL_INTERNAL.
+
+    DATA: lr_controller            TYPE REF TO cl_salv_controller_model,
+          lr_adapter               TYPE REF TO cl_salv_adapter,
+          lr_fullscreen_adapter    TYPE REF TO cl_salv_fullscreen_adapter,
+          lr_grid_adapter          TYPE REF TO cl_salv_grid_adapter,
+          lr_table_display_adapter TYPE REF TO if_salv_table_display_adapter,
+          lr_tree_adapter_base     TYPE REF TO cl_salv_tree_adapter_base.
+
+    IF e_adapter_type IS NOT REQUESTED AND
+          er_control      IS NOT REQUESTED.
+      RETURN.
+    ENDIF.
+
+    IF  e_adapter_type IS REQUESTED.
+      CLEAR e_adapter_type.
+    ENDIF.
+
+    IF  er_control IS REQUESTED.
+      CLEAR er_control.
+    ENDIF.
+
+    lr_controller = ir_salv->r_controller.
+    IF lr_controller IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    lr_adapter = lr_controller->r_adapter.
+    IF lr_adapter IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    IF e_adapter_type IS REQUESTED.
+      e_adapter_type = lr_adapter->type.
+    ENDIF.
+    IF er_control IS NOT REQUESTED.
+      RETURN.
+    ENDIF.
+
+    CASE lr_adapter->type.
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_fullscreen.
+        lr_fullscreen_adapter ?= lr_adapter.
+        er_control = lr_fullscreen_adapter->get_grid( ).
+
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_grid.
+        lr_grid_adapter ?= lr_adapter.
+        er_control = lr_grid_adapter->get_grid( ).
+
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_hierseq.
+
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_list.
+        lr_table_display_adapter ?= lr_adapter.
+        er_control = lr_table_display_adapter->r_table.
+
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_tree.
+        lr_tree_adapter_base ?= lr_adapter.
+        er_control = lr_tree_adapter_base->r_tree.
+
+      WHEN lr_adapter->if_salv_adapter~c_adapter_type_append.
+
+    ENDCASE.
+
+  endmethod.
+
+
+  method SET_EDITABLE.
+
+    CONSTANTS lc_stable TYPE lvc_s_stbl VALUE 'XX'.
+    DATA: lr_grid     TYPE REF TO cl_gui_alv_grid,
+          lt_fieldcat TYPE lvc_t_fcat,
+          ls_layout   TYPE lvc_s_layo.
+    FIELD-SYMBOLS: <ls_fieldcat> LIKE LINE OF lt_fieldcat.
+
+    lr_grid ?= get_control( ir_salv_table ).
+    IF lr_grid IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    IF i_fieldname IS SUPPLIED AND
+       i_fieldname IS NOT INITIAL.
+      lr_grid->get_frontend_fieldcatalog( IMPORTING et_fieldcatalog = lt_fieldcat ).
+      READ TABLE lt_fieldcat ASSIGNING <ls_fieldcat> WITH KEY fieldname = i_fieldname.
+      IF sy-subrc = 0.
+        <ls_fieldcat>-edit = i_editable.
+        lr_grid->set_frontend_fieldcatalog( lt_fieldcat ).
+      ENDIF.
+    ELSE.
+      lr_grid->get_frontend_layout( IMPORTING es_layout = ls_layout ).
+      ls_layout-edit = i_editable.
+      lr_grid->set_frontend_layout( EXPORTING is_layout = ls_layout ).
+    ENDIF.
+
+    IF i_refresh = abap_true.
+      ir_salv_table->refresh( lc_stable ).
+    ENDIF.
+
+  endmethod.
+ENDCLASS.
