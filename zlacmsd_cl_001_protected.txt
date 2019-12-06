@@ -1,0 +1,34 @@
+*"* protected components of class ZLACMSD_CL_001
+*"* do not include other source files here!!!
+protected section.
+
+  methods RAISE_SOFTWAY_DATA_INSERTED
+    raising
+      CX_SWF_EVT_EXCEPTION .
+  methods GET_PICKER_DATA
+    exporting
+      !RT_VBPOK type CYT_PICKING_ITEMS .
+  methods GET_BATCH_DATA
+    exporting
+      value(RT_ITEM_DATA) type CYT_DLV_CHG_ITEMS .
+  methods GET_INTERCOMPANY_DATA
+    changing
+      value(RT_DLV_CRT_DATA) type CYT_DLV_CRT_ITEMS
+      value(RT_RELATIONSHIP) type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP .
+  methods GET_SUPPLING_STK_DATA
+    changing
+      !RT_DLV_CRT_DATA type CYT_DLV_CRT_ITEMS
+      !RT_RELATIONSHIP type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP .
+  methods GET_DSD_OUT_SAP
+    changing
+      !RT_DLV_CRT_DATA type CYT_DLV_CRT_ITEMS
+      !RT_RELATIONSHIP type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP .
+  methods GET_DSD_RELATIONSHIP
+    exporting
+      value(RT_RELATIONSHIP) type ZLACMSD_CL_INTERCOMP_PROCESS=>CYT_ID_RELATIONSHIP .
+  methods HAS_STARTED
+    returning
+      value(R_BOOLEAN) type CHAR01 .
+
+  methods CREATE_DELIVERIES
+    redefinition .

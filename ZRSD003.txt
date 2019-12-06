@@ -1,0 +1,56 @@
+*&---------------------------------------------------------------------*
+*& Report  ZRSD003
+*&
+*&---------------------------------------------------------------------*
+*& PURPOSE.: "The purpose of this program is automatically identify
+*&           the defaulting and good standing customers of SIN
+*&           performing their locking/unlocking automatically in order
+*&           to mitigate errors, "narrow" and establish business rules
+*            in regard to customer credit."
+*$ BY......: Alex Rodrigues Fritzsons, in his functional specification.
+*& OBJETIVO: "O propósito deste programa é de forma automática
+*&           identificar os clientes inadimplente e adimplentes da SIN
+*&           realizando o seu bloqueio/ desbloqueio automaticamente a
+*&           fim de mitigar erros, “estreitar” e estabelecer regras
+*&           de negócios no que se refere à crédito de clientes."
+*$ POR.....: Alex Rodrigues Fritzsons, em sua especificação funcional
+*& ------------------------------
+*& BUILD BY: RGQ Informática Ltda
+*&---------------------------------------------------------------------*
+*&---CHANGES HISTORY --------------------------------------------------*
+* REF ID  |  DATE    | DESCRIPTION                                     *
+*&---------------------------------------------------------------------*
+* #MD 999 |DD/MM/YYYY| XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+*&---------------------------------------------------------------------*
+
+INCLUDE: zrsd003_top                              ,   " global Data
+         zrsd003_c01                       ,   " classes implementations
+         zrsd003_ts1                              . " ABAP Unit tests
+* INCLUDE ZRSD003_O01                             .  " PBO-Modules
+* INCLUDE ZRSD003_I01                             .  " PAI-Modules
+* INCLUDE ZRSD003_F01                             .  " FORM-Routines
+
+START-OF-SELECTION.
+  o_operator = lcl_operator=>get_instance( ).
+  IF p_lock IS NOT INITIAL.
+    o_operator->set_customers_list( abap_false ). "Gets unlocked clients
+  ELSEIF p_unlk IS NOT INITIAL.
+    o_operator->set_customers_list( abap_true ). " Gets locked customers
+  ENDIF.
+  IF o_operator->is_customers_list_empty( ) = abap_true.
+    MESSAGE i151.
+    LEAVE TO CURRENT TRANSACTION.
+  ENDIF.
+
+END-OF-SELECTION.
+  IF p_lock IS NOT INITIAL.
+    o_operator->do( abap_true ). " Locks customers
+  ELSEIF p_unlk IS NOT INITIAL.
+    o_operator->do( abap_false ). " Unlocks clients
+  ENDIF.
+  o_operator->show_results( ).
+  IF o_operator->av_failed = abap_true.
+    o_operator->show_fails( ).
+  ENDIF.
+  o_operator->free( ).
+  FREE o_operator.

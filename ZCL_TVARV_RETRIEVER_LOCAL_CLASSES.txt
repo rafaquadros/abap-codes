@@ -1,0 +1,50 @@
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
+*--------------------------------------------------------------------*
+* Class LCL_DB
+*  OVERVIEW: Objects of this class mediates database accesses. It aims
+*            to isolate this development from external dependencies, as
+*            might be desirable in tests.
+*            The instances of this object is provided by the private
+*            method GET_DB of the main class (ZCL_TVARV_RETRIEVER). By
+*            redefining the method GET_DB one can provide appropriated
+*            stubs, which must redefine the desired methods of LCL_DB,
+*            instead of accessing real database tables.
+*--------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS  get_tvarvc_values IMPORTING p_vname         TYPE rvari_vnam
+                               EXPORTING value(rt_values) TYPE TVARVC_T
+                                RAISING cx_sy_sql_error.
+*--------------------------------------------------------------------*
+* Method GET_TVARVC_VALUES
+*--------------------------------------------------------------------*
+* REQUIRES: The variant name must be provided.
+* EFFECTS.: If no related data is found, returns exception type
+*           CX_SX_SY_SQL_ERROR, otherwise returns the related variant
+*           type and a table with the range of related values found in
+*           tabel TVARVC.
+*--------------------------------------------------------------------*
+* ->   P_VNAME      Name of Variant Variable.
+* <-   RT_VALUES    Collection of variant values.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_tvarvc_values.
+    DATA  lv_vname TYPE RVARI_VNAM.
+
+    CONCATENATE p_vname '%' INTO lv_vname.
+    SELECT * FROM tvarvc
+      INTO TABLE rt_values
+     WHERE name LIKE lv_vname.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "get_tvarvc_values
+ENDCLASS.                    "lcl_db IMPLEMENTATION

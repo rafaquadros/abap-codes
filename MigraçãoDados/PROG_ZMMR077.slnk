@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROG NAME="ZMMR077" VARCL="X" SUBC="1" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" FIXPT="X" UCCHECK="X">
+ <textPool>
+  <language SPRAS="E">
+   <textElement ID="I" KEY="001" ENTRY="File path and name" LENGTH="30 "/>
+   <textElement ID="I" KEY="002" ENTRY="Tab separated values with no header line" LENGTH="60 "/>
+   <textElement ID="I" KEY="003" ENTRY="Table name in ABAP Dictionary" LENGTH="30 "/>
+   <textElement ID="I" KEY="004" ENTRY="Operation" LENGTH="9 "/>
+   <textElement ID="I" KEY="005" ENTRY="Media" LENGTH="5 "/>
+   <textElement ID="I" KEY="E01" ENTRY="Table not found!" LENGTH="35 "/>
+   <textElement ID="I" KEY="E02" ENTRY="File could not be saved!" LENGTH="35 "/>
+   <textElement ID="I" KEY="M01" ENTRY="Please provide the file path and name." LENGTH="50 "/>
+   <textElement ID="R" ENTRY="Download/Upload of table contents" LENGTH="33 "/>
+   <textElement ID="S" KEY="P_FILE" ENTRY="        Path+File name" LENGTH="22 "/>
+   <textElement ID="S" KEY="P_TABL" ENTRY="D       ." LENGTH="18 "/>
+   <textElement ID="S" KEY="R_LCAL" ENTRY="        Local" LENGTH="13 "/>
+   <textElement ID="S" KEY="R_OPRD" ENTRY="        Download" LENGTH="16 "/>
+   <textElement ID="S" KEY="R_OPRU" ENTRY="        Upload" LENGTH="14 "/>
+   <textElement ID="S" KEY="R_SERV" ENTRY="        Server" LENGTH="14 "/>
+  </language>
+  <language SPRAS="P">
+   <textElement ID="I" KEY="001" ENTRY="Caminho e nome do arquivo" LENGTH="30 "/>
+   <textElement ID="I" KEY="002" ENTRY="Valores separados por tabulação, sem linhas de cabeçalho." LENGTH="60 "/>
+   <textElement ID="I" KEY="003" ENTRY="Nome da tabela no Dicionário" LENGTH="30 "/>
+   <textElement ID="I" KEY="004" ENTRY="Operação" LENGTH="9 "/>
+   <textElement ID="I" KEY="005" ENTRY="Meio" LENGTH="5 "/>
+   <textElement ID="I" KEY="E01" ENTRY="Tabela não encontrada!" LENGTH="35 "/>
+   <textElement ID="I" KEY="E02" ENTRY="O arquivo não pôde ser gravado!" LENGTH="35 "/>
+   <textElement ID="I" KEY="M01" ENTRY="Por favor, forneça o caminho e o nome do arquivo." LENGTH="50 "/>
+   <textElement ID="R" ENTRY="Download/Upload de conteúdo de tabelas" LENGTH="70 "/>
+   <textElement ID="S" KEY="P_FILE" ENTRY="        Caminho e nome do arquivo" LENGTH="33 "/>
+   <textElement ID="S" KEY="R_LCAL" ENTRY="        Local" LENGTH="13 "/>
+   <textElement ID="S" KEY="R_OPRD" ENTRY="        Download" LENGTH="16 "/>
+   <textElement ID="S" KEY="R_OPRU" ENTRY="        Upload" LENGTH="14 "/>
+   <textElement ID="S" KEY="R_SERV" ENTRY="        Server" LENGTH="14 "/>
+   <textElement ID="S" KEY="P_TABL" ENTRY="D       ." LENGTH="18 "/>
+  </language>
+ </textPool>
+ <source>************************************************************************
+* Autor      : META - Rafael Guares Quadros                            *
+* Data       : 28.11.2019                                              *
+* Descrição  : Download/Upload do conteúdo de tabelas                  *
+************************************************************************
+*                    Histórico das Modificações                        *
+*----------------------------------------------------------------------*
+* Versão  | Autor        | Data       | Request nº                     *
+*----------------------------------------------------------------------*
+* VER-nnn | &lt;User ID&gt;    | dd.mm.aaaa | &lt;Request&gt;                      *
+* Objetivo   :                                                         *
+************************************************************************
+
+INCLUDE: zmmr077_top                             ,   &quot; global Data
+         zmmr077_p01.                                &quot; classes implementations
+* INCLUDE ZMMR061_O01                             .  &quot; PBO-Modules
+* INCLUDE ZMMR061_I01                             .  &quot; PAI-Modules
+* INCLUDE ZMMR061_F01                             .  &quot; FORM-Routines
+
+INITIALIZATION.
+  CREATE OBJECT r_report.
+  CLEAR p_file.
+
+AT SELECTION-SCREEN ON p_file.
+  IF sy-ucomm &lt;&gt; &apos;MOP&apos;.
+    IF r_report-&gt;mr_media IS INITIAL.
+      FREE: r_desktop, r_server.
+      p_file = r_report-&gt;get_field_value( &apos;P_FILE&apos; ).
+
+
+      IF p_file IS NOT INITIAL OR p_file CO space.
+        IF r_opru = abap_true.
+          TRY .
+              CREATE OBJECT r_server
+                EXPORTING
+                  i_filename = p_file.
+
+              r_server-&gt;open( ).
+              r_server-&gt;close( ).
+              r_report-&gt;mr_media ?= r_server.
+            CATCH cx_bapi_error.
+              CREATE OBJECT r_desktop
+                EXPORTING
+                  i_filename = p_file.
+              r_report-&gt;mr_media ?= r_desktop.
+          ENDTRY.
+          p_file = r_report-&gt;mr_media-&gt;m_filename.
+        ENDIF.
+
+      ELSE.
+        IF p_file IS INITIAL.
+          MESSAGE &apos;Please provide the file path and name.&apos;(m01) TYPE &apos;E&apos; DISPLAY LIKE &apos;I&apos;.
+          LEAVE TO CURRENT TRANSACTION.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+  ENDIF.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+  DATA: t_file_table TYPE filetable,
+        rc           TYPE i.
+  FIELD-SYMBOLS  &lt;s_file_table&gt; TYPE file_table.
+
+  CLEAR: t_file_table, rc.
+  cl_gui_frontend_services=&gt;file_open_dialog(
+    EXPORTING
+*      window_title            = window_title
+*      default_extension       = default_extension
+*      default_filename        = default_filename
+*      file_filter             = file_filter
+*      with_encoding           = with_encoding
+*      initial_directory       = initial_directory
+      multiselection          = abap_false
+    CHANGING
+      file_table              = t_file_table
+      rc                      = rc
+*      user_action             = user_action
+*      file_encoding           = file_encoding
+    EXCEPTIONS
+      file_open_dialog_failed = 1
+      cntl_error              = 2
+      error_no_gui            = 3
+      not_supported_by_gui    = 4
+         ).
+  IF sy-subrc &lt;&gt; 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+  READ TABLE t_file_table ASSIGNING &lt;s_file_table&gt; INDEX 1.
+  IF sy-subrc = 0.
+    p_file = &lt;s_file_table&gt;-filename.
+  ENDIF.
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-name NP &apos;*R_OPR*&apos;.
+      CASE abap_true.
+        WHEN r_oprd.
+          IF screen-group1 = &apos;MOP&apos;.
+            screen-active = &apos;1&apos;.
+            MODIFY SCREEN.
+            CONTINUE.
+          ENDIF.
+        WHEN OTHERS.
+          IF screen-group1 = &apos;MOP&apos;.
+            screen-active = &apos;0&apos;.
+            MODIFY SCREEN.
+            CONTINUE.
+          ENDIF.
+      ENDCASE.
+    ENDIF.
+  ENDLOOP.
+
+AT SELECTION-SCREEN.
+  IF sy-ucomm = &apos;MOP&apos;.
+    LOOP AT SCREEN.
+      CASE abap_true.
+        WHEN r_oprd.
+          IF screen-group1 = &apos;MOP&apos;.
+            screen-active = &apos;1&apos;.
+            MODIFY SCREEN.
+            CONTINUE.
+          ENDIF.
+        WHEN OTHERS.
+          IF screen-group1 = &apos;MOP&apos;.
+            screen-active = &apos;0&apos;.
+            MODIFY SCREEN.
+            CONTINUE.
+          ENDIF.
+      ENDCASE.
+    ENDLOOP.
+  ENDIF.
+
+START-OF-SELECTION.
+  TRY .
+      r_report-&gt;check_table_existence( ).
+    CATCH cx_bapi_error INTO r_error.
+      READ TABLE r_error-&gt;status ASSIGNING &lt;s_return&gt; INDEX 1.
+      IF sy-subrc = 0.
+        MESSAGE &lt;s_return&gt;-message TYPE &apos;I&apos; DISPLAY LIKE &apos;E&apos;.
+        LEAVE TO CURRENT TRANSACTION.
+      ENDIF.
+  ENDTRY.
+
+END-OF-SELECTION.
+  TRY .
+      r_report-&gt;execute( ).
+    CATCH cx_bapi_error INTO r_error.
+      READ TABLE r_error-&gt;status ASSIGNING &lt;s_return&gt; INDEX 1.
+      IF sy-subrc = 0.
+        MESSAGE &lt;s_return&gt;-message TYPE &apos;I&apos; DISPLAY LIKE &apos;E&apos;.
+        LEAVE TO CURRENT TRANSACTION.
+      ENDIF.
+  ENDTRY.</source>
+</PROG>

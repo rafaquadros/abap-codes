@@ -1,0 +1,112 @@
+class ZCL_BM_WEBUI_CONFIG definition
+  public
+  final
+  create public .
+
+public section.
+
+  interfaces IF_BADI_INTERFACE .
+  interfaces IF_DLC_CONFIG_ACCESS .
+
+  class-methods CLASS_CONSTRUCTOR .
+protected section.
+private section.
+
+  class-data T_ENHANCEMENTS type OSREFTAB .
+ENDCLASS.
+
+
+
+CLASS ZCL_BM_WEBUI_CONFIG IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_BM_WEBUI_CONFIG=>CLASS_CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD class_constructor.
+  DATA: lo_query_manager TYPE REF TO if_os_query_manager,
+        lo_query         TYPE REF TO cl_os_query.
+
+  TRY .
+      lo_query_manager = cl_os_system=>get_query_manager( ).
+      lo_query ?= lo_query_manager->create_query( ).
+
+      t_enhancements = zca_bm_prs_bspwd_cmp_c_repl=>agent->if_os_ca_persistency~get_persistent_by_query(
+           i_query         = lo_query
+*      i_parameter_tab =
+*      i_par1          =
+*      i_par2          =
+*      i_par3          =
+*      i_subclasses    = OSCON_FALSE
+*      i_upto          = 0
+*      i_options       = IF_OS_QUERY_OPTIONS=>DEFAULT_OPTIONS
+       ).
+
+    CATCH cx_os_object_not_found " Object Services: Object not Found
+          cx_os_query_error. " Object Services: Query Error
+      RETURN.
+  ENDTRY.
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_BM_WEBUI_CONFIG->IF_DLC_CONFIG_ACCESS~CHOOSE_CONFIG
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_COMPONENT                   TYPE        BSP_WD_COMPONENT_NAME
+* | [--->] IV_VIEWNAME                    TYPE        O2PAGEEXT
+* | [--->] IS_CONFIG_SEARCH_KEY           TYPE        BSP_DLCS_CONF_SEM_KEY_VAR_PART
+* | [--->] IT_CONFIG_SAP                  TYPE        BSP_DLCT_CONTEXT_SEMANTIC_KEY
+* | [--->] IT_CONFIG_CUS                  TYPE        BSP_DLCT_CONTEXT_SEMANTIC_KEY
+* | [<---] ES_CONFIG_CHOOSEN              TYPE        BSP_DLCS_CONTEXT_SEMANTIC_KEY
+* | [<---] EV_CONFIG_CHOOSEN_ORIGIN       TYPE        BSP_DLC_CONFIG_DATA_ORIGIN
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD if_dlc_config_access~choose_config.
+  DATA: lo_badi            TYPE REF TO component_loading,
+        lv_enhancement_set TYPE bsp_wd_enhancement_set,
+        lo_enhancement     TYPE REF TO zcl_bm_prs_bspwd_cmp_c_repl.
+  FIELD-SYMBOLS: <o_enhancement>     LIKE LINE OF t_enhancements,
+                 <lw_config_chososen> TYPE bsp_dlcs_context_semantic_key.
+
+  IF sy-uname <> '97611016'.
+    RETURN.
+  ENDIF.
+
+  TRY.
+*     try to determine active enhancement set
+      GET BADI lo_badi.
+      CALL BADI lo_badi->get_active_enhancement_set
+        RECEIVING
+          rv_result = lv_enhancement_set.
+    CATCH cx_badi_not_implemented.
+      RETURN.
+  ENDTRY.
+
+  FREE lo_badi.
+  IF lv_enhancement_set <> 'Z_NEW_CRM'.
+    RETURN.
+  ENDIF.
+
+  LOOP AT t_enhancements ASSIGNING <o_enhancement>.
+    lo_enhancement ?= <o_enhancement>.
+
+    TRY .
+        IF lo_enhancement->get_enhancement_set( ) = lv_enhancement_set OR
+           lo_enhancement->get_comp_name( ) <> iv_component OR
+           lo_enhancement->get_replaced_contr( ) <> iv_viewname.
+          CONTINUE.
+        ENDIF.
+
+        READ TABLE it_config_sap ASSIGNING <lw_config_chososen> INDEX 1.
+        IF sy-subrc = 0.
+          es_config_choosen = <lw_config_chososen>.
+          ev_config_choosen_origin = 'S'.
+          EXIT.
+        ENDIF.
+      CATCH cx_os_object_not_found.
+        CONTINUE.
+    ENDTRY.
+  ENDLOOP.
+
+ENDMETHOD.
+ENDCLASS.

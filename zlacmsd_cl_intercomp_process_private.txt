@@ -1,0 +1,46 @@
+*"* private components of class ZLACMSD_CL_INTERCOMP_PROCESS
+*"* do not include other source files here!!!
+private section.
+
+  class-data AO_DB type ref to LCL_DB .
+  class-data AO_API type ref to LCL_API .
+  class-data AO_INSTANCE type ref to ZLACMSD_CL_INTERCOMP_PROCESS .
+  data AO_ITEMS type ref to LCL_PO_ITEMS .
+
+  methods BATCH_SPLIT
+    importing
+      !PO_API type ref to LCL_API
+      !PO_DB type ref to LCL_DB .
+  class-methods ARE_PREREQUISITES_STATISFIED
+    importing
+      value(PO_API) type ref to LCL_API
+    returning
+      value(R_BOOLEAN) type CHAR01 .
+  methods CREATE_ID
+    importing
+      !PO_API type ref to LCL_API
+      !PO_DB type ref to LCL_DB .
+  methods CREATE_STOCK_ID
+    importing
+      !PO_API type ref to LCL_API
+      !PO_DB type ref to LCL_DB .
+  methods PICKING_DSD
+    importing
+      !PO_API type ref to LCL_API .
+  methods CREATE_ITEMS_LIST
+    importing
+      !PT_XMSEG type TY_T_MSEG
+      !P_CANCELATION type CHAR01
+      !PO_DB type ref to LCL_DB
+    returning
+      value(RO_ITEMS) type ref to LCL_PO_ITEMS .
+  methods GET_RELATED_DELIVERY
+    returning
+      value(R_VBELN) type VBELN .
+  methods PICKING_PROCESSING
+    importing
+      value(PT_ITEMS) type CYT_DELIVERIES_ITEMS
+      value(PO_API) type ref to LCL_API .
+  methods GET_FRIENDS_DELIVERIES
+    exporting
+      value(RT_ITEMS) type CYT_SALE_ITEMS .

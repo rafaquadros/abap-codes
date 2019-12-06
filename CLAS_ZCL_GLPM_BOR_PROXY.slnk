@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-16"?>
+<CLAS CLSNAME="ZCL_GLPM_BOR_PROXY" VERSION="1" LANGU="E" DESCRIPT="BOR Proxy" UUID="514D93CA048E48A0E10080000A010BAA" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" CHGDANYON="00000000" CLSCCINCL="X" FIXPT="X" UNICODE="X" R3RELEASE="702" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 " REFCLSNAME="ZCL_GLME_BOR_PROXY">
+ <publicSection>class ZCL_GLPM_BOR_PROXY definition
+  public
+  inheriting from ZCL_GLME_BOR_PROXY
+  create public .
+
+public section.
+*&quot;* public components of class ZCL_GLPM_BOR_PROXY
+*&quot;* do not include other source files here!!!
+
+  methods GET_MULTILINE_ATTRIBUTE
+    importing
+      value(P_NAME) type SWO_VERB
+    returning
+      value(RT_VALUES) type SWFTVALUE
+    raising
+      ZCX_BOR_PROXY_ERROR .
+  methods CMTD_PARM_NORESULT
+    importing
+      value(P_NAME) type SWO_VERB
+      value(PT_PARMS) type SWCONTTAB
+    raising
+      ZCX_BOR_PROXY_ERROR .
+  methods FREE .</publicSection>
+ <protectedSection>protected section.
+*&quot;* protected components of class ZCL_GLPM_BOR_PROXY
+*&quot;* do not include other source files here!!!</protectedSection>
+ <privateSection>private section.
+*&quot;* private components of class ZCL_GLPM_BOR_PROXY
+*&quot;* do not include other source files here!!!</privateSection>
+ <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+ <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+ <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class
+DEFINE m_raise_exception.
+  MESSAGE ID lw_swo_return-workarea
+  TYPE &apos;E&apos;
+  NUMBER lw_swo_return-MESSAGE
+  WITH lw_swo_return-variable1 lw_swo_return-variable2
+  lw_swo_return-variable3 lw_swo_return-variable4
+  INTO lvc_dummy.
+  lw_return-TYPE       = sy-msgty.
+  lw_return-ID         = sy-msgid.
+  lw_return-NUMBER     = sy-msgno.
+  lw_return-message_v1 = sy-msgv1.
+  lw_return-message_v2 = sy-msgv2.
+  lw_return-message_v3 = sy-msgv3.
+  lw_return-message_v4 = sy-msgv4.
+  lw_return-MESSAGE    = lw_swo_return-TEXT.
+  APPEND lw_return TO lt_return.
+  RAISE exception TYPE zcx_bor_proxy_error
+  EXPORTING
+    at_return = lt_return.
+END-OF-DEFINITION.</localMacros>
+ <textPool/>
+ <classDocumentation/>
+ <inheritance CLSNAME="ZCL_GLPM_BOR_PROXY" REFCLSNAME="ZCL_GLME_BOR_PROXY" VERSION="1" STATE="1" AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000"/>
+ <method CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="CMTD_PARM_NORESULT" VERSION="1" LANGU="E" DESCRIPT="Calls a method the requires parameters returns nothing." EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="CMTD_PARM_NORESULT" SCONAME="P_NAME" VERSION="1" LANGU="E" DESCRIPT="Object type component" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="SWO_VERB"/>
+  <parameter CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="CMTD_PARM_NORESULT" SCONAME="PT_PARMS" VERSION="1" LANGU="E" DESCRIPT="Container Table" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="SWCONTTAB"/>
+  <exception CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="CMTD_PARM_NORESULT" SCONAME="ZCX_BOR_PROXY_ERROR" VERSION="1" LANGU="E" DESCRIPT="BOR proxy exception" MTDTYPE="0" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000"/>
+  <source>METHOD CMTD_PARM_NORESULT.
+  DATA: lt_container  TYPE swconttab,
+        lw_swo_return TYPE swotreturn,
+        lw_return     TYPE bapiret2,
+        lt_return     TYPE bapiret2_t,
+        lvc_dummy(1)  TYPE c.
+  FIELD-SYMBOLS  &lt;lw_container&gt;  TYPE swcont.
+
+  lt_container = pt_parms.
+  CALL FUNCTION &apos;SWO_INVOKE&apos;
+    EXPORTING
+      access    = &apos;C&apos;
+      object    = me-&gt;av_object
+      verb      = p_name
+    IMPORTING
+      return    = lw_swo_return
+    TABLES
+      container = lt_container.
+
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="FREE" VERSION="1" LANGU="E" DESCRIPT="Releases BOR" EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130324" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <source>method FREE.
+  CALL FUNCTION &apos;SWO_FREE&apos;
+    EXPORTING
+      object        = me-&gt;av_object.
+endmethod.</source>
+  <methodDocumentation/>
+ </method>
+ <method CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="GET_MULTILINE_ATTRIBUTE" VERSION="1" LANGU="E" DESCRIPT="Returns the value of a table attribute" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" R3RELEASE="702" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="GET_MULTILINE_ATTRIBUTE" SCONAME="P_NAME" VERSION="1" LANGU="E" DESCRIPT="Object type component" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="0" PARPASSTYP="0" TYPTYPE="1" TYPE="SWO_VERB"/>
+  <parameter CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="GET_MULTILINE_ATTRIBUTE" SCONAME="RT_VALUES" VERSION="1" LANGU="E" DESCRIPT="Workflow: Table Type for XML Character Stream" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000" PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="SWFTVALUE"/>
+  <exception CLSNAME="ZCL_GLPM_BOR_PROXY" CMPNAME="GET_MULTILINE_ATTRIBUTE" SCONAME="ZCX_BOR_PROXY_ERROR" VERSION="1" LANGU="E" DESCRIPT="BOR proxy exception" MTDTYPE="0" EDITORDER="1 " AUTHOR="EXRQUADR" CREATEDON="20130323" CHANGEDON="00000000"/>
+  <source>METHOD get_multiline_attribute.
+  DATA: lt_container  TYPE swconttab,
+        lw_swo_return TYPE swotreturn,
+        lw_return     TYPE bapiret2,
+        lt_return     TYPE bapiret2_t,
+        lvc_dummy(1)  TYPE c.
+  FIELD-SYMBOLS  &lt;lw_container&gt;  TYPE swcont.
+
+  CALL FUNCTION &apos;SWO_INVOKE&apos;
+    EXPORTING
+      access    = &apos;G&apos;
+      object    = me-&gt;av_object
+      verb      = p_name
+    IMPORTING
+      return    = lw_swo_return
+    TABLES
+      container = lt_container.
+  IF lt_container IS INITIAL.
+    m_raise_exception.
+  ELSE.
+    LOOP AT lt_container ASSIGNING &lt;lw_container&gt;.
+      APPEND &lt;lw_container&gt;-value TO rt_values.
+    ENDLOOP.
+  ENDIF.
+ENDMETHOD.</source>
+  <methodDocumentation/>
+ </method>
+</CLAS>

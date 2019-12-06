@@ -1,0 +1,767 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZRSD003_C01: LOCAL CLASSES IMPLEMENTATIONS
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_open_item
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_open_item IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+
+    av_bukrs = p_bukrs.
+    av_gjahr = p_gjahr.
+    av_belnr = p_belnr.
+    av_buzei = p_buzei.
+    av_shkzg = p_shkzg.
+    av_dmbtr = p_dmbtr.
+    av_zfbdt = p_zfbdt.
+    av_zbd1t = p_zbd1t.
+    av_zbd2t = p_zbd2t.
+    av_zbd3t = p_zbd3t.
+    av_rebzg = p_rebzg.
+  ENDMETHOD.                    "constructor
+  METHOD get_due_date.
+    DATA  lo_api TYPE REF TO lcl_api.
+
+    lo_api = me->get_api( ).
+
+    r_duedt = lo_api->calculate_due_date( p_shkzg = me->av_shkzg
+                                          p_zfbdt = me->av_zfbdt
+                                          p_zbd1t = me->av_zbd1t
+                                          p_zbd2t = me->av_zbd2t
+                                          p_zbd3t = me->av_zbd3t
+                                          p_rebzg = me->av_rebzg ).
+  ENDMETHOD.                    "get_due_date
+  METHOD set_local_currency.
+    DATA lo_db TYPE REF TO lcl_db.
+
+    lo_db = me->get_db( ).
+
+    TRY .
+        me->av_waerh = lo_db->get_company_currency( me->av_bukrs ).
+      CATCH cx_sy_sql_error.
+        FREE lo_db. RETURN.
+    ENDTRY.
+
+    FREE lo_db.
+  ENDMETHOD.                    "set_local_currency
+  METHOD free.
+    CLEAR: av_bukrs,
+           av_waerh,
+           av_gjahr,
+           av_belnr,
+           av_buzei,
+           av_shkzg,
+           av_dmbtr,
+           av_zfbdt,
+           av_zbd1t,
+           av_zbd2t,
+           av_zbd3t,
+           av_rebzg.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_open_item
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_items_list
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_items_list IMPLEMENTATION.
+  METHOD add.
+    APPEND po_item TO at_items.
+  ENDMETHOD.                    "add
+  METHOD get_iterator.
+    DATA lo_iterator TYPE REF TO lcl_item_iterator.
+
+    CREATE OBJECT lo_iterator
+      EXPORTING
+        pt_items = me->at_items.
+
+    ro_iterator = lo_iterator.
+  ENDMETHOD.                    "get_iterator
+  METHOD free.
+    FIELD-SYMBOLS: <lo_element> TYPE REF TO lcl_list_element.
+
+    LOOP AT at_items ASSIGNING <lo_element>.
+      <lo_element>->free( ).
+      FREE <lo_element>.
+      DELETE at_items.
+    ENDLOOP.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_items_list
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_item_iterator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_item_iterator IMPLEMENTATION.
+  METHOD constructor.
+    me->at_items = pt_items.
+  ENDMETHOD.                    "constructor
+  METHOD hasnext.
+    DATA li_lines TYPE int4.
+
+    DESCRIBE TABLE at_items LINES li_lines.
+    IF li_lines > 0.
+      r_result = abap_true.
+    ENDIF.
+  ENDMETHOD.                    "hasnext
+  METHOD next.
+    READ TABLE at_items INDEX 1 INTO ro_object.
+    DELETE at_items INDEX 1.
+  ENDMETHOD.                    "next
+ENDCLASS.               "lcl_item_iterator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_api
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_api IMPLEMENTATION.
+  METHOD calculate_due_date.
+    CALL FUNCTION 'NET_DUE_DATE_GET'
+      EXPORTING
+        i_zfbdt = p_zfbdt
+        i_zbd1t = p_zbd1t
+        i_zbd2t = p_zbd2t
+        i_zbd3t = p_zbd3t
+        i_shkzg = p_shkzg
+        i_rebzg = p_rebzg
+      IMPORTING
+        e_faedt = r_duedt.
+  ENDMETHOD.                    "calculate_due_date
+  METHOD convert_amount.
+    DATA: lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+
+    CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'
+      EXPORTING
+        date             = sy-datum
+        foreign_amount   = p_amount
+        foreign_currency = p_fcurr
+        local_currency   = p_tcurr
+      IMPORTING
+        local_amount     = r_amount
+      EXCEPTIONS
+        no_rate_found    = 1
+        overflow         = 2
+        no_factors_found = 3
+        no_spread_found  = 4
+        derived_2_times  = 5
+        OTHERS           = 6.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO lvc_dummy.
+      me->fill_in_bapiret2(
+               EXPORTING
+                 p_type    = sy-msgty
+                 p_cl      = sy-msgid
+                 p_number  = sy-msgno
+                 p_par1    = sy-msgv1
+                 p_par2    = sy-msgv2
+                 p_par3    = sy-msgv3
+                 p_par4    = sy-msgv4
+               IMPORTING
+                 rw_return = lw_return ).
+      APPEND lw_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    "convert_amount
+  METHOD fill_in_bapiret2.
+    CALL FUNCTION 'BALW_BAPIRETURN_GET2'
+      EXPORTING
+        type   = p_type
+        cl     = p_cl
+        number = p_number
+        par1   = p_par1
+        par2   = p_par2
+        par3   = p_par3
+        par4   = p_par4
+      IMPORTING
+        return = rw_return.
+  ENDMETHOD.                    "fill_in_bapiret2
+ENDCLASS.               "lcl_api
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_db
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD get_blocking_data.
+    SELECT b~waers a~zzbla a~zzndd
+      FROM ztfi005 AS a
+     INNER JOIN t014 AS b
+        ON b~kkber = a~kkber
+        UP TO 1 ROWS
+      INTO (r_waers, r_zzbla, r_zzndd)
+     WHERE kunnr   = p_kunnr
+       AND a~kkber = c_kkber.
+    ENDSELECT.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "get_blocking_data
+  METHOD get_company_currency.
+    IF cv_bukrs = p_bukrs.
+      r_waers = cv_waers.
+      RETURN.
+    ELSE.
+      CLEAR: cv_bukrs, cv_waers.
+    ENDIF.
+    SELECT waers FROM t001 UP TO 1 ROWS
+      INTO r_waers
+     WHERE bukrs = p_bukrs.
+    ENDSELECT.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ELSE.
+      cv_bukrs = p_bukrs.
+      cv_waers = r_waers.
+    ENDIF.
+  ENDMETHOD.                    "get_company_currency
+  METHOD get_customers.
+    DATA  lr_kunnr TYPE cyr_kunnr.
+    FIELD-SYMBOLS  <lw_kunnr> TYPE LINE OF cyr_kunnr.
+
+    lr_kunnr[] = pr_kunnr[].
+    LOOP AT lr_kunnr ASSIGNING <lw_kunnr>.
+      IF <lw_kunnr>-sign is INITIAL.
+        <lw_kunnr>-sign = 'I'.
+      ENDIF.
+      IF <lw_kunnr>-option is INITIAL.
+        <lw_kunnr>-option = 'GE'.
+      ENDIF.
+    ENDLOOP.
+
+    SELECT kunnr FROM knkk
+      INTO TABLE rt_customers
+     WHERE kunnr IN lr_kunnr
+       AND kkber =  c_kkber
+       AND crblb =  p_locked.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "get_customers
+  METHOD get_open_items.
+    SELECT bukrs kunnr gjahr belnr buzei shkzg
+           dmbtr zfbdt zbd1t zbd2t zbd3t rebzg
+      FROM bsid
+      INTO TABLE rt_items
+       FOR ALL ENTRIES IN pt_kunnr
+     WHERE bukrs =  p_bukrs
+       AND kunnr = pt_kunnr-table_line
+       AND umskz = space
+       AND cpudt <> sy-datum
+       AND shkzg = 'S'.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "get_open_items
+  METHOD get_customer_name.
+    SELECT name1 FROM kna1 UP TO 1 ROWS
+      INTO r_name1
+     WHERE kunnr = p_kunnr.
+    ENDSELECT.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "get_customer_name
+ENDCLASS.               "lcl_db
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_customer
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_customer IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+
+    me->av_kunnr = p_kunnr.
+    me->av_crblb = p_locked.
+  ENDMETHOD.                    "constructor
+  METHOD set_name.
+    DATA lo_db TYPE REF TO lcl_db.
+
+    lo_db = me->get_db( ).
+
+    TRY .
+        me->av_name1 = lo_db->get_customer_name( me->av_kunnr ).
+      CATCH cx_sy_sql_error.
+        me->av_name1 = 'No name'(003).
+    ENDTRY.
+
+    FREE lo_db.
+  ENDMETHOD.                    "set_name
+  METHOD set_exception_data.
+    DATA lo_db TYPE REF TO lcl_db.
+
+    lo_db = me->get_db( ).
+
+    TRY .
+        lo_db->get_blocking_data(
+                EXPORTING
+                  p_kunnr = me->av_kunnr
+                IMPORTING
+                  r_waers = me->av_curlk
+                  r_zzbla = me->av_zzbla
+                  r_zzndd = me->av_zzndd ).
+        me->av_excep = abap_true.
+      CATCH cx_sy_sql_error.
+        me->av_excep = abap_false.
+    ENDTRY.
+
+    FREE lo_db.
+  ENDMETHOD.                    "set_exception_data
+  METHOD set_open_items.
+    me->ao_open_items = po_list.
+  ENDMETHOD.                    "set_open_items
+  METHOD get_amount_older_than.
+    DATA: lo_iterator TYPE REF TO lif_iterator,
+          lo_item     TYPE REF TO lcl_open_item,
+          lo_api      TYPE REF TO lcl_api,
+          lv_amount   TYPE wrb_curr,
+          li_days     TYPE int4.
+
+    lo_iterator = me->ao_open_items->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      li_days = sy-datum - lo_item->get_due_date( ).
+      IF li_days >= p_zzndd.
+        IF lo_item->av_waerh IS NOT INITIAL AND
+           ( lo_item->av_waerh <> p_waers ).
+          lo_api = me->get_api( ).
+          TRY .
+              lv_amount = lo_api->convert_amount(
+                                    p_fcurr  = lo_item->av_waerh
+                                    p_tcurr  = p_waers
+                                    p_amount = lo_item->av_dmbtr ).
+            CATCH cx_bapi_error.
+              lv_amount = lo_item->av_dmbtr.
+          ENDTRY.
+          ADD lv_amount TO r_amount.
+        ELSE.
+          ADD lo_item->av_dmbtr TO r_amount.
+        ENDIF.
+      ENDIF.
+    ENDWHILE.
+  ENDMETHOD.                    "get_amount_older_than
+  METHOD print_open_items.
+    DATA: lo_iterator  TYPE REF TO lif_iterator,
+          lo_item      TYPE REF TO lcl_open_item,
+          lo_api       TYPE REF TO lcl_api,
+          lv_amount    TYPE wrb_curr,
+          lv_total     TYPE wrb_curr,
+          li_days      TYPE int4,
+          ld_duedt     TYPE d,
+          lc_duedt(10) TYPE c.
+
+    lo_iterator = me->ao_open_items->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      ld_duedt = lo_item->get_due_date( ).
+      WRITE ld_duedt TO lc_duedt.
+      li_days = sy-datum - ld_duedt.
+      IF li_days >= p_zzndd.
+        IF lo_item->av_waerh IS NOT INITIAL AND
+           ( lo_item->av_waerh <> p_waers ).
+          lo_api = me->get_api( ).
+          TRY .
+              lv_amount = lo_api->convert_amount(
+                                    p_fcurr  = lo_item->av_waerh
+                                    p_tcurr  = p_waers
+                                    p_amount = lo_item->av_dmbtr ).
+            CATCH cx_bapi_error.
+              lv_amount = lo_item->av_dmbtr.
+          ENDTRY.
+          ADD lv_amount TO lv_total.
+        ELSE.
+          ADD lo_item->av_dmbtr TO lv_total.
+          lv_amount = lo_item->av_dmbtr.
+        ENDIF.
+      ENDIF.
+      WRITE: /10 lo_item->av_bukrs, lo_item->av_gjahr,
+                 lo_item->av_belnr, lo_item->av_buzei,
+                 lv_amount CURRENCY p_waers, p_waers, lc_duedt.
+    ENDWHILE.
+    WRITE: /20 'Total of open items:'(005), lv_total CURRENCY p_waers,
+           p_waers.
+  ENDMETHOD.                    "print_open_items
+  METHOD fd32.
+    DATA: lt_bdc       TYPE bdcdata_tab,
+          lw_bdc       TYPE bdcdata,
+          lw_opt       TYPE ctu_params,
+          lt_msg       TYPE tab_bdcmsgcoll,
+          lw_msg       TYPE bdcmsgcoll,
+          lt_return    TYPE bapiret2_t,
+          lw_return    TYPE bapiret2,
+          lv_msgty     TYPE symsgty,
+          lv_msgid     TYPE symsgid,
+          lv_msgno     TYPE symsgno,
+          lv_msgv1     TYPE symsgv,
+          lv_msgv2     TYPE symsgv,
+          lv_msgv3     TYPE symsgv,
+          lv_msgv4     TYPE symsgv,
+          ld_nexdt     TYPE d,
+          lc_nexdt(10) TYPE c,
+          li_times     TYPE i,
+          lo_api       TYPE REF TO lcl_api.
+
+    ld_nexdt = sy-datum + 1.
+    WRITE ld_nexdt TO lc_nexdt.
+* Screen mapping
+    m_fill_in_bdc: 'X' 'SAPMF02C'    '0100',
+                   ' ' 'BDC_OKCODE'  '/00',
+                   ' ' 'RF02L-KUNNR' me->av_kunnr,
+                   ' ' 'RF02L-KKBER' c_kkber,
+                   ' ' 'RF02L-D0210' 'X',
+                   'X' 'SAPMF02C'    '0210',
+                   ' ' 'BDC_OKCODE'  '=UPDA',
+                   ' ' 'KNKK-CRBLB'  p_lock,
+                   ' ' 'KNKK-NXTRV'  lc_nexdt.
+* Processing options
+    lw_opt-dismode = 'N'.
+    lw_opt-updmode = 'S'.
+* Transaction call
+    DO 3 TIMES. " Three tentatives in case of record locking
+      ADD 1 TO li_times.
+      CALL TRANSACTION 'FD32' USING lt_bdc
+                              OPTIONS FROM lw_opt
+                              MESSAGES INTO lt_msg.
+      IF li_times < 3.
+        READ TABLE lt_msg WITH KEY msgid = 'F4' "record locked
+                                   msgnr = '309'
+         TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          CLEAR lt_msg.
+          WAIT UP TO 10 SECONDS.
+        ENDIF.
+      ENDIF.
+    ENDDO.
+* Error treatment
+    READ TABLE lt_msg INTO lw_msg WITH KEY msgtyp = 'E'.
+    IF sy-subrc = 0.
+      lo_api = me->get_api( ).
+      LOOP AT lt_msg INTO lw_msg.
+        MOVE: lw_msg-msgtyp TO lv_msgty,
+              lw_msg-msgid  TO lv_msgid,
+              lw_msg-msgnr  TO lv_msgno,
+              lw_msg-msgv1  TO lv_msgv1,
+              lw_msg-msgv2  TO lv_msgv2,
+              lw_msg-msgv3  TO lv_msgv3,
+              lw_msg-msgv4  TO lv_msgv4.
+        lo_api->fill_in_bapiret2(
+             EXPORTING
+               p_type    = lv_msgty
+               p_cl      = lv_msgid
+               p_number  = lv_msgno
+               p_par1    = lv_msgv1
+               p_par2    = lv_msgv2
+               p_par3    = lv_msgv3
+               p_par4    = lv_msgv4
+             IMPORTING
+               rw_return = lw_return ).
+        APPEND lw_return TO lt_return.
+      ENDLOOP.
+      FREE lo_api.
+    ELSE.
+      IF p_lock = abap_true.
+        me->av_crblb = abap_true.
+      ELSE.
+        me->av_crblb = abap_false.
+      ENDIF.
+    ENDIF.
+    READ TABLE lt_return INTO lw_return WITH KEY type = 'E'.
+    IF sy-subrc = 0.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+           t100_msgid = lw_return-id
+           t100_msgno = lw_return-number
+           t100_msgv1 = lw_return-message_v1
+           t100_msgv2 = lw_return-message_v2
+           t100_msgv3 = lw_return-message_v3
+           t100_msgv4 = lw_return-message_v4
+           status     = lt_return[].
+    ENDIF.
+  ENDMETHOD.                    "fd32
+  METHOD set_operation_failed.
+    me->ax_error = px_error.
+  ENDMETHOD.                    "set_operation_failed
+  METHOD has_failed.
+    IF me->ax_error IS BOUND.
+      r_bool = abap_true.
+    ENDIF.
+  ENDMETHOD.                    "has_failed
+  METHOD print_messages.
+    DATA  ls_message TYPE string.
+    FIELD-SYMBOLS  <lw_return>  TYPE bapiret2.
+
+    LOOP AT me->ax_error->status ASSIGNING <lw_return>.
+      MESSAGE ID <lw_return>-id
+         TYPE <lw_return>-type
+       NUMBER <lw_return>-number
+         WITH <lw_return>-message_v1 <lw_return>-message_v2
+              <lw_return>-message_v3 <lw_return>-message_v4
+         INTO ls_message.
+      WRITE: /10 <lw_return>-id, <lw_return>-type, <lw_return>-number,
+             ls_message.
+    ENDLOOP.
+  ENDMETHOD.                    "print_messages
+  METHOD free.
+    me->ao_open_items->free( ).
+    FREE me->ao_open_items.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_customer
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_operator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_operator IMPLEMENTATION.
+  METHOD get_instance.
+    DATA: lo_locker   TYPE REF TO lcl_locker,
+          lo_unlocker TYPE REF TO lcl_unlocker.
+    IF p_lock IS NOT INITIAL.
+      CREATE OBJECT lo_locker.
+      ro_operator = lo_locker.
+      FREE lo_locker.
+    ELSEIF p_unlk IS NOT INITIAL.
+      CREATE OBJECT lo_unlocker.
+      ro_operator = lo_unlocker.
+      FREE lo_unlocker.
+    ENDIF.
+  ENDMETHOD.                    "get_instance
+  METHOD set_customers_list.
+    DATA: lo_db         TYPE REF TO lcl_db,
+          lo_customer   TYPE REF TO lcl_customer,
+          lo_item       TYPE REF TO lcl_open_item,
+          lo_list       TYPE REF TO lcl_items_list,
+          lt_customers  TYPE lcl_db=>cyt_customers,
+          lt_open_items TYPE lcl_db=>cyt_open_items,
+          lr_kunnr      TYPE lcl_db=>cyr_kunnr,
+          lw_kunnr      TYPE LINE OF lcl_db=>cyr_kunnr,
+          lv_tabix      TYPE sytabix.
+    FIELD-SYMBOLS: <lv_kunnr> TYPE kunnr,
+                   <lw_item>  TYPE lcl_db=>cyw_open_item.
+
+    CREATE OBJECT ao_customers_list.
+    lo_db = me->get_db( ).
+
+    lr_kunnr = s_kunnr[]. "sel. screen
+    INSERT s_kunnr INTO lr_kunnr INDEX 1. "sel. screen
+    SORT lr_kunnr.
+    DELETE ADJACENT DUPLICATES FROM lr_kunnr.
+    TRY .
+        lo_db->get_customers( EXPORTING pr_kunnr = lr_kunnr
+                                        p_locked = p_locked
+                              IMPORTING rt_customers = lt_customers ).
+      CATCH cx_sy_sql_error.
+        FREE lo_db. RETURN.
+    ENDTRY.
+
+    TRY .
+        lo_db->get_open_items( EXPORTING p_bukrs  = p_bukr " sel. screen
+                                         pt_kunnr = lt_customers
+                               IMPORTING rt_items = lt_open_items ).
+      CATCH cx_sy_sql_error.
+    ENDTRY.
+    FREE lr_kunnr.
+
+    SORT lt_open_items BY kunnr.
+    LOOP AT lt_customers ASSIGNING <lv_kunnr>.
+      CREATE OBJECT lo_customer
+        EXPORTING
+          p_kunnr  = <lv_kunnr>
+          p_locked = p_locked.
+      CREATE OBJECT lo_list.
+      READ TABLE lt_open_items TRANSPORTING NO FIELDS
+       WITH KEY kunnr = <lv_kunnr>.
+      IF sy-subrc = 0.
+        lv_tabix = sy-tabix.
+        LOOP AT lt_open_items ASSIGNING <lw_item> FROM lv_tabix.
+          IF <lw_item>-kunnr <> <lv_kunnr>.
+            EXIT.
+          ENDIF.
+          CREATE OBJECT lo_item
+            EXPORTING
+              p_bukrs = <lw_item>-bukrs
+              p_gjahr = <lw_item>-gjahr
+              p_belnr = <lw_item>-belnr
+              p_buzei = <lw_item>-buzei
+              p_shkzg = <lw_item>-shkzg
+              p_dmbtr = <lw_item>-dmbtr
+              p_zfbdt = <lw_item>-zfbdt
+              p_zbd1t = <lw_item>-zbd1t
+              p_zbd2t = <lw_item>-zbd2t
+              p_zbd3t = <lw_item>-zbd3t
+              p_rebzg = <lw_item>-rebzg.
+          lo_item->set_local_currency( ).
+          lo_list->add( lo_item ).
+          FREE lo_item.
+        ENDLOOP.
+      ENDIF.
+      lo_customer->set_open_items( lo_list ).
+      lo_customer->set_exception_data( ).
+      lo_customer->set_name( ).
+      ao_customers_list->add( lo_customer ).
+      FREE: lo_list, lo_customer.
+    ENDLOOP.
+
+    FREE lo_db.
+  ENDMETHOD.                    "set_customers_list
+  METHOD is_customers_list_empty.
+    DATA  lo_iterator TYPE REF TO lcl_item_iterator.
+
+    lo_iterator ?= me->ao_customers_list->get_iterator( ).
+    IF lo_iterator->hasnext( ) = abap_false.
+      r_bool = abap_true.
+    ENDIF.
+  ENDMETHOD.                    "is_customers_list_empty
+  METHOD do.
+    DATA: lo_db       TYPE REF TO lcl_db,
+          lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_customer TYPE REF TO lcl_customer,
+          lx_error    TYPE REF TO cx_bapi_error,
+          lv_waers    TYPE waers,
+          lv_zzbla    TYPE zzbla,
+          lv_zzndd    TYPE zzndd,
+          lv_amount   TYPE wrb_curr.
+
+    lo_db = me->get_db( ).
+    TRY .
+        lo_db->get_blocking_data(
+                EXPORTING
+                  p_kunnr = space
+                IMPORTING
+                  r_waers = me->av_waers
+                  r_zzbla = me->av_zzbla
+                  r_zzndd = me->av_zzndd ).
+      CATCH cx_sy_sql_error.
+        MESSAGE e150.
+    ENDTRY.
+
+    lo_iterator ?= ao_customers_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_customer ?= lo_iterator->next( ).
+      IF lo_customer->av_excep = abap_true.
+        lv_zzndd = lo_customer->av_zzndd.
+        lv_waers = lo_customer->av_curlk.
+        lv_zzbla = lo_customer->av_zzbla.
+      ELSE.
+        lv_zzndd = me->av_zzndd.
+        lv_waers = me->av_waers.
+        lv_zzbla = me->av_zzbla.
+      ENDIF.
+      lv_amount =
+               lo_customer->get_amount_older_than( p_zzndd = lv_zzndd
+                                                   p_waers = lv_waers ).
+      IF ( p_lock = abap_true  AND lv_amount >= lv_zzbla ) OR
+         ( p_lock = abap_false AND lv_amount < lv_zzbla ).
+        TRY .
+            lo_customer->fd32( p_lock ).
+          CATCH cx_bapi_error INTO lx_error .
+            lo_customer->set_operation_failed( lx_error ).
+            me->av_failed = abap_true.
+        ENDTRY.
+      ENDIF.
+      FREE lo_customer.
+    ENDWHILE.
+    FREE: lo_iterator, lo_db.
+  ENDMETHOD.                    "do
+  METHOD show_fails.
+    DATA: lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_customer TYPE REF TO lcl_customer,
+          lv_waers    TYPE waers,
+          lv_zzbla    TYPE zzbla,
+          lv_zzndd    TYPE zzndd.
+
+    WRITE / 'Customers to whom the action failed:'(011).
+    lo_iterator ?= ao_customers_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_customer ?= lo_iterator->next( ).
+      IF lo_customer->has_failed( ) = abap_false.
+        CONTINUE.
+      ENDIF.
+      m_customer_header.
+      lo_customer->print_messages( ).
+      FREE lo_customer.
+    ENDWHILE.
+    FREE: lo_iterator.
+  ENDMETHOD.                    "show_fails
+  METHOD free.
+    ao_customers_list->free( ).
+    FREE ao_customers_list.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_operator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_locker
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_locker IMPLEMENTATION.
+  METHOD show_results.
+    DATA: lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_customer TYPE REF TO lcl_customer,
+          lv_waers    TYPE waers,
+          lv_zzbla    TYPE zzbla,
+          lv_zzndd    TYPE zzndd.
+
+    WRITE 'Customers that have been locked:'(004).
+    lo_iterator ?= ao_customers_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_customer ?= lo_iterator->next( ).
+      IF lo_customer->av_crblb  = abap_false.
+        CONTINUE.
+      ENDIF.
+      m_customer_header.
+      lo_customer->print_open_items( p_zzndd = lv_zzndd
+                                     p_waers = lv_waers ).
+      FREE lo_customer.
+    ENDWHILE.
+    FREE: lo_iterator.
+  ENDMETHOD.                    "show_results
+ENDCLASS.               "lcl_locker
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_unlocker
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_unlocker IMPLEMENTATION.
+  METHOD show_results.
+    DATA: lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_customer TYPE REF TO lcl_customer,
+          lv_waers    TYPE waers,
+          lv_zzbla    TYPE zzbla,
+          lv_zzndd    TYPE zzndd.
+
+    WRITE 'Customers that have been unlocked:'(006).
+    lo_iterator ?= ao_customers_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_customer ?= lo_iterator->next( ).
+      IF lo_customer->av_crblb  = abap_true.
+        CONTINUE.
+      ENDIF.
+      m_customer_header.
+      FREE lo_customer.
+    ENDWHILE.
+    FREE lo_iterator.
+  ENDMETHOD.                    "show_results
+ENDCLASS.               "lcl_unlocker
+CLASS lcl_custom_class IMPLEMENTATION.
+  METHOD get_api.
+    DATA lo_api TYPE REF TO lcl_api.
+
+    CREATE OBJECT lo_api.
+    ro_api = lo_api.
+    FREE lo_api.
+  ENDMETHOD.                    "get_api
+  METHOD get_db.
+    DATA lo_db TYPE REF TO lcl_db.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.

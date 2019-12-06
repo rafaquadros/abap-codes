@@ -1,0 +1,761 @@
+*&---------------------------------------------------------------------*
+*& Include ZPFIR_008_TOP                                Report ZPFIR_008
+*&
+*&---------------------------------------------------------------------*
+
+REPORT   zpfir_008 MESSAGE-ID zlfi03.
+* Naming notation:
+*  [V][C][T]_[name]
+*  where: .[V] stands for visibility, e.g.: g for global, l for local;
+*         .[C] stands for category, e.g.: a for class attributes,
+*                                         v for variable, c for
+*                                         constants, y for types,
+*                                         w for structured work area,
+*                                         t for tables,
+*                                         f for field-symbols etc;
+*         .[T] stands for type, e.g.: i for integer, d for data, etc.
+* Obs: Structured types and types defined in Abap dictionary do not
+*      have a [T] identification.
+
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It's a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+*----------------------------------------------------------------------*
+* TYPES
+*----------------------------------------------------------------------*
+TYPE-POOLS abap.
+
+*----------------------------------------------------------------------*
+* SCREEN SELECTION
+*----------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+PARAMETERS: p_desk  RADIOBUTTON GROUP grp1 DEFAULT 'X',
+            p_serv  RADIOBUTTON GROUP grp1,
+            p_file  TYPE string OBLIGATORY MEMORY ID zpfir_fcd
+                                                             LOWER CASE.
+SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE text-002.
+PARAMETERS: p_xls RADIOBUTTON GROUP grp2,
+            p_csv RADIOBUTTON GROUP grp2,
+            p_txt RADIOBUTTON GROUP grp2 DEFAULT 'X'.
+SELECTION-SCREEN END OF BLOCK b2.
+*--------------------------------------------------------------------*
+* INTERFACES DEFINITIONS
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* INTERFACE  LIF_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This interface defines an interator.
+*--------------------------------------------------------------------*
+INTERFACE lif_iterator.
+  DATA  av_next TYPE int4 READ-ONLY.
+  METHODS: rewind,
+*--------------------------------------------------------------------*
+* REWIND
+*--------------------------------------------------------------------*
+*       MODIFIES:  Position on First Object.
+*--------------------------------------------------------------------*
+           first   RETURNING value(ro_object)  TYPE REF TO object,
+*--------------------------------------------------------------------*
+* FIRST
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns First Object.
+*--------------------------------------------------------------------*
+* <-- RO_OBJECT  The first object.
+*--------------------------------------------------------------------*
+            next    RETURNING value(ro_object) TYPE REF TO object,
+*--------------------------------------------------------------------*
+* NEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns Next Object.
+*--------------------------------------------------------------------*
+* <-- RO_OBJECT The next object.
+*--------------------------------------------------------------------*
+            hasnext RETURNING value(r_result)  TYPE abap_bool.
+*--------------------------------------------------------------------*
+* HASNEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the result.
+*--------------------------------------------------------------------*
+* <-- R_RESULT The next object.
+*--------------------------------------------------------------------*
+ENDINTERFACE.                    "lif_iterator  PUBLIC
+*--------------------------------------------------------------------*
+* CLASSES DEFINITIONS
+*--------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file line.
+*----------------------------------------------------------------------*
+CLASS lcl_file_line DEFINITION.
+  PUBLIC SECTION.
+    TYPES: BEGIN OF y_excel,
+            dummy TYPE string,
+           END OF y_excel,
+           ty_excel TYPE TABLE OF y_excel.
+    DATA  aw_line TYPE y_excel.
+    METHODS  constructor IMPORTING pw_fline TYPE y_excel.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_line.
+*--------------------------------------------------------------------*
+*  --> PW_FLINE     File line.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_iterator DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file iterator.
+*----------------------------------------------------------------------*
+CLASS lcl_file_iterator DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES lif_iterator.
+    ALIASES: av_next FOR lif_iterator~av_next,
+             rewind  FOR lif_iterator~rewind,
+             next    FOR lif_iterator~next,
+             hasnext FOR lif_iterator~hasnext.
+    METHODS constructor IMPORTING pt_fcontent
+                                           TYPE lcl_file_line=>ty_excel.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: at_structured_content TYPE lcl_file_line=>ty_excel,
+          av_lines TYPE int4.
+ENDCLASS.                    "lcl_file_iterator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file.
+*--------------------------------------------------------------------*
+CLASS lcl_file DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    DATA  type TYPE char03.
+    METHODS: constructor IMPORTING value(pt_fcontent)
+                                                  TYPE table_of_strings,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file.
+*--------------------------------------------------------------------*
+             get_iterator RETURNING value(ro_iterator)
+                                               TYPE REF TO lif_iterator,
+*--------------------------------------------------------------------*
+* GET_ITERATOR
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns a file iterator.
+*--------------------------------------------------------------------*
+* <-- RO_ITERATOR    The iterator.
+*--------------------------------------------------------------------*
+             set_file_content IMPORTING pt_fcontent
+                                           TYPE lcl_file_line=>ty_excel.
+*--------------------------------------------------------------------*
+* SET_FILE_CONTENT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Changes the content of the file in memory.
+*       MODIFIES:  The content of the file in the memory representation
+*                  of the file.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA:  filecontent           TYPE table_of_strings,
+           at_structured_content TYPE lcl_file_line=>ty_excel.
+ENDCLASS.                    "lcl_file DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_XLS
+* ------------------------------------------------------------------ *
+* OVERVIEW: Represents a XLS file.
+*--------------------------------------------------------------------*
+CLASS lcl_xls DEFINITION INHERITING FROM lcl_file.
+  PUBLIC SECTION.
+    METHODS  constructor IMPORTING value(pt_content)
+                                          TYPE lcl_file_line=>ty_excel.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_xls.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_xls DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_WITH_SEPARATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file with its fields delimited by
+*           a separator.
+*--------------------------------------------------------------------*
+CLASS lcl_file_with_separator DEFINITION ABSTRACT
+                                         INHERITING FROM lcl_file.
+  PUBLIC SECTION.
+    DATA  a_separator TYPE char01 READ-ONLY.
+    METHODS  constructor IMPORTING value(p_separator) TYPE char01
+                                   value(pt_content)
+                                                  TYPE table_of_strings.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_with_separator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    METHODS  parse_file.
+*--------------------------------------------------------------------*
+* PARSE_FILE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Puts the file in a structured form.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_file_with_separator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_CSV
+* ------------------------------------------------------------------ *
+* OVERVIEW: Represents a CSV file.
+*--------------------------------------------------------------------*
+CLASS lcl_csv DEFINITION INHERITING FROM lcl_file_with_separator.
+  PUBLIC SECTION.
+    METHODS constructor IMPORTING value(pt_content)
+                                                  TYPE table_of_strings.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_csv.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_csv DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_TXT
+* ------------------------------------------------------------------ *
+* OVERVIEW: Represents a TXT file.
+*--------------------------------------------------------------------*
+CLASS lcl_txt DEFINITION INHERITING FROM lcl_file.
+  PUBLIC SECTION.
+    METHODS  constructor IMPORTING value(pt_content)
+                                                  TYPE table_of_strings.
+ENDCLASS.                    "lcl_txt DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_MEDIA
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file media. It defines basic
+*           methods for a media.
+*--------------------------------------------------------------------*
+CLASS lcl_media DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    DATA: filename TYPE string READ-ONLY,
+          o_file   TYPE REF TO lcl_file READ-ONLY.
+    METHODS: open_file   RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* OPEN_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Retrieves the file content.
+*--------------------------------------------------------------------*
+             close_file  ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CLOSE_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Closes the file.
+*--------------------------------------------------------------------*
+             get_file_name RETURNING value(r_fname) TYPE string,
+*--------------------------------------------------------------------*
+* GET_FILE_NAME
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the file name.
+*--------------------------------------------------------------------*
+             rename_file IMPORTING i_fname TYPE string
+                         RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* RENAME_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  If an error occurs raises exception CX_BAPI_ERROR,
+*                  otherwhise changes the file name in FILENAME.
+*       MODIFIES:  The media by changing the name of the file.
+*--------------------------------------------------------------------*
+             save_file  RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* SAVE_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  If an error occurs raises exception CX_BAPI_ERROR,
+*                  otherwhise stores a new file in the media.
+*       MODIFIES:  The media by adding up a new file into it.
+*--------------------------------------------------------------------*
+             free,
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Cleans up internal objects.
+*--------------------------------------------------------------------*
+             set_file_name IMPORTING p_fname TYPE string,
+*--------------------------------------------------------------------*
+* SET_FILE_NAME
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Changes the name of the file.
+*       MODIFIES:  The name of the file in the memory representation
+*                  of the media.
+*--------------------------------------------------------------------*
+             set_file_content IMPORTING pt_fcontent
+                                           TYPE lcl_file_line=>ty_excel.
+*--------------------------------------------------------------------*
+* SET_FILE_CONTENT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Changes the content of the file in memory.
+*       MODIFIES:  The content of the file in the memory representation
+*                  of the media.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA o_path        TYPE REF TO cl_fs_path.
+    METHODS: confirm_filepathname IMPORTING p_path     TYPE string
+                                            p_name     TYPE string
+                                  EXPORTING r_pathname TYPE string
+                                  RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONFIRM_FILEPATHNAME
+*--------------------------------------------------------------------*
+*       REQUIRES: Current path and file name must be given.
+*       EFFECTS.: Returns the user option for path and file name.
+*--------------------------------------------------------------------*
+*  --> P_PATH     Path.
+*  --> P_NAME     File name.
+*  <-- R_PATHNAME Full name (Path + File name).
+*--------------------------------------------------------------------*
+             open_xls    ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* OPEN_XLS
+*--------------------------------------------------------------------*
+*       REQUIRES: The file name, including path, must be given.
+*       MODIFIES:  Creates an object of type lcl_xls and stores it in
+*                  o_file attribute
+*--------------------------------------------------------------------*
+* --> P_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             open_others ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* OPEN_OTHERS
+*--------------------------------------------------------------------*
+*       REQUIRES: The file name, including path, must be given.
+*       MODIFIES:  Creates an object of type lcl_csv or lcl_txt and
+*                  stores it in o_file attribute.
+*--------------------------------------------------------------------*
+* --> P_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             delete_file ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* DELETE_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  If an error occurs raises exception CX_BAPI_ERROR,
+*                  otherwhise removes a file from the media.
+*       MODIFIES:  The media by removing a file from it.
+*--------------------------------------------------------------------*
+             save_xls ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* SAVE_XLS
+*--------------------------------------------------------------------*
+*       EFFECTS.:  If an error occurs raises exception CX_BAPI_ERROR,
+*                  otherwhise stores a new .XLS file in the media.
+*       MODIFIES:  The media by adding up a new .XLS file into it.
+*--------------------------------------------------------------------*
+             save_others ABSTRACT RAISING cx_bapi_error.
+*--------------------------------------------------------------------*
+* SAVE_OTHERS
+*--------------------------------------------------------------------*
+*       EFFECTS.:  If an error occurs raises exception CX_BAPI_ERROR,
+*                  otherwhise stores a new non .XLS file in the media.
+*       MODIFIES:  The media by adding up a new non .XLS file into it.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_media DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_DESKTOP
+* ------------------------------------------------------------------ *
+* OVERVIEW: Desktop OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_desktop DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING p_filename TYPE string OPTIONAL,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --> P_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             rename_file   REDEFINITION,
+             close_file    REDEFINITION,
+             set_file_name REDEFINITION.
+  PROTECTED SECTION.
+    TYPE-POOLS truxs.
+    METHODS: open_xls    REDEFINITION,
+             open_others REDEFINITION,
+             delete_file REDEFINITION,
+             save_xls    REDEFINITION,
+             save_others REDEFINITION.
+ENDCLASS.                    "lcl_desktop DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_SERVER
+* ------------------------------------------------------------------ *
+* OVERVIEW: Server OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_server DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING p_filename TYPE string,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --> P_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             rename_file   REDEFINITION,
+             set_file_name REDEFINITION,
+             close_file    REDEFINITION.
+  PROTECTED SECTION.
+    METHODS: open_xls    REDEFINITION,
+             open_others REDEFINITION,
+             delete_file REDEFINITION,
+             save_xls    REDEFINITION,
+             save_others REDEFINITION.
+ENDCLASS.                    "lcl_server DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_ITEMS_LIST
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class represents a list of objecs.
+*--------------------------------------------------------------------*
+CLASS lcl_items_list DEFINITION.
+  PUBLIC SECTION.
+    TYPES: y_item   TYPE REF TO object,
+           ty_items TYPE TABLE OF y_item.
+    METHODS: add IMPORTING value(po_item)
+                                         TYPE REF TO object,
+*--------------------------------------------------------------------*
+* ADD
+*--------------------------------------------------------------------*
+*       REQUIRES: A financial document item must be given.
+*       MODIFIES: Adds up an item to the this list.
+*--------------------------------------------------------------------*
+*  --> PO_ITEM    Document item.
+*--------------------------------------------------------------------*
+             get_iterator RETURNING value(ro_iterator)
+                                               TYPE REF TO lif_iterator.
+*--------------------------------------------------------------------*
+* GET_ITERATOR
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns an item list iterator.
+*--------------------------------------------------------------------*
+* <-- RO_ITERATOR    The iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA  at_items TYPE ty_items.
+ENDCLASS.                    "lcl_items_list DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_ITEM_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class represents an interator of financial document
+*           items.
+*--------------------------------------------------------------------*
+CLASS lcl_item_iterator DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES lif_iterator.
+    ALIASES: av_next FOR lif_iterator~av_next,
+             rewind  FOR lif_iterator~rewind,
+             next    FOR lif_iterator~next,
+             hasnext FOR lif_iterator~hasnext.
+    METHODS: constructor IMPORTING value(pt_items)
+                                          TYPE lcl_items_list=>ty_items,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       REQUIRES: A table holding items must be given.
+*       MODIFIES: Creates an object of type lcl_item_iterator.
+*--------------------------------------------------------------------*
+*  --> PT_ITEMS    Table of items.
+*--------------------------------------------------------------------*
+             how_many_items RETURNING value(r_items) TYPE int4.
+*--------------------------------------------------------------------*
+* HOW_MANY_ITEMS
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the number of items included into the
+*                  iterator.
+*--------------------------------------------------------------------*
+* <-- R_ITEMS   The number of items.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA:  at_items TYPE lcl_items_list=>ty_items,
+           ai_lines TYPE int4.
+ENDCLASS.                    "lcl_item_iterator DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS LCL_LOG DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class controls the logging procedures.
+*----------------------------------------------------------------------*
+CLASS lcl_log DEFINITION.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING p_instid TYPE string
+                         RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       REQUIRES: The log instance name must be informed.
+*       MODIFIES: If an error occurs raises exception CX_BAPI_ERROR,
+*                 otherwise creates an object of type lcl_log.
+*--------------------------------------------------------------------*
+*  -->  P_INSTID   Log instance name
+*----------------------------------------------------------------------*
+             put_messages IMPORTING pt_msg    TYPE bapiret2_t
+                          RAISING cx_bapi_error,
+*---------------------------------------------------------------------*
+* PUT_MESSAGES S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: If an error occurs raises exception CX_BAPI_ERROR,
+*                 otherwise writes down messages into related log.
+*----------------------------------------------------------------------*
+*  -->  PT_MSG        Table with messages.
+*----------------------------------------------------------------------*
+             save_log RAISING cx_bapi_error,
+*---------------------------------------------------------------------*
+* SAVE_LOG S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: If an error occurs raises exception CX_BAPI_ERROR,
+*                 otherwise saves log messages in the database.
+*----------------------------------------------------------------------*
+             show_messages,
+*---------------------------------------------------------------------*
+* SHOW_MESSAGES S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: Shows related log messages.
+*----------------------------------------------------------------------*
+*  -->  P_INSTID     Instance identifier
+*----------------------------------------------------------------------*
+             clean_up_log IMPORTING p_date  TYPE sydatum.
+*---------------------------------------------------------------------*
+* CLEAN_UP_LOG S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: Deletes from database entries older than a given date.
+*----------------------------------------------------------------------*
+*  -->  P_DATE     Cut date
+*----------------------------------------------------------------------*
+  PROTECTED SECTION.
+    CONSTANTS  c_log_object    TYPE balobj_d VALUE 'ZLO_001'.
+    DATA: aw_log_handle TYPE balloghndl,
+          av_instid     TYPE sibfinstid,
+          av_date       TYPE sydatum,
+          av_time       TYPE syuzeit.
+    METHODS: load_logs IMPORTING pw_lfil  TYPE bal_s_lfil,
+*---------------------------------------------------------------------*
+* LOAD_LOGS S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: Load related log messages into memory.
+*----------------------------------------------------------------------*
+*  -->  PW_LFIL     Log filter criteria
+*----------------------------------------------------------------------*
+             get_det_profile EXPORTING rw_dsprof TYPE bal_s_prof.
+*---------------------------------------------------------------------*
+* GET_DET_PROFILE S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: Returns detailed level formating information.
+*----------------------------------------------------------------------*
+*  <--  RW_DSPROF     Log Output Format Profile
+*----------------------------------------------------------------------*
+ENDCLASS.                    "LCL_LOG DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_VALIDATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls is responsible for checking file
+*           content.
+*--------------------------------------------------------------------*
+CLASS lcl_file_validator DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS  check_file IMPORTING po_file TYPE REF TO lcl_file
+                              RAISING   cx_bapi_error.
+*---------------------------------------------------------------------*
+* CHECK_FILE  S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: A file instance must be given.
+*       EFFECTS.: If the file does not have a valid content raises
+*                 CX_BAPI_ERROR.
+*--------------------------------------------------------------------*
+*  -->  PO_FILE   The file.
+*----------------------------------------------------------------------*
+ENDCLASS.                    "lcl_file_validator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_MAIN
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls the program behavior, provided the
+*           selection arguments have been set.
+*--------------------------------------------------------------------*
+CLASS lcl_main DEFINITION.
+  PUBLIC SECTION.
+    CLASS-DATA: ao_media      TYPE REF TO lcl_media,
+                ao_log        TYPE REF TO lcl_log,
+                as_path       TYPE string.
+    CLASS-METHODS: get_field_value IMPORTING p_fieldname  TYPE dynfnam
+                         RETURNING value(r_fvalue) TYPE dynfieldvalue,
+*--------------------------------------------------------------------*
+* GET_FIELD_VALUE
+*--------------------------------------------------------------------*
+*       REQUIRES:  The field name must be informed.
+*       EFFECTS.:  Returns the values of a field, before PAI is
+*                  executed.
+*--------------------------------------------------------------------*
+* --> P_FILENAME  Name of the file.
+* <-- R_FVALUE    Field value.
+*--------------------------------------------------------------------*
+                   get_data RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* GET_DATA
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Loads the file.
+*--------------------------------------------------------------------*
+                   process_data RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* PROCESS_DATA
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Process each file line.
+*--------------------------------------------------------------------*
+                   set_path IMPORTING p_path      TYPE string OPTIONAL
+                            RETURNING value(r_path) TYPE string,
+*--------------------------------------------------------------------*
+* SET_PATH
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Sets the value of the attribute AS_PATH as a path
+*                  of desktop file system and returns it.
+*--------------------------------------------------------------------*
+* --> P_PATH    Initial path
+* <-- R_PATH    The path.
+*--------------------------------------------------------------------*
+                   house_keeping.
+*--------------------------------------------------------------------*
+* HOUSE_KEEPING
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Cleans up the objectos.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_main DEFINITION
+*--------------------------------------------------------------------*
+* GLOBAL ATOMIC VARIABLES
+*--------------------------------------------------------------------*
+DATA: o_desktop TYPE REF TO lcl_desktop,
+      o_server  TYPE REF TO lcl_server.
+*--------------------------------------------------------------------*
+* MACROS
+*--------------------------------------------------------------------*
+DEFINE m_raise_fm_exception.
+  message id &1
+          type &2
+          number &3
+          with &4 &5 &6 &7
+          into lvc_dummy.
+  lw_return-type       = sy-msgty.
+  lw_return-id         = sy-msgid.
+  lw_return-number     = sy-msgno.
+  lw_return-message_v1 = sy-msgv1.
+  lw_return-message_v2 = sy-msgv2.
+  lw_return-message_v3 = sy-msgv3.
+  lw_return-message_v4 = sy-msgv4.
+  append lw_return to lt_return.
+  raise exception type cx_bapi_error
+   exporting
+     status = lt_return[].
+END-OF-DEFINITION.
+DEFINE m_show_first_msg.
+  read table lx_error->status with key type = 'E' into lw_return.
+  if sy-subrc = 0.
+    message id     lw_return-id
+            type   lw_return-type
+            number lw_return-number
+            with   lw_return-message_v1
+                   lw_return-message_v2
+                   lw_return-message_v3
+                   lw_return-message_v4.
+  else.
+    raise exception lx_error.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_fill_msg.
+  lw_msg-msgty     = &1.
+  lw_msg-msgid     = &2.
+  lw_msg-msgno     = &3.
+  lw_msg-msgv1     = &4.
+  lw_msg-msgv2     = &5.
+  lw_msg-msgv3     = &6.
+  lw_msg-msgv4     = &7.
+  lw_msg-detlevel  = &8.
+END-OF-DEFINITION.
+DEFINE m_msg_add.
+  call function 'BAL_LOG_MSG_ADD'
+    exporting
+      i_log_handle     = &1
+      i_s_msg          = &2
+    exceptions
+      log_not_found    = 1
+      msg_inconsistent = 2
+      log_is_full      = 3
+      others           = 4.
+  if sy-subrc <> 0.
+    m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                         sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_raise_message.
+  read table lx_error->status with key type = 'E'
+   assigning <lw_return>.
+  if sy-subrc = 0.
+    message
+         id <lw_return>-id
+       type <lw_return>-type
+     number <lw_return>-number
+       with <lw_return>-message_v1 <lw_return>-message_v2
+            <lw_return>-message_v3 <lw_return>-message_v4.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_put_messages.
+  try .
+      ao_log->put_messages( pt_msg  = &1 ).
+      ao_log->save_log( ).
+    catch cx_bapi_error.
+      m_raise_message.
+  endtry.
+END-OF-DEFINITION.
+DEFINE m_raise_bal_message.
+  message
+       id lx_error->balmsg-msgid
+     type lx_error->balmsg-msgty
+   number lx_error->balmsg-msgno
+     with lx_error->balmsg-msgv1 lx_error->balmsg-msgv2
+          lx_error->balmsg-msgv3 lx_error->balmsg-msgv4.
+END-OF-DEFINITION.
+DEFINE m_get_file_content.
+  lo_iterator ?= me->o_file->get_iterator( ).
+  while lo_iterator->hasnext( ) = abap_true.
+    lo_fline ?= lo_iterator->next( ).
+    append lo_fline->aw_line-dummy to lt_filecontent.
+  endwhile.
+END-OF-DEFINITION.
+DEFINE m_put_message.
+  message id &1
+          type &2
+          number &3
+          with &4 &5 &6 &7
+          into lvc_dummy.
+  lw_return-type       = sy-msgty.
+  lw_return-id         = sy-msgid.
+  lw_return-number     = sy-msgno.
+  lw_return-message_v1 = sy-msgv1.
+  lw_return-message_v2 = sy-msgv2.
+  lw_return-message_v3 = sy-msgv3.
+  lw_return-message_v4 = sy-msgv4.
+  append lw_return to lt_return.
+  m_put_messages lt_return.
+  CLEAR lt_return.
+END-OF-DEFINITION.

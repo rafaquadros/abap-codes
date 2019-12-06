@@ -1,0 +1,312 @@
+*"* use this source file for your ABAP unit test classes
+* Test #001 - Method GET_SINGLE returns a known value.
+** Scenario setting up
+CLASS lcl_db_single  DEFINITION FOR TESTING
+                     RISK LEVEL HARMLESS
+                     DURATION SHORT
+                     INHERITING FROM lcl_db
+                     FINAL.
+  PUBLIC SECTION.
+    METHODS get_tvarvc_values REDEFINITION.
+ENDCLASS.                    "lcl_db_single DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_sg DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_sg  DEFINITION FOR TESTING
+                        RISK LEVEL HARMLESS
+                        DURATION SHORT
+                        INHERITING FROM zcl_tvarv_retriever
+                        FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_retriever_sg DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_single IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_single IMPLEMENTATION.
+  METHOD get_tvarvc_values.
+    DATA  lw_value TYPE tvarvc.
+
+    lw_value-type = 'P'.
+    lw_value-low = 'SINGLE'.
+    APPEND lw_value TO rt_values.
+  ENDMETHOD.                    "get_tvarvc_values
+ENDCLASS.                    "lcl_db_single IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_sg IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_sg IMPLEMENTATION.
+  METHOD get_db.
+    DATA lo_db TYPE REF TO lcl_db_single.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_retriever_sg IMPLEMENTATION
+* Test #002 - Method GET_MULTPLE returns a table of values that
+*             includes the value tested.
+** Scenario setting up
+CLASS lcl_db_multiple  DEFINITION FOR TESTING
+                       RISK LEVEL HARMLESS
+                       DURATION SHORT
+                       INHERITING FROM lcl_db
+                       FINAL.
+  PUBLIC SECTION.
+    METHODS  get_tvarvc_values REDEFINITION.
+ENDCLASS.                    "lcl_db_wbs_email_ok DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_mp DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_mp  DEFINITION FOR TESTING
+                        RISK LEVEL HARMLESS
+                        DURATION SHORT
+                        INHERITING FROM zcl_tvarv_retriever
+                        FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_retriever_mp DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_multiple IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_multiple IMPLEMENTATION.
+  METHOD get_tvarvc_values.
+    DATA  lw_value TYPE tvarvc.
+
+    lw_value-type       = 'S'.
+    lw_value-sign       = 'I'.
+    lw_value-opti       = 'BT'.
+    lw_value-low        = 'E0001'.
+    lw_value-high       = 'E0003'.
+    APPEND lw_value TO rt_values.
+  ENDMETHOD.                    "get_tvarvc_values
+ENDCLASS.                    "lcl_db_multiple IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_mp IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_mp IMPLEMENTATION.
+  METHOD get_db.
+    DATA lo_db TYPE REF TO lcl_db_multiple.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_retriever_mp IMPLEMENTATION
+* Test #003 - Method GET_SINGLE returns a known value assigned to a
+*             name.
+** Scenario setting up
+CLASS lcl_db_sg_with_name  DEFINITION FOR TESTING
+                           RISK LEVEL HARMLESS
+                           DURATION SHORT
+                           INHERITING FROM lcl_db
+                           FINAL.
+  PUBLIC SECTION.
+    METHODS get_tvarvc_values REDEFINITION.
+ENDCLASS.                    "lcl_db_sg_with_name DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_sg_nm DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_sg_nm  DEFINITION FOR TESTING
+                           RISK LEVEL HARMLESS
+                           DURATION SHORT
+                           INHERITING FROM zcl_tvarv_retriever
+                           FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_retriever_sg_nm DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_sg_with_name IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_sg_with_name IMPLEMENTATION.
+  METHOD get_tvarvc_values.
+    DATA  lw_value TYPE tvarvc.
+
+    lw_value-type = 'P'.
+    lw_value-name = 'DUMMY_DUMMY'.
+    lw_value-low  = 'DUMMY'.
+    APPEND lw_value TO rt_values.
+    lw_value-name = 'DUMMY_SINGLE'.
+    lw_value-low  = 'SINGLE'.
+    APPEND lw_value TO rt_values.
+  ENDMETHOD.                    "get_tvarvc_values
+ENDCLASS.                    "lcl_db_sg_with_name IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_sg_nm IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_sg_nm IMPLEMENTATION.
+  METHOD get_db.
+    DATA lo_db TYPE REF TO lcl_db_sg_with_name.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_retriever_sg_nm IMPLEMENTATION
+* Test #004 - Method GET_MULTPLE returns a known value assigned to a
+*             name.
+** Scenario setting up
+CLASS lcl_db_mp_with_name  DEFINITION FOR TESTING
+                           RISK LEVEL HARMLESS
+                           DURATION SHORT
+                           INHERITING FROM lcl_db
+                           FINAL.
+  PUBLIC SECTION.
+    METHODS get_tvarvc_values REDEFINITION.
+ENDCLASS.                    "lcl_db_mp_with_name DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_mp_nm DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_mp_nm  DEFINITION FOR TESTING
+                           RISK LEVEL HARMLESS
+                           DURATION SHORT
+                           INHERITING FROM zcl_tvarv_retriever
+                           FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_retriever_mp_nm DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_mp_with_name IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_mp_with_name IMPLEMENTATION.
+  METHOD get_tvarvc_values.
+    DATA  lw_value TYPE tvarvc.
+
+    lw_value-type = 'S'.
+    lw_value-sign = 'I'.
+    lw_value-opti = 'BT'.
+    lw_value-name = 'DUMMY_STAT1'.
+    lw_value-low  = 'E0001'.
+    lw_value-high = 'E0003'.
+    APPEND lw_value TO rt_values.
+    lw_value-name = 'DUMMY_STAT2'.
+    lw_value-low  = 'E0004'.
+    lw_value-high = 'E0006'.
+    APPEND lw_value TO rt_values.
+  ENDMETHOD.                    "get_tvarvc_values
+ENDCLASS.                    "lcl_db_mp_with_name IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_retriever_mp_nm IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_retriever_mp_nm IMPLEMENTATION.
+  METHOD get_db.
+    DATA lo_db TYPE REF TO lcl_db_mp_with_name.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_retriever_mp_nm IMPLEMENTATION
+** Performing tests
+CLASS lcl_tester DEFINITION FOR TESTING
+                 RISK LEVEL HARMLESS
+                 DURATION SHORT
+                 INHERITING FROM cl_aunit_assert
+                 FINAL.
+  PRIVATE SECTION.
+    CONSTANTS: lcs_single TYPE string VALUE 'SINGLE',
+               lcs_multip TYPE string VALUE 'E0004',
+               lcs_multnm TYPE string VALUE 'E0007'.
+
+    METHODS: tst_single_ok  FOR TESTING, " Single value ok.
+             tst_multip_nok FOR TESTING, " Range of values not ok.
+             tst_slgnm_ok   FOR TESTING, " Single assigned to value ok.
+             tst_mlpnm_nok  FOR TESTING. " Multi assigned to name nok.
+ENDCLASS.                    "lcl_tester DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_tester IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_tester IMPLEMENTATION.
+  METHOD tst_single_ok.
+    DATA: lo_tvarv     TYPE REF TO lcl_retriever_sg,
+          lvc_value(6) TYPE c.
+*     Setup parameters for the call
+    CREATE OBJECT lo_tvarv
+      EXPORTING
+        p_name = 'DUMMY'.
+*       Perform the call
+    lo_tvarv->get_single( IMPORTING ex_value = lvc_value ).
+*       Check returned values
+    assert_equals( exp = lcs_single act = lvc_value
+                   msg = 'Single valued method failed!' ).
+  ENDMETHOD.                    "tst_single_ok
+  METHOD tst_multip_nok.
+    DATA: lo_tvarv    TYPE REF TO lcl_retriever_mp,
+          lr_estat    TYPE RANGE OF j_status,
+          lv_bool     TYPE abap_bool.
+*     Setup parameters for the call
+    CREATE OBJECT lo_tvarv
+      EXPORTING
+        p_name = 'DUMMY'.
+*       Perform the call
+    lo_tvarv->get_multiple( IMPORTING ext_values = lr_estat ).
+*       Check returned values
+    IF lcs_multip IN lr_estat.
+      lv_bool = abap_true.
+    ENDIF.
+    assert_equals( exp = abap_false act = lv_bool
+                   msg = 'Multiple valued method failed!' ).
+  ENDMETHOD.                    "tst_multip_nok
+  METHOD tst_slgnm_ok.
+    DATA: lo_tvarv     TYPE REF TO lcl_retriever_sg_nm,
+          lvc_value(6) TYPE c.
+*       Setup parameters for the call
+    CREATE OBJECT lo_tvarv
+      EXPORTING
+        p_name = 'DUMMY'.
+*         Perform the call
+    lo_tvarv->get_single( EXPORTING i_vname  = 'SINGLE'
+                          IMPORTING ex_value = lvc_value ).
+*         Check returned values
+    assert_equals( exp = lcs_single act = lvc_value
+                   msg = 'Single valued method failed!' ).
+  ENDMETHOD.                    "tst_slgnm_ok
+  METHOD tst_mlpnm_nok.
+    DATA: lo_tvarv    TYPE REF TO lcl_retriever_mp_nm,
+          lr_estat    TYPE RANGE OF j_status,
+          lv_bool     TYPE abap_bool.
+*       Setup parameters for the call
+    CREATE OBJECT lo_tvarv
+      EXPORTING
+        p_name = 'DUMMY'.
+*         Perform the call
+    lo_tvarv->get_multiple( EXPORTING i_vname = 'STAT2'
+                            IMPORTING ext_values = lr_estat ).
+*         Check returned values
+    IF lcs_multnm IN lr_estat.
+      lv_bool = abap_true.
+    ENDIF.
+    assert_equals( exp = abap_false act = lv_bool
+                   msg = 'Multiple valued method failed!' ).
+  ENDMETHOD.                    "tst_mlpnm_nok
+ENDCLASS.                    "lcl_tester IMPLEMENTATION

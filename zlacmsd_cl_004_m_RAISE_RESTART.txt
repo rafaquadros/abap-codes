@@ -1,0 +1,13 @@
+METHOD raise_restart.
+  DATA: lvc_key(15) TYPE c,
+        lo_batcher TYPE REF TO zlacmsd_cl_004.
+
+  CONCATENATE p_mjahr p_mblnr INTO lvc_key.
+
+  TRY .
+      lo_batcher = get_instance( lvc_key ).
+      lo_batcher->raise_restart_object( ).
+    CATCH cx_root.
+      RETURN.
+  ENDTRY.
+ENDMETHOD.

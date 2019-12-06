@@ -1,0 +1,1378 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZPFIR_007_C01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_media
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_media IMPLEMENTATION.
+  METHOD open_file.
+    IF p_xls = abap_true.
+      me->open_xls( ).
+    ELSE.
+      me->open_others( ).
+    ENDIF.
+  ENDMETHOD.                    "open_file
+  METHOD confirm_filepathname.
+    DATA: ls_name      TYPE string,
+          ls_path      TYPE string,
+          ls_pathname  TYPE string,
+          lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapirettab.
+
+    CALL METHOD cl_gui_frontend_services=>file_save_dialog
+      EXPORTING
+        default_file_name    = p_name
+        initial_directory    = p_path
+      CHANGING
+        filename             = ls_name
+        path                 = ls_path
+        fullpath             = ls_pathname
+      EXCEPTIONS
+        cntl_error           = 1
+        error_no_gui         = 2
+        not_supported_by_gui = 3
+        OTHERS               = 4.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    IF ls_pathname IS NOT INITIAL.
+      r_pathname = ls_pathname.
+    ELSE.
+      CONCATENATE p_path '\' p_name INTO r_pathname.
+    ENDIF.
+  ENDMETHOD.                    "confirm_filepathname
+  METHOD get_file_name.
+    r_fname = o_path->get_file_name( ).
+  ENDMETHOD.                    "get_file_name
+  METHOD free.
+    FREE: o_file, o_path.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_media
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_desktop
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_desktop IMPLEMENTATION.
+  METHOD constructor.
+    DATA: lt_filetable TYPE filetable,
+          lw_fileline  TYPE file_table,
+          li_rc        TYPE i,
+          lo_xls       TYPE REF TO lcl_xls,
+          lo_csv       TYPE REF TO lcl_csv,
+          lo_txt       TYPE REF TO lcl_txt.
+
+    super->constructor( ).
+
+    IF p_filename IS INITIAL.
+      CALL METHOD cl_gui_frontend_services=>file_open_dialog
+        CHANGING
+          file_table              = lt_filetable[]
+          rc                      = li_rc
+        EXCEPTIONS
+          file_open_dialog_failed = 1
+          cntl_error              = 2
+          error_no_gui            = 3
+          not_supported_by_gui    = 4
+          OTHERS                  = 5.
+      IF sy-subrc <> 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                   WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      READ TABLE lt_filetable INDEX 1 INTO lw_fileline.
+      IF sy-subrc = 0.
+        filename = lw_fileline-filename.
+      ENDIF.
+    ELSE.
+      filename = p_filename.
+    ENDIF.
+    o_path = cl_fs_windows_path=>create_smart_path( filename ).
+  ENDMETHOD.                    "constructor
+  METHOD close_file.
+  ENDMETHOD.                    "close_file
+  METHOD open_xls.
+    DATA: lvc_dummy(1) TYPE c ,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapirettab,
+          lv_filename  TYPE localfile,
+          lt_raw_data  TYPE truxs_t_text_data,
+          lt_data      TYPE lcl_file_line=>ty_excel,
+          lo_xls       TYPE REF TO lcl_xls.
+
+    lv_filename = me->filename.
+
+    CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+      EXPORTING
+*       I_FIELD_SEPERATOR          =
+        i_line_header              = 'X'
+        i_tab_raw_data             = lt_raw_data
+        i_filename                 = lv_filename
+      TABLES
+        i_tab_converted_data       = lt_data
+      EXCEPTIONS
+        conversion_failed          = 1
+        OTHERS                     = 2.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    CREATE OBJECT lo_xls
+      EXPORTING
+        pt_content = lt_data.
+    me->o_file ?= lo_xls.
+  ENDMETHOD.                    "open_xls
+  METHOD open_others.
+    DATA: lvc_dummy(1)   TYPE c,
+          lt_filecontent TYPE table_of_strings,
+          lw_return      TYPE bapiret2,
+          lt_return      TYPE bapirettab,
+          lo_csv         TYPE REF TO lcl_csv,
+          lo_txt         TYPE REF TO lcl_txt.
+
+    CALL METHOD cl_gui_frontend_services=>gui_upload
+      EXPORTING
+        filename                = me->filename
+      CHANGING
+        data_tab                = lt_filecontent[]
+      EXCEPTIONS
+        file_open_error         = 1
+        file_read_error         = 2
+        no_batch                = 3
+        gui_refuse_filetransfer = 4
+        invalid_type            = 5
+        no_authority            = 6
+        unknown_error           = 7
+        bad_data_format         = 8
+        header_not_allowed      = 9
+        separator_not_allowed   = 10
+        header_too_long         = 11
+        unknown_dp_error        = 12
+        access_denied           = 13
+        dp_out_of_memory        = 14
+        disk_full               = 15
+        dp_timeout              = 16
+        not_supported_by_gui    = 17
+        error_no_gui            = 18
+        OTHERS                  = 19.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    CASE abap_true.
+      WHEN p_csv.
+        CREATE OBJECT lo_csv
+          EXPORTING
+            pt_content = lt_filecontent.
+        me->o_file ?= lo_csv.
+      WHEN p_txt.
+        CREATE OBJECT lo_txt
+          EXPORTING
+            pt_content = lt_filecontent.
+        me->o_file ?= lo_txt.
+    ENDCASE.
+  ENDMETHOD.                    "open_others
+ENDCLASS.               "lcl_desktop
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_server.
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_server IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+    IF p_filename IS INITIAL.
+      MESSAGE e041.
+    ELSE.
+      filename = p_filename.
+    ENDIF.
+    o_path = cl_fs_unix_path=>create_smart_path( filename ).
+  ENDMETHOD.                    "constructor
+  METHOD open_xls.
+    MESSAGE e000 WITH 'Este programa não se arquivos .XLS'(005)
+                      ' no servidor de aplicações.'(006)
+    DISPLAY LIKE 'I'.
+    LEAVE TO CURRENT TRANSACTION.
+  ENDMETHOD.                    "open_xls
+  METHOD open_others.
+    DATA: lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapirettab,
+          lw_fileline  TYPE string,
+          lt_content   TYPE table_of_strings,
+          lo_csv       TYPE REF TO lcl_csv,
+          lo_txt       TYPE REF TO lcl_txt,
+          l_encoding   TYPE sychar01. " RSWATCH0
+
+    TRY. " -> RSWATCH0
+        CALL METHOD cl_abap_file_utilities=>check_utf8
+          EXPORTING
+            file_name = me->filename
+          IMPORTING
+            encoding  = l_encoding.
+
+      CATCH cx_sy_file_open cx_sy_file_authority cx_sy_file_io.
+*     File  & could not be opened.
+        m_raise_fm_exception 'ZLFI03' 'E' 100  ' ' ' ' ' ' ' '.
+    ENDTRY.
+
+    IF l_encoding = cl_abap_file_utilities=>encoding_utf8 OR
+       l_encoding = cl_abap_file_utilities=>encoding_7bit_ascii.
+      OPEN DATASET me->filename FOR INPUT IN TEXT MODE
+                         ENCODING UTF-8 SKIPPING BYTE-ORDER MARK
+                         IGNORING CONVERSION ERRORS.
+    ELSE.
+      OPEN DATASET me->filename FOR INPUT IN TEXT MODE
+                         ENCODING NON-UNICODE
+                         IGNORING CONVERSION ERRORS.
+    ENDIF. " <- RSWATCH0
+
+*    OPEN DATASET me->filename FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+    IF sy-subrc NE 0.
+*     File  & could not be opened.
+      m_raise_fm_exception 'ZLFI03' 'E' 100  ' ' ' ' ' ' ' '.
+    ENDIF.
+    DO.
+      READ DATASET me->filename INTO lw_fileline.
+      IF sy-subrc NE 0.
+        EXIT.
+      ENDIF.
+      CONCATENATE lw_fileline cl_abap_char_utilities=>cr_lf
+             INTO lw_fileline.
+      APPEND lw_fileline TO lt_content.
+      CLEAR lw_fileline.
+    ENDDO.
+    CASE abap_true.
+      WHEN p_csv.
+        CREATE OBJECT lo_csv
+          EXPORTING
+            pt_content = lt_content.
+        me->o_file ?= lo_csv.
+      WHEN p_txt.
+        CREATE OBJECT lo_txt
+          EXPORTING
+            pt_content = lt_content.
+        me->o_file ?= lo_txt.
+    ENDCASE.
+  ENDMETHOD.                    "open_others
+  METHOD close_file.
+    CLOSE DATASET me->filename.
+  ENDMETHOD.                    "close_file
+ENDCLASS.               "lcl_server.
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_main
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_main IMPLEMENTATION.
+  METHOD get_field_value.
+    DATA: lt_dynpfields TYPE dynpread_tabtype,
+          lw_dynpfield  TYPE dynpread,
+          lx_error      TYPE REF TO cx_bapi_error.
+
+    MOVE p_fieldname TO lw_dynpfield-fieldname.
+    APPEND lw_dynpfield TO lt_dynpfields.
+
+    CALL FUNCTION 'DYNP_VALUES_READ'
+      EXPORTING
+        dyname               = sy-repid
+        dynumb               = sy-dynnr
+      TABLES
+        dynpfields           = lt_dynpfields[]
+      EXCEPTIONS
+        invalid_abapworkarea = 1
+        invalid_dynprofield  = 2
+        invalid_dynproname   = 3
+        invalid_dynpronummer = 4
+        invalid_request      = 5
+        no_fielddescription  = 6
+        invalid_parameter    = 7
+        undefind_error       = 8
+        double_conversion    = 9
+        stepl_not_found      = 10
+        OTHERS               = 11.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    READ TABLE lt_dynpfields INTO lw_dynpfield
+     WITH KEY fieldname = p_fieldname.
+    IF sy-subrc = 0.
+      r_fvalue = lw_dynpfield-fieldvalue.
+    ENDIF.
+  ENDMETHOD.                    "get_field_value
+  METHOD get_data.
+    DATA: lw_return TYPE bapiret2,
+          lx_error  TYPE REF TO cx_bapi_error,
+          ls_fname  TYPE string.
+
+    TRY .
+        ao_media->open_file( ).
+        ao_media->close_file( ).
+        ls_fname = ao_media->get_file_name( ).
+        lcl_file_validator=>check_file( ao_media->o_file ).
+        CREATE OBJECT ao_log
+          EXPORTING
+            p_instid = ls_fname.
+      CATCH cx_bapi_error INTO lx_error.
+        m_show_first_msg.
+    ENDTRY.
+    CREATE OBJECT ao_factory
+      EXPORTING
+        po_file = ao_media->o_file
+        po_log  = ao_log.
+  ENDMETHOD.                    "get_data
+  METHOD process_data.
+    DATA: lt_return   TYPE bapirettab,
+          lw_return   TYPE bapiret2,
+          lx_error    TYPE REF TO cx_bapi_error,
+          lo_iterator TYPE REF TO lif_iterator,
+          lo_fiscaldc TYPE REF TO lcl_fiscal_document,
+          lvc_dummy   TYPE char01.
+    FIELD-SYMBOLS <lw_return> TYPE bapiret2.
+
+    lo_iterator ?= ao_factory->ao_doc_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_fiscaldc ?= lo_iterator->next( ).
+      TRY .
+          IF lo_fiscaldc->av_optype = 'Cancelamento'.
+            lo_fiscaldc->cancel( ).
+          ELSE.
+            lo_fiscaldc->conciliate( ).
+          ENDIF.
+        CATCH cx_bapi_error INTO lx_error.
+          m_raise_message.
+      ENDTRY.
+    ENDWHILE.
+    ao_log->show_messages( ).
+  ENDMETHOD.                    "process_data
+  METHOD set_path.
+    DATA ls_path TYPE string.
+
+    IF p_path IS NOT INITIAL.
+      r_path = p_path.
+    ENDIF.
+    CALL METHOD cl_gui_frontend_services=>directory_browse
+      EXPORTING
+        initial_folder       = p_path
+      CHANGING
+        selected_folder      = ls_path
+      EXCEPTIONS
+        cntl_error           = 1
+        error_no_gui         = 2
+        not_supported_by_gui = 3
+        OTHERS               = 4.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                 WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    IF ls_path IS NOT INITIAL.
+      r_path = ls_path.
+    ENDIF.
+  ENDMETHOD.                    "set_path
+  METHOD house_keeping.
+    DATA lv_cut_date TYPE sydatum.
+
+    IF ao_media IS NOT INITIAL.
+      ao_media->free( ).
+      FREE: ao_media, o_desktop, o_server.
+    ENDIF.
+    IF ao_factory IS NOT INITIAL.
+      ao_factory->free( ).
+      FREE ao_factory.
+    ENDIF.
+    lv_cut_date = sy-datum - 90.
+    ao_log->clean_up_log( lv_cut_date ).
+    FREE ao_log.
+  ENDMETHOD.                    "house_keeping
+ENDCLASS.               "lcl_main
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_xls
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_xls IMPLEMENTATION.
+  METHOD constructor.
+    DATA pt_dummy TYPE table_of_strings.
+
+    super->constructor( pt_dummy ).
+    at_structured_content = pt_content.
+  ENDMETHOD.                    "constructor
+ENDCLASS.               "lcl_xls
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_file
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file IMPLEMENTATION.
+  METHOD constructor.
+    me->filecontent = pt_fcontent.
+    CASE abap_true.
+      WHEN p_xls.
+        type = 'XLS'.
+      WHEN p_csv.
+        type = 'CSV'.
+      WHEN OTHERS.
+        type = 'TXT'.
+    ENDCASE.
+  ENDMETHOD.                    "constructor
+  METHOD get_iterator.
+    DATA lo_iterator TYPE REF TO lcl_file_iterator.
+
+    CREATE OBJECT lo_iterator
+      EXPORTING
+        pt_fcontent = me->at_structured_content.
+
+    ro_iterator ?= lo_iterator.
+  ENDMETHOD.                    "get_iterator
+ENDCLASS.               "lcl_file
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_txt
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_txt IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( p_separator = p_sep pt_content = pt_content ).
+    me->parse_file( ).
+  ENDMETHOD.                    "constructor
+ENDCLASS.               "lcl_txt
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_csv
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_csv IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( p_separator = ';' pt_content = pt_content ).
+    me->parse_file( ).
+  ENDMETHOD.                    "constructor
+ENDCLASS.               "lcl_csv
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_file_with_separator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_with_separator IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( pt_content ).
+    me->a_separator = p_separator.
+  ENDMETHOD.                    "constructor
+  METHOD parse_file.
+    DATA: lt_headers TYPE TABLE OF string,
+          lt_details  TYPE TABLE OF string,
+          lw_line    TYPE lcl_file_line=>y_excel.
+    FIELD-SYMBOLS: <ls_line>   TYPE string,
+                   <ls_detail> TYPE string,
+                   <ls_header> TYPE string,
+                   <ls_field>  TYPE string.
+
+    LOOP AT me->filecontent ASSIGNING <ls_line>.
+      IF sy-tabix = 1.
+        SPLIT <ls_line> AT me->a_separator INTO TABLE lt_headers.
+        CONTINUE.
+      ELSE.
+        SPLIT <ls_line> AT me->a_separator INTO TABLE lt_details.
+      ENDIF.
+      LOOP AT lt_details ASSIGNING <ls_detail>.
+        READ TABLE lt_headers ASSIGNING <ls_header> INDEX sy-tabix.
+        IF sy-subrc = 0.
+          TRANSLATE <ls_header> TO UPPER CASE.
+          ASSIGN COMPONENT <ls_header> OF STRUCTURE lw_line
+           TO <ls_field>.
+          IF <ls_field> IS ASSIGNED.
+            <ls_field> = <ls_detail>.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+      APPEND lw_line TO me->at_structured_content.
+      CLEAR lt_details.
+    ENDLOOP.
+  ENDMETHOD.                    "parse_file
+ENDCLASS.               "lcl_file_with_separator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_doc_factory
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_doc_factory IMPLEMENTATION.
+  METHOD constructor.
+    TYPES: BEGIN OF ly_vbfa,
+             vbelv TYPE vbelv,
+             vbeln TYPE vbeln,
+             erdat TYPE erdat,
+             gjahr TYPE gjahr,
+           END OF ly_vbfa,
+           lty_vbfa TYPE TABLE OF ly_vbfa,
+           BEGIN OF ly_bkpf,
+             bukrs TYPE bukrs,
+             gjahr TYPE gjahr,
+             belnr TYPE belnr_d,
+           END OF ly_bkpf,
+           lty_bkpf TYPE TABLE OF ly_bkpf,
+           BEGIN OF ly_bsid,
+             bukrs TYPE bukrs,
+             gjahr TYPE gjahr,
+             belnr TYPE belnr_d,
+             buzei TYPE buzei,
+           END OF ly_bsid,
+           lty_bsid TYPE TABLE OF ly_bsid.
+    DATA: lo_iterator TYPE REF TO lcl_file_iterator,
+          lo_fline    TYPE REF TO lcl_file_line,
+          lo_fisdoc   TYPE REF TO lcl_fiscal_document,
+          lo_invoice  TYPE REF TO lcl_outbound_invoice,
+          lo_findoc   TYPE REF TO lcl_financial_document,
+          lo_item     TYPE REF TO lcl_financial_item,
+          lw_extract  TYPE y_extract,
+          lt_extract  TYPE ty_extract,
+          lt_vbfa     TYPE lty_vbfa,
+          lt_bkpf     TYPE lty_bkpf,
+          lt_bsid     TYPE lty_bsid,
+          li_size     TYPE int4,
+          li_offset   TYPE int4,
+          lv_index    TYPE sytabix.
+    FIELD-SYMBOLS: <lw_extract> TYPE y_extract,
+                   <lw_vbfa>    TYPE ly_vbfa,
+                   <lw_bkpf>    TYPE ly_bkpf,
+                   <lw_bsid>    TYPE ly_bsid.
+* Extrating relevant data
+    lo_iterator ?= po_file->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_fline ?= lo_iterator->next( ).
+      MOVE-CORRESPONDING lo_fline->aw_line TO lw_extract.
+      li_size   = STRLEN( lw_extract-documentofiscal ).
+      li_offset = li_size - 4.
+      li_size   = li_size - 4.
+      lw_extract-vbelv = lw_extract-documentofiscal(li_size).
+      SHIFT lw_extract-vbelv RIGHT DELETING TRAILING space.
+      OVERLAY lw_extract-vbelv WITH '0000000000'.
+      lw_extract-gjahr = lw_extract-documentofiscal+li_offset(4).
+      APPEND lw_extract TO lt_extract.
+    ENDWHILE.
+* Retrinving data from database
+    SORT lt_extract BY vbelv.
+    IF lt_extract IS NOT INITIAL.
+      SELECT vbelv vbeln erdat FROM vbfa
+        INTO CORRESPONDING FIELDS OF TABLE lt_vbfa
+         FOR ALL ENTRIES IN lt_extract
+       WHERE vbelv = lt_extract-vbelv
+         AND vbtyp_n = 'M'.
+      IF lt_vbfa IS NOT INITIAL.
+        LOOP AT lt_vbfa ASSIGNING <lw_vbfa>.
+          <lw_vbfa>-gjahr = <lw_vbfa>-erdat(4).
+        ENDLOOP.
+        SORT lt_vbfa BY vbeln.
+        SELECT bukrs gjahr belnr FROM bkpf
+          INTO CORRESPONDING FIELDS OF TABLE lt_bkpf
+           FOR ALL ENTRIES IN lt_vbfa
+         WHERE bukrs = '1000'
+           AND belnr = lt_vbfa-vbeln
+           AND gjahr = lt_vbfa-gjahr.
+        IF lt_bkpf IS NOT INITIAL.
+          SELECT bukrs gjahr belnr buzei FROM bsid
+            INTO CORRESPONDING FIELDS OF TABLE lt_bsid
+             FOR ALL ENTRIES IN lt_bkpf
+           WHERE bukrs = lt_bkpf-bukrs
+             AND belnr = lt_bkpf-belnr
+             AND gjahr = lt_bkpf-gjahr.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+* Creating objects
+    SORT: lt_extract, lt_vbfa, lt_bkpf, lt_bsid.
+    CREATE OBJECT ao_doc_list.
+    LOOP AT lt_extract ASSIGNING <lw_extract>.
+      CREATE OBJECT lo_fisdoc
+        EXPORTING
+          p_docdat = <lw_extract>-data
+          p_optype = <lw_extract>-tipo
+          p_cardnm = <lw_extract>-cartao
+          p_authnb = <lw_extract>-autorizacao
+          p_vbelv  = <lw_extract>-vbelv
+          p_gjahr  = <lw_extract>-gjahr
+          po_log   = po_log.
+      READ TABLE lt_vbfa WITH KEY vbelv = <lw_extract>-vbelv
+       BINARY SEARCH
+       ASSIGNING <lw_vbfa>.
+      IF sy-subrc = 0.
+        CREATE OBJECT lo_invoice
+          EXPORTING
+            p_vbeln = <lw_vbfa>-vbeln.
+        READ TABLE lt_bkpf WITH KEY bukrs = '1000'
+                                    gjahr = <lw_vbfa>-erdat(4)
+                                    belnr = <lw_vbfa>-vbeln
+         BINARY SEARCH
+         ASSIGNING <lw_bkpf>.
+        IF sy-subrc = 0.
+          CREATE OBJECT lo_findoc
+            EXPORTING
+              p_bukrs = <lw_bkpf>-bukrs
+              p_gjahr = <lw_bkpf>-gjahr
+              p_belnr = <lw_bkpf>-belnr.
+          READ TABLE lt_bsid WITH KEY bukrs = <lw_bkpf>-bukrs
+                                      gjahr = <lw_bkpf>-gjahr
+                                      belnr = <lw_bkpf>-belnr
+           BINARY SEARCH
+           TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            lv_index = sy-tabix.
+            LOOP AT lt_bsid FROM lv_index ASSIGNING <lw_bsid>.
+              IF <lw_bsid>-bukrs <> <lw_bkpf>-bukrs OR
+                 <lw_bsid>-gjahr <> <lw_bkpf>-gjahr OR
+                 <lw_bkpf>-belnr <> <lw_bkpf>-belnr.
+                EXIT.
+              ENDIF.
+              CREATE OBJECT lo_item
+                EXPORTING
+                  p_buzei = <lw_bsid>-buzei.
+              lo_findoc->add_item( lo_item ).
+              FREE lo_item.
+            ENDLOOP.
+          ENDIF.
+          lo_invoice->assign_fin_doc( lo_findoc ).
+          FREE lo_findoc.
+        ENDIF.
+        lo_fisdoc->assign_invoice( lo_invoice ).
+        FREE lo_invoice.
+      ENDIF.
+      ao_doc_list->add( lo_fisdoc ).
+      FREE lo_fisdoc.
+    ENDLOOP.
+  ENDMETHOD.                    "constructor
+  METHOD free.
+    DATA: lo_iterator TYPE REF TO lif_iterator,
+          lo_fiscdoc  TYPE REF TO lcl_fiscal_document.
+
+    lo_iterator ?= me->ao_doc_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_fiscdoc ?= lo_iterator->next( ).
+      lo_fiscdoc->free( ).
+      FREE lo_fiscdoc.
+    ENDWHILE.
+    FREE: lo_iterator, ao_doc_list.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_doc_factory
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_file_iterator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_iterator IMPLEMENTATION.
+  METHOD constructor.
+    me->at_structured_content = pt_fcontent.
+    av_next = 1.
+    DESCRIBE TABLE me->at_structured_content LINES me->av_lines.
+  ENDMETHOD.                    "constructor
+  METHOD lif_iterator~rewind.
+    me->av_next = 1.
+  ENDMETHOD.                    "lif_iterator~rewind
+  METHOD lif_iterator~first.
+    DATA  lo_line TYPE REF TO lcl_file_line.
+    FIELD-SYMBOLS  <lw_line> TYPE lcl_file_line=>y_excel.
+
+    READ TABLE at_structured_content INDEX 1 ASSIGNING <lw_line>.
+    IF sy-subrc = 0.
+      CREATE OBJECT lo_line
+        EXPORTING
+          pw_fline = <lw_line>.
+      ro_object ?= lo_line.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~first
+  METHOD lif_iterator~next.
+    DATA  lo_line TYPE REF TO lcl_file_line.
+    FIELD-SYMBOLS  <lw_line> TYPE lcl_file_line=>y_excel.
+
+    IF av_next > av_lines.
+      me->rewind( ).
+    ENDIF.
+    READ TABLE at_structured_content INDEX av_next
+     ASSIGNING <lw_line>.
+    IF sy-subrc = 0.
+      CREATE OBJECT lo_line
+        EXPORTING
+          pw_fline = <lw_line>.
+      ro_object ?= lo_line.
+      ADD 1 TO me->av_next.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~next
+  METHOD lif_iterator~hasnext.
+    IF av_next <= av_lines.
+      r_result = abap_true.
+    ELSE.
+      r_result = abap_false.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~hasnext
+ENDCLASS.               "lcl_file_iterator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_file_line
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_line IMPLEMENTATION.
+  METHOD constructor.
+    me->aw_line = pw_fline.
+  ENDMETHOD.                    "constructor
+ENDCLASS.               "lcl_file_line
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_fiscal_document
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_fiscal_document IMPLEMENTATION.
+  METHOD constructor.
+    DATA: lx_error TYPE REF TO cx_bapi_error.
+    FIELD-SYMBOLS  <lw_return> TYPE bapiret2.
+
+    av_docdat = p_docdat.
+    av_optype = p_optype.
+    av_cardnm = p_cardnm.
+    av_authnb = p_authnb.
+    av_vbelv  = p_vbelv.
+    av_gjahr  = p_gjahr.
+
+    ao_log = po_log.
+  ENDMETHOD.                    "constructor
+  METHOD assign_invoice.
+    ao_invoice = po_invoice.
+  ENDMETHOD.                    "assign_invoice
+  METHOD cancel.
+  ENDMETHOD.                    "cancel
+  METHOD conciliate.
+    DATA: lt_ft_cd_txt TYPE lty_ft_cd_txt,
+          lv_zuonr     TYPE dzuonr,
+          lx_error     TYPE REF TO cx_bapi_error,
+          lvc_dummy(1) TYPE c,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t.
+    FIELD-SYMBOLS: <lw_ft_cd_txt> TYPE ly_ft_cd_txt,
+                   <lw_return>    TYPE bapiret2.
+
+    get_from_to( IMPORTING rt_from_to = lt_ft_cd_txt ).
+
+    READ TABLE lt_ft_cd_txt WITH KEY cartao = me->av_cardnm
+     ASSIGNING <lw_ft_cd_txt>.
+    lv_zuonr = me->av_authnb.
+    IF me->ao_invoice IS NOT INITIAL.
+      TRY .
+          ao_invoice->conciliate( p_bktxt = <lw_ft_cd_txt>-bktxt
+                                   p_zuonr = lv_zuonr ).
+          MESSAGE i103 WITH me->av_vbelv INTO lvc_dummy.
+          lw_return-type       = sy-msgty.
+          lw_return-id         = sy-msgid.
+          lw_return-number     = sy-msgno.
+          lw_return-message_v1 = sy-msgv1.
+          lw_return-message_v2 = sy-msgv2.
+          lw_return-message_v3 = sy-msgv3.
+          lw_return-message_v4 = sy-msgv4.
+          APPEND lw_return TO lt_return.
+          m_put_messages me->av_vbelv lt_return.
+        CATCH cx_bapi_error INTO lx_error.
+          m_put_messages me->av_vbelv lx_error->status.
+      ENDTRY.
+    ELSE.
+* Log registering
+      MESSAGE e104 WITH me->av_vbelv INTO lvc_dummy.
+      lw_return-type       = sy-msgty.
+      lw_return-id         = sy-msgid.
+      lw_return-number     = sy-msgno.
+      lw_return-message_v1 = sy-msgv1.
+      lw_return-message_v2 = sy-msgv2.
+      lw_return-message_v3 = sy-msgv3.
+      lw_return-message_v4 = sy-msgv4.
+      APPEND lw_return TO lt_return.
+      TRY .
+          m_put_messages me->av_vbelv lt_return.
+        CATCH cx_bapi_error.
+          m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                               sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.                    "conciliate
+  METHOD get_from_to.
+    STATICS lt_ft_cd_txt TYPE lty_ft_cd_txt.
+    DATA  lw_ft_cd_txt TYPE ly_ft_cd_txt.
+
+    IF lt_ft_cd_txt IS INITIAL.
+      lw_ft_cd_txt-cartao = 'VISA Crédito'.
+      lw_ft_cd_txt-bktxt  = 'VISA'.
+      APPEND lw_ft_cd_txt TO lt_ft_cd_txt.
+      lw_ft_cd_txt-cartao = 'MASTERCARD'.
+      lw_ft_cd_txt-bktxt  = 'MASTER'.
+      APPEND lw_ft_cd_txt TO lt_ft_cd_txt.
+      lw_ft_cd_txt-cartao = 'AMEX'.
+      lw_ft_cd_txt-bktxt  = 'AMEX'.
+      APPEND lw_ft_cd_txt TO lt_ft_cd_txt.
+      lw_ft_cd_txt-cartao = 'HIPERCARD'.
+      lw_ft_cd_txt-bktxt  = 'HIPERCARD'.
+      APPEND lw_ft_cd_txt TO lt_ft_cd_txt.
+      lw_ft_cd_txt-cartao = 'DINERS'.
+      lw_ft_cd_txt-bktxt  = 'DINERS'.
+      APPEND lw_ft_cd_txt TO lt_ft_cd_txt.
+    ENDIF.
+    rt_from_to = lt_ft_cd_txt.
+  ENDMETHOD.                    "get_from_to
+  METHOD free.
+    IF me->ao_invoice IS NOT INITIAL.
+      me->ao_invoice->free( ).
+    ENDIF.
+    FREE: ao_invoice, ao_log.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_fiscal_document
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_outbound_invoice
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_outbound_invoice IMPLEMENTATION.
+  METHOD constructor.
+    me->av_vbeln = p_vbeln.
+  ENDMETHOD.                    "constructor
+  METHOD assign_fin_doc.
+    me->ao_financial_document = po_findoc.
+  ENDMETHOD.                    "assign_fin_doc
+  METHOD conciliate.
+    DATA lx_error TYPE REF TO cx_bapi_error.
+
+    IF ao_financial_document IS NOT INITIAL.
+      TRY .
+          ao_financial_document->conciliate( p_bktxt = p_bktxt
+                                             p_zuonr = p_zuonr ).
+        CATCH cx_bapi_error INTO lx_error.
+          RAISE EXCEPTION lx_error.
+      ENDTRY.
+    ELSE.
+* Log registering.
+    ENDIF.
+  ENDMETHOD.                    "conciliate
+  METHOD free.
+    IF ao_financial_document IS NOT INITIAL.
+      ao_financial_document->free( ).
+    ENDIF.
+    FREE ao_financial_document.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_outbound_invoice
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_financial_document
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_financial_document IMPLEMENTATION.
+  METHOD constructor.
+    me->av_bukrs = p_bukrs.
+    me->av_gjahr = p_gjahr.
+    me->av_belnr = p_belnr.
+    CREATE OBJECT ao_items.
+  ENDMETHOD.                    "constructor
+  METHOD add_item.
+    ao_items->add( po_item ).
+  ENDMETHOD.                    "add_item
+  METHOD conciliate.
+    DATA: lt_bdc      TYPE bdcdata_tab,
+          lw_bdc      TYPE bdcdata,
+          lw_opt      TYPE ctu_params,
+          lt_msg      TYPE tab_bdcmsgcoll,
+          lw_msg      TYPE bdcmsgcoll,
+          lv_msgty    TYPE symsgty,
+          lv_msgid    TYPE symsgid,
+          lv_msgno    TYPE symsgno,
+          lv_msgv1    TYPE symsgv,
+          lv_msgv2    TYPE symsgv,
+          lv_msgv3    TYPE symsgv,
+          lv_msgv4    TYPE symsgv,
+          lv_msgv5    TYPE symsgv,
+          lt_return   TYPE bapiret2_t,
+          lw_return   TYPE bapiret2,
+          lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_item     TYPE REF TO lcl_financial_item.
+
+    lo_iterator ?= ao_items->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+* Screen mapping
+      m_fill_in_bdc: 'X' 'SAPMF05L'    '0102',
+                     ' ' 'BDC_OKCODE'  '/00',
+                     ' ' 'RF05L-BUKRS' me->av_bukrs,
+                     ' ' 'RF05L-BELNR' me->av_belnr,
+                     ' ' 'RF05L-GJAHR' me->av_gjahr,
+                     ' ' 'RF05L-BUZEI' lo_item->av_buzei,
+                     ' ' 'RF05L-XKDEB' 'X',
+                     'X' 'SAPMF05L'    '0301',
+                     ' ' 'BDC_OKCODE'  '=VK',
+                     'X' 'SAPMF05L'    '1710',
+                     ' ' 'BDC_OKCODE'  '=ENTR',
+                     ' ' 'BKPF-BKTXT'  p_bktxt,
+                     'X' 'SAPMF05L'    '0301',
+                     ' ' 'BDC_OKCODE'  '=AE',
+                     ' ' 'BSEG-ZUONR'  p_zuonr.
+* Processing options
+      lw_opt-dismode = 'N'.
+      lw_opt-updmode = 'S'.
+* Transaction call
+      CALL TRANSACTION 'FB09' USING lt_bdc
+                              OPTIONS FROM lw_opt
+                              MESSAGES INTO lt_msg.
+* Error treatment
+      READ TABLE lt_msg INTO lw_msg WITH KEY msgtyp = 'E'.
+      IF sy-subrc = 0.
+        LOOP AT lt_msg INTO lw_msg.
+          MOVE: lw_msg-msgtyp TO lv_msgty,
+                lw_msg-msgid  TO lv_msgid,
+                lw_msg-msgnr  TO lv_msgno,
+                lw_msg-msgv1  TO lv_msgv1,
+                lw_msg-msgv2  TO lv_msgv2,
+                lw_msg-msgv3  TO lv_msgv3,
+                lw_msg-msgv4  TO lv_msgv4.
+          CALL FUNCTION 'BALW_BAPIRETURN_GET2'
+            EXPORTING
+              type   = lv_msgty
+              cl     = lv_msgid
+              number = lv_msgno
+              par1   = lv_msgv1
+              par2   = lv_msgv2
+              par3   = lv_msgv3
+              par4   = lv_msgv4
+            IMPORTING
+              return = lw_return.
+          APPEND lw_return TO lt_return.
+        ENDLOOP.
+      ENDIF.
+      CLEAR: lt_bdc, lt_msg.
+    ENDWHILE.
+    READ TABLE lt_return INTO lw_return WITH KEY type = 'E'.
+    IF sy-subrc = 0.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          t100_msgid = lv_msgid
+          t100_msgno = lv_msgno
+          t100_msgv1 = lv_msgv1
+          t100_msgv2 = lv_msgv2
+          t100_msgv3 = lv_msgv3
+          t100_msgv4 = lv_msgv4
+          status     = lt_return[].
+    ENDIF.
+  ENDMETHOD.                    "conciliate
+  METHOD free.
+    DATA: lo_iterator TYPE REF TO lcl_item_iterator,
+          lo_item     TYPE REF TO lcl_financial_item.
+
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      FREE lo_item.
+    ENDWHILE.
+    FREE: lo_iterator, ao_items.
+  ENDMETHOD.                    "free
+ENDCLASS.               "lcl_financial_document
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_items_list
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_items_list IMPLEMENTATION.
+  METHOD add.
+    APPEND po_item TO at_items.
+  ENDMETHOD.                    "add
+  METHOD get_iterator.
+    DATA lo_iterator TYPE REF TO lcl_item_iterator.
+
+    CREATE OBJECT lo_iterator
+      EXPORTING
+        pt_items = me->at_items.
+
+    ro_iterator ?= lo_iterator.
+  ENDMETHOD.                    "get_iterator
+ENDCLASS.               "lcl_items_list
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_item_iterator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_item_iterator IMPLEMENTATION.
+  METHOD constructor.
+    me->at_items = pt_items.
+    me->av_next = 1.
+    DESCRIBE TABLE me->at_items LINES me->ai_lines.
+  ENDMETHOD.                    "constructor
+  METHOD lif_iterator~rewind.
+    me->av_next = 1.
+  ENDMETHOD.                    "lif_iterator~rewind
+  METHOD lif_iterator~first.
+    FIELD-SYMBOLS <lo_item> TYPE REF TO lcl_financial_item.
+
+    READ TABLE at_items INDEX 1 ASSIGNING <lo_item>.
+    IF sy-subrc = 0.
+      ro_object ?= <lo_item>.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~first
+  METHOD lif_iterator~next.
+    FIELD-SYMBOLS <lo_item> TYPE REF TO lcl_financial_item.
+
+    IF av_next > ai_lines.
+      me->rewind( ).
+    ENDIF.
+
+    READ TABLE at_items INDEX av_next ASSIGNING <lo_item>.
+    IF sy-subrc = 0.
+      ro_object ?= <lo_item>.
+      ADD 1 TO me->av_next.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~next
+  METHOD hasnext.
+    IF av_next > ai_lines.
+      r_result = abap_false.
+    ELSE.
+      r_result = abap_true.
+    ENDIF.
+  ENDMETHOD.                    "hasnext
+ENDCLASS.               "lcl_item_iterator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_financial_item
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_financial_item IMPLEMENTATION.
+  METHOD constructor.
+    me->av_buzei = p_buzei.
+  ENDMETHOD.                    "constructor
+ENDCLASS.               "lcl_financial_item
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_fiscal_docs_list
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_fiscal_docs_list IMPLEMENTATION.
+  METHOD add.
+    APPEND po_fiscaldc TO me->at_fiscdcs.
+  ENDMETHOD.                    "add
+  METHOD get_iterator.
+    DATA  lo_iterator TYPE REF TO lcl_fiscal_doc_iterator.
+
+    CREATE OBJECT lo_iterator
+      EXPORTING
+        pt_fiscdcs = me->at_fiscdcs.
+
+    ro_iterator ?= lo_iterator.
+  ENDMETHOD.                    "get_iterator
+ENDCLASS.               "lcl_fiscal_docs_list
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_fiscal_doc_iterator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_fiscal_doc_iterator IMPLEMENTATION.
+  METHOD constructor.
+    me->at_fiscdcs = pt_fiscdcs.
+    av_next = 1.
+    DESCRIBE TABLE me->at_fiscdcs LINES me->ai_lines.
+  ENDMETHOD.                    "constructor
+  METHOD lif_iterator~rewind.
+    av_next = 1.
+  ENDMETHOD.                    "lif_iterator~rewind
+  METHOD lif_iterator~first.
+    FIELD-SYMBOLS <lo_fiscaldc> TYPE REF TO lcl_fiscal_document.
+
+    READ TABLE at_fiscdcs INDEX 1 ASSIGNING <lo_fiscaldc>.
+    IF sy-subrc = 0.
+      ro_object ?= <lo_fiscaldc>.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~first
+  METHOD lif_iterator~next.
+    FIELD-SYMBOLS <lo_fiscaldc> TYPE REF TO lcl_fiscal_document.
+
+    IF me->av_next > me->ai_lines.
+      me->rewind( ).
+    ENDIF.
+
+    READ TABLE at_fiscdcs INDEX me->av_next ASSIGNING <lo_fiscaldc>.
+    IF sy-subrc = 0.
+      ro_object ?= <lo_fiscaldc>.
+      ADD 1 TO av_next.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~next
+  METHOD lif_iterator~hasnext.
+    IF av_next > ai_lines.
+      r_result = abap_false.
+    ELSE.
+      r_result = abap_true.
+    ENDIF.
+  ENDMETHOD.                    "lif_iterator~hasnext
+ENDCLASS.               "lcl_fiscal_doc_iterator
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  LCL_LOG
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_log IMPLEMENTATION.
+  METHOD constructor.
+    DATA: ls_log        TYPE bal_s_log,    "Log header data
+          lv_timestp    TYPE timestamp,
+          ls_timestp    TYPE string,
+          lvc_dummy(1)  TYPE c,
+          lw_return     TYPE bapiret2,
+          lt_return     TYPE bapiret2_t.
+
+* define some header data of this log
+    av_instid = p_instid.
+    ls_log-extnumber  = av_instid.
+    ls_log-object     = c_log_object.
+    ls_log-aldate     = sy-datum.
+    ls_log-altime     = sy-uzeit.
+    ls_log-aluser     = sy-uname.
+    ls_log-alprog     = sy-repid.
+
+    CALL FUNCTION 'BAL_LOG_CREATE'
+      EXPORTING
+        i_s_log                 = ls_log
+      IMPORTING
+        e_log_handle            = aw_log_handle
+      EXCEPTIONS
+        log_header_inconsistent = 1
+        OTHERS                  = 2.
+
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.                    "constructor
+  METHOD put_messages.
+    DATA: lw_msg        TYPE bal_s_msg,
+          lw_return     TYPE bapiret2,
+          lt_return     TYPE bapiret2_t,
+          lv_type       TYPE symsgty,
+          lvc_dummy(1)  TYPE c.
+
+* Defining the type of upper levels
+** Message type: S Success, E Error, W Warning, I Info, A Abort
+    READ TABLE pt_msg WITH KEY type = 'E' TRANSPORTING NO FIELDS.
+    IF sy-subrc = 0.
+      lv_type = 'E'.
+    ENDIF.
+    IF lv_type IS INITIAL.
+      READ TABLE pt_msg WITH KEY type = 'W' TRANSPORTING NO FIELDS.
+      IF sy-subrc = 0.
+        lv_type = 'W'.
+      ENDIF.
+      IF lv_type IS INITIAL.
+        READ TABLE pt_msg WITH KEY type = 'I' TRANSPORTING NO FIELDS.
+        IF sy-subrc = 0.
+          lv_type = 'I'.
+        ENDIF.
+        IF lv_type IS INITIAL.
+          READ TABLE pt_msg WITH KEY type = 'S' TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            lv_type = 'S'.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+* Putting messages
+    LOOP AT pt_msg INTO lw_return.
+      IF sy-tabix EQ 1.
+        MESSAGE ID 'ZLFI03' TYPE lv_type NUMBER 102 WITH p_vbelv
+           INTO lvc_dummy.
+        CLEAR lw_msg.
+        m_fill_msg sy-msgty sy-msgid sy-msgno sy-msgv1 sy-msgv2
+                   sy-msgv3 sy-msgv4 '1'.
+        m_msg_add aw_log_handle lw_msg.
+      ENDIF.
+      m_fill_msg lw_return-type
+                 lw_return-id
+                 lw_return-number
+                 lw_return-message_v1
+                 lw_return-message_v2
+                 lw_return-message_v3
+                 lw_return-message_v4
+                 '2'.
+      m_msg_add aw_log_handle lw_msg.
+    ENDLOOP.
+  ENDMETHOD.                    "put_messages
+  METHOD save_log.
+    DATA: lt_log_handles TYPE bal_t_logh,
+          lvc_dummy(1)  TYPE c,
+          lw_return     TYPE bapiret2,
+          lt_return     TYPE bapiret2_t.
+
+    APPEND me->aw_log_handle TO lt_log_handles.
+    CALL FUNCTION 'BAL_DB_SAVE'
+      EXPORTING
+        i_t_log_handle   = lt_log_handles[]
+      EXCEPTIONS
+        log_not_found    = 1
+        save_not_allowed = 2
+        numbering_error  = 3
+        OTHERS           = 4.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.                    "save_log
+  METHOD show_messages.
+    DATA: lr_object          TYPE bal_s_obj,
+          lr_extnumber       TYPE bal_s_extn,
+          lw_log_filter      TYPE bal_s_lfil,
+          lw_display_profile TYPE bal_s_prof.
+
+* create a filter with all relevant criteria:
+    lr_object-sign   = 'I'.
+    lr_object-option = 'EQ'.
+    lr_object-low    = c_log_object.
+    APPEND lr_object TO lw_log_filter-object.
+
+    lr_extnumber-sign   = 'I'.
+    lr_extnumber-option = 'EQ'.
+    lr_extnumber-low    = av_instid.
+    APPEND lr_extnumber TO lw_log_filter-extnumber.
+
+* Load logs into memory
+    load_logs(
+      EXPORTING
+        pw_lfil = lw_log_filter ).
+* Get a prepared profile
+    get_det_profile(
+     IMPORTING
+       rw_dsprof = lw_display_profile ).
+* use grid and detail level for display
+    lw_display_profile-title  = 'Log de conciliação de Pagamentos'(004).
+    lw_display_profile-use_grid   = 'X'.
+    lw_display_profile-bydetlevel = 'X'.
+* call display function module
+    CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'
+      EXPORTING
+        i_s_display_profile  = lw_display_profile
+        i_s_log_filter       = lw_log_filter
+      EXCEPTIONS
+        profile_inconsistent = 1
+        internal_error       = 2
+        no_data_available    = 3
+        no_authority         = 4
+        OTHERS               = 5.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.                    "show_messages
+  METHOD load_logs.
+    DATA lt_log_header TYPE balhdr_t.
+* search on DB for the logs
+    CALL FUNCTION 'BAL_DB_SEARCH'
+      EXPORTING
+        i_s_log_filter     = pw_lfil
+      IMPORTING
+        e_t_log_header     = lt_log_header[]
+      EXCEPTIONS
+        log_not_found      = 1
+        no_filter_criteria = 2.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+* load messages into memory
+    CALL FUNCTION 'BAL_DB_LOAD'
+      EXPORTING
+        i_t_log_header     = lt_log_header[]
+      EXCEPTIONS
+        no_logs_specified  = 1
+        log_not_found      = 2
+        log_already_loaded = 3.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.                    "load_logs
+  METHOD get_det_profile.
+*    CALL FUNCTION 'BAL_DSP_PROFILE_DETLEVEL_GET'
+    CALL FUNCTION 'BAL_DSP_PROFILE_STANDARD_GET'
+      IMPORTING
+        e_s_display_profile = rw_dsprof
+      EXCEPTIONS
+        OTHERS              = 1.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.                    "get_det_profile
+  METHOD clean_up_log.
+    DATA: lr_object          TYPE bal_s_obj,
+          lr_date            TYPE bal_s_date,
+          lw_log_filter      TYPE bal_s_lfil,
+          lw_display_profile TYPE bal_s_prof,
+          lt_log_header      TYPE balhdr_t.
+
+* create a filter with all relevant criteria:
+    lr_object-sign = lr_date-sign = 'I'.
+    lr_object-option = 'EQ'.
+    lr_object-low    = c_log_object.
+    APPEND lr_object TO lw_log_filter-object.
+    lr_date-option = 'LE'.
+    lr_date-low    = p_date.
+    APPEND lr_date TO lw_log_filter-aldate.
+
+* search on DB for the logs
+    CALL FUNCTION 'BAL_DB_SEARCH'
+      EXPORTING
+        i_s_log_filter     = lw_log_filter
+      IMPORTING
+        e_t_log_header     = lt_log_header[]
+      EXCEPTIONS
+        log_not_found      = 1
+        no_filter_criteria = 2.
+    IF sy-subrc <> 0.
+*      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+* Delete the log
+    IF lt_log_header[] IS NOT INITIAL.
+      CALL FUNCTION 'BAL_DB_DELETE'
+        EXPORTING
+          i_t_logs_to_delete = lt_log_header[]
+*          i_in_update_task   = 'X'
+*          i_with_commit_work = 'X'
+        EXCEPTIONS
+          no_logs_specified  = 1
+          OTHERS             = 2.
+      IF sy-subrc <> 0.
+*        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+*           WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.                    "clean_up_log
+ENDCLASS.               "LCL_LOG
+*&---------------------------------------------------------------------*
+*&       Class (Implementation)  lcl_file_validator
+*&---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_validator IMPLEMENTATION.
+  METHOD check_file.
+    DATA: lo_iterator  TYPE REF TO lcl_file_iterator,
+          lo_fline     TYPE REF TO lcl_file_line,
+          lx_error     TYPE REF TO cx_bapi_error,
+          li_size      TYPE int4,
+          li_offset    TYPE int4,
+          lw_return    TYPE bapiret2,
+          lt_return    TYPE bapiret2_t,
+          lvc_dummy(1) TYPE c.
+
+    lo_iterator ?= po_file->get_iterator( ).
+    IF lo_iterator->hasnext( ) = abap_false.
+* Empty file.
+      m_raise_fm_exception 'ZLFI03' 'E' 107  ' ' ' ' ' ' ' '.
+    ENDIF.
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_fline ?= lo_iterator->next( ).
+      IF lo_fline->aw_line IS INITIAL.
+* The file has an empty line. Check line &
+        m_raise_fm_exception 'ZLFI03' 'E' 106  sy-index ' ' ' ' ' '.
+      ENDIF.
+      li_size   = STRLEN( lo_fline->aw_line-documentofiscal ).
+      li_offset = li_size - 4.
+      IF li_size <= 0 OR li_offset < 0.
+* Invalid Fiscal Document. Check line &
+        m_raise_fm_exception 'ZLFI03' 'E' 105  sy-index ' ' ' ' ' '.
+      ENDIF.
+    ENDWHILE.
+  ENDMETHOD.                    "check_file
+ENDCLASS.               "lcl_file_validator

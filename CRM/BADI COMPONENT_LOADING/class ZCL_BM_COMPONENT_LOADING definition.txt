@@ -1,0 +1,46 @@
+class ZCL_BM_COMPONENT_LOADING definition
+  public
+  final
+  create public .
+
+public section.
+
+  interfaces IF_BADI_INTERFACE .
+  interfaces IF_BSP_WD_CMP_LOADING_BADI .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_BM_COMPONENT_LOADING IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_BM_COMPONENT_LOADING->IF_BSP_WD_CMP_LOADING_BADI~GET_ACTIVE_ENHANCEMENT_SET
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RV_RESULT                      TYPE        BSP_WD_ENHANCEMENT_SET
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method IF_BSP_WD_CMP_LOADING_BADI~GET_ACTIVE_ENHANCEMENT_SET.
+  DATA: lo_profile TYPE REF TO if_crm_ui_profile,
+        ls_role    TYPE string.
+
+  lo_profile ?= cl_crm_ui_profile=>get_instance( ).
+
+  ls_role = lo_profile->GET_PROFILE( ).
+
+  if CL_BSP_WD_ENHANCEMENT_API=>INHOUSE_USE = ABAP_FALSE.
+    data: LS_ASSIGMENT type BSPWD_EHSET_ASGN.
+
+    select single * from BSPWD_EHSET_ASGN into LS_ASSIGMENT where CLIENT = SY-MANDT.
+    if SY-SUBRC = 0.
+      RV_RESULT = LS_ASSIGMENT-ENHANCEMENT_SET.
+    endif.
+  endif.
+
+  IF sy-uname = '97611016'.
+    RV_RESULT = 'Z_NEW_CRM'.
+    "CLEAR RV_RESULT.
+  ENDIF.
+endmethod.
+ENDCLASS.

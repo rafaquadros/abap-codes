@@ -1,0 +1,157 @@
+class ZCL_TVARV_RETRIEVER definition
+  public
+  create public .
+
+public section.
+*"* public components of class ZCL_TVARV_RETRIEVER
+*"* do not include other source files here!!!
+
+  data AV_NAME type RVARI_VNAM read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !P_NAME type RVARI_VNAM .
+  methods GET_SINGLE
+    importing
+      !I_VNAME type STRING optional
+    exporting
+      value(EX_VALUE) type ANY .
+  methods GET_MULTIPLE
+    importing
+      !I_VNAME type STRING optional
+    exporting
+      value(EXT_VALUES) type ANY TABLE .
+protected section.
+*"* protected components of class ZCL_TVARV_RETRIEVER
+*"* do not include other source files here!!!
+
+  data AT_VALUES type TVARVC_T .
+
+  methods SET_ATTRIBUTES .
+  methods GET_DB
+    returning
+      value(RO_DB) type ref to OBJECT .
+private section.
+*"* private components of class ZCL_TVARV_RETRIEVER
+*"* do not include other source files here!!!
+ENDCLASS.
+
+
+
+CLASS ZCL_TVARV_RETRIEVER IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_TVARV_RETRIEVER->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] P_NAME                         TYPE        RVARI_VNAM
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method CONSTRUCTOR.
+  me->av_name = p_name.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method ZCL_TVARV_RETRIEVER->GET_DB
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RO_DB                          TYPE REF TO OBJECT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_DB.
+  DATA lo_db TYPE REF TO lcl_db.
+
+  CREATE OBJECT lo_db.
+
+  ro_db = lo_db.
+  FREE lo_db.
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_TVARV_RETRIEVER->GET_MULTIPLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_VNAME                        TYPE        STRING(optional)
+* | [<---] EXT_VALUES                     TYPE        ANY TABLE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_multiple.
+  TYPES  lyr_tvarv TYPE RANGE OF tvarv_val.
+  DATA: lv_search TYPE rvari_vnam,
+        lr_tvarv  TYPE lyr_tvarv,
+        lw_tvarv  TYPE LINE OF lyr_tvarv.
+  FIELD-SYMBOLS <lw_value> TYPE tvarvc.
+  DEFINE lm_append.
+    lw_tvarv-sign   = <lw_value>-sign.
+    lw_tvarv-option = <lw_value>-opti.
+    lw_tvarv-low    = <lw_value>-low.
+    lw_tvarv-high   = <lw_value>-high.
+    append lw_tvarv to lr_tvarv.
+  END-OF-DEFINITION.
+
+  IF me->at_values IS INITIAL.
+    me->set_attributes( ).
+  ENDIF.
+
+  IF i_vname IS SUPPLIED.
+    CONCATENATE av_name i_vname INTO lv_search SEPARATED BY '_'.
+    LOOP AT me->at_values ASSIGNING <lw_value> WHERE name = lv_search.
+      lm_append.
+    ENDLOOP.
+  ELSE.
+    LOOP AT me->at_values ASSIGNING <lw_value>.
+      lm_append.
+    ENDLOOP.
+  ENDIF.
+  ext_values = lr_tvarv.
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_TVARV_RETRIEVER->GET_SINGLE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_VNAME                        TYPE        STRING(optional)
+* | [<---] EX_VALUE                       TYPE        ANY
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_single.
+  DATA  lv_search TYPE rvari_vnam.
+  FIELD-SYMBOLS <lw_value> TYPE tvarvc.
+
+  IF me->at_values IS INITIAL.
+    me->set_attributes( ).
+  ENDIF.
+
+  IF i_vname IS SUPPLIED.
+    CONCATENATE av_name i_vname INTO lv_search SEPARATED BY '_'.
+    READ TABLE me->at_values WITH KEY name = lv_search
+     ASSIGNING <lw_value>.
+    IF sy-subrc = 0.
+      ex_value = <lw_value>-low.
+    ENDIF.
+  ELSE.
+    READ TABLE me->at_values INDEX 1 ASSIGNING <lw_value>.
+    IF sy-subrc = 0.
+      ex_value = <lw_value>-low.
+    ENDIF.
+  ENDIF.
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method ZCL_TVARV_RETRIEVER->SET_ATTRIBUTES
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SET_ATTRIBUTES.
+  DATA lo_db TYPE REF TO lcl_db.
+
+  lo_db ?= me->get_db( ).
+
+  TRY .
+    lo_db->get_tvarvc_values( EXPORTING
+                                p_vname = me->av_name
+                              IMPORTING
+                                rt_values = me->AT_VALUES ).
+  CATCH cx_sy_sql_error.
+    free lo_db. return.
+  ENDTRY.
+  sort me->at_values.
+  free lo_db.
+endmethod.
+ENDCLASS.
