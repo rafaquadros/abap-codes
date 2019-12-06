@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROG NAME="ZMMR077_D01" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" UCCHECK="X">
+ <textPool>
+  <language SPRAS="E">
+   <textElement ID="R" ENTRY="Include ZMMR077_D01" LENGTH="19 "/>
+  </language>
+ </textPool>
+ <source>*&amp;---------------------------------------------------------------------*
+*&amp;  Include           ZMMR077_D01
+*&amp;---------------------------------------------------------------------*
+
+* Naming notation:
+*  [V][C][T]_[name]
+*  where: .[V] stands for visibility, e.g.: g for global, l for local;
+*         .[C] stands for category, e.g.: a for class attributes,
+*                                         v for variable, c for
+*                                         constants, y for types,
+*                                         w for structured work area,
+*                                         t for tables,
+*                                         f for field-symbols etc;
+*         .[T] stands for type, e.g.: i for integer, d for data, etc.
+* Obs: Structured types and types defined in Abap dictionary do not
+*      have a [T] identification.
+
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It&apos;s a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+
+*--------------------------------------------------------------------*
+* INTERFACES DEFINITIONS
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* INTERFACE  LIF_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This interface defines an interator.
+*--------------------------------------------------------------------*
+INTERFACE lif_iterator.
+  DATA  m_next TYPE int4 READ-ONLY.
+  METHODS: rewind,
+*--------------------------------------------------------------------*
+* REWIND
+*--------------------------------------------------------------------*
+*       MODIFIES:  Position on First Object.
+*--------------------------------------------------------------------*
+           first   RETURNING value(rr_object)  TYPE REF TO object,
+*--------------------------------------------------------------------*
+* FIRST
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns First Object.
+*--------------------------------------------------------------------*
+* &lt;-- RR_OBJECT  The first object.
+*--------------------------------------------------------------------*
+            next    RETURNING value(rr_object) TYPE REF TO object,
+*--------------------------------------------------------------------*
+* NEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns Next Object.
+*--------------------------------------------------------------------*
+* &lt;-- RROBJECT The next object.
+*--------------------------------------------------------------------*
+            hasnext RETURNING value(r_result)  TYPE abap_bool.
+*--------------------------------------------------------------------*
+* HASNEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the result.
+*--------------------------------------------------------------------*
+* &lt;-- R_RESULT The next object.
+*--------------------------------------------------------------------*
+ENDINTERFACE.                    &quot;lif_iterator  PUBLIC
+*--------------------------------------------------------------------*
+* CLASSES DEFINITIONS
+*--------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file line.
+*----------------------------------------------------------------------*
+CLASS lcl_file_line DEFINITION.
+  PUBLIC SECTION.
+    DATA  ms_line TYPE string.
+    METHODS  constructor IMPORTING is_fline TYPE string.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_line.
+*--------------------------------------------------------------------*
+*  --&gt; IS_FLINE     File line.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_iterator DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file iterator.
+*----------------------------------------------------------------------*
+CLASS lcl_file_iterator DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES lif_iterator.
+    ALIASES: m_next  FOR lif_iterator~m_next,
+             rewind  FOR lif_iterator~rewind,
+             next    FOR lif_iterator~next,
+             hasnext FOR lif_iterator~hasnext.
+    METHODS constructor IMPORTING it_fcontent TYPE table_of_strings.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: mt_data TYPE table_of_strings,
+          m_lines TYPE int4.
+ENDCLASS.                    &quot;lcl_file_iterator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file.
+*--------------------------------------------------------------------*
+CLASS lcl_file DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING it_fcontent TYPE table_of_strings,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file.
+*--------------------------------------------------------------------*
+             get_iterator RETURNING value(rr_iterator)
+                                               TYPE REF TO lif_iterator.
+*--------------------------------------------------------------------*
+* GET_ITERATOR
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns a file iterator.
+*--------------------------------------------------------------------*
+* &lt;-- RR_ITERATOR    The iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: mt_filecontent        TYPE table_of_strings,
+          mr_structured_content TYPE REF TO data.
+ENDCLASS.                    &quot;lcl_file DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_WITH_SEPARATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file with its fields delimited by
+*           a separator.
+*--------------------------------------------------------------------*
+CLASS lcl_file_with_separator DEFINITION ABSTRACT
+                                         INHERITING FROM lcl_file.
+  PUBLIC SECTION.
+    DATA  m_separator TYPE char01 READ-ONLY.
+    METHODS  constructor IMPORTING value(i_separator) TYPE char01
+                                   value(it_content)
+                                                  TYPE table_of_strings.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_with_separator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    METHODS  parse_file.
+*--------------------------------------------------------------------*
+* PARSE_FILE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Puts the file in a structured form.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_with_separator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_TXT
+* ------------------------------------------------------------------ *
+* OVERVIEW: Represents a TAB separated file.
+*--------------------------------------------------------------------*
+CLASS lcl_tab DEFINITION INHERITING FROM lcl_file_with_separator.
+  PUBLIC SECTION.
+    METHODS  constructor IMPORTING value(it_content)
+                                                  TYPE table_of_strings.
+ENDCLASS.                    &quot;lcl_txt DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_MEDIA
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file media. It defines basic
+*           methods for a media.
+*--------------------------------------------------------------------*
+CLASS lcl_report DEFINITION DEFERRED.
+*----------------------------------------------------------------------*
+*       CLASS lcl_media DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_media DEFINITION ABSTRACT FRIENDS lcl_report.
+  PUBLIC SECTION.
+    DATA  m_filename TYPE string READ-ONLY.
+    METHODS:
+     get_file_name  RETURNING value(r_fname) TYPE string,
+     open           ABSTRACT RAISING cx_bapi_error,
+     close          ABSTRACT RAISING cx_bapi_error,
+     save           IMPORTING it_data TYPE ANY TABLE
+                    RAISING cx_bapi_error,
+     get_data       EXPORTING er_data TYPE REF TO data
+                    RAISING cx_bapi_error,
+     free.
+
+  PROTECTED SECTION.
+    DATA  mr_file    TYPE REF TO lcl_file.
+    METHODS:
+     confirm_filepathname IMPORTING i_path     TYPE string
+                                    i_name     TYPE string
+                          EXPORTING r_pathname TYPE string
+                          RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONFIRM_FILEPATHNAME
+*--------------------------------------------------------------------*
+*       REQUIRES: Current path and file name must be given.
+*       EFFECTS.: Returns the user option for path and file name.
+*--------------------------------------------------------------------*
+*  --&gt; I_PATH     Path.
+*  --&gt; I_NAME     File name.
+*  &lt;-- R_PATHNAME Full name (Path + File name).
+*--------------------------------------------------------------------*
+    set_file_content IMPORTING it_data TYPE ANY TABLE.
+  PRIVATE SECTION.
+    CONSTANTS: mc_car_ret_line_feed TYPE string VALUE &apos;|||||||||||||||||||||||||||||&apos;,
+               mc_new_line          TYPE string VALUE &apos;|||||||||||||||||||||||||||||||&apos;,
+               mc_hor_tab           TYPE string VALUE &apos;||||||||||||||||||||||||||||||||||||||&apos;.
+ENDCLASS.                    &quot;lcl_media DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_DESKTOP
+* ------------------------------------------------------------------ *
+* OVERVIEW: Desktop OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_desktop DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING i_filename TYPE string OPTIONAL,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             close    REDEFINITION,
+             open     REDEFINITION,
+             save     REDEFINITION.
+ENDCLASS.                    &quot;lcl_desktop DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_SERVER
+* ------------------------------------------------------------------ *
+* OVERVIEW: Server OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_server DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING i_filename TYPE string
+                         RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             close    REDEFINITION,
+             open     REDEFINITION,
+             save     REDEFINITION.
+ENDCLASS.                    &quot;lcl_server DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_VALIDATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls is responsible for checking file
+*           content.
+*--------------------------------------------------------------------*
+CLASS lcl_file_validator DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS  check_file IMPORTING ir_file TYPE REF TO lcl_file
+                              RAISING   cx_bapi_error.
+*---------------------------------------------------------------------*
+* CHECK_FILE  S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: A file instance must be given.
+*       EFFECTS.: If the file does not have a valid content raises
+*                 CX_BAPI_ERROR.
+*--------------------------------------------------------------------*
+*  --&gt;  IR_FILE   The file.
+*----------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_validator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_REPORT
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls the program behavior, provided the
+*           selection arguments have been set.
+*--------------------------------------------------------------------*
+CLASS lcl_report DEFINITION.
+  PUBLIC SECTION.
+    DATA: mr_media      TYPE REF TO lcl_media,
+          ms_path       TYPE string.
+    METHODS:
+      get_field_value IMPORTING i_fieldname  TYPE dynfnam
+                      RETURNING value(r_fvalue) TYPE dynfieldvalue,
+*--------------------------------------------------------------------*
+* GET_FIELD_VALUE
+*--------------------------------------------------------------------*
+*       REQUIRES:  The field name must be informed.
+*       EFFECTS.:  Returns the values of a field, before PAI is
+*                  executed.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+* &lt;-- R_FVALUE    Field value.
+*--------------------------------------------------------------------*
+      check_table_existence RAISING cx_bapi_error,
+      execute               RAISING cx_bapi_error.
+  PRIVATE SECTION.
+    DATA: mr_table TYPE REF TO cl_abap_tabledescr,
+          mr_data  TYPE REF TO data.
+
+    METHODS:
+          download       RAISING cx_bapi_error,
+          upload         RAISING cx_bapi_error,
+          initiate_media RAISING cx_bapi_error.
+*--------------------------------------------------------------------*
+* GET_DATA
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Loads the file.
+*--------------------------------------------------------------------*
+
+ENDCLASS.                    &quot;lcl_report DEFINITION</source>
+</PROG>
