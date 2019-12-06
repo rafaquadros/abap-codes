@@ -1,0 +1,188 @@
+class ZCL_CRM_BAL_LOG definition
+  public
+  create public .
+
+public section.
+
+  data AV_OBJECT type BALOBJ_D read-only .
+  data AV_EXTNUM type BALNREXT read-only .
+
+  methods CONSTRUCTOR
+    importing
+      !P_OBJECT type BALOBJ_D
+      !P_EXTNUM type BALNREXT .
+  methods PUT_MESSAGES
+    importing
+      !PT_MESSAGES type BAPIRET2_T
+    raising
+      CX_BAPI_ERROR .
+  methods SAVE_LOG
+    raising
+      CX_BAPI_ERROR .
+  methods SHOW_MESSAGES
+    importing
+      !P_TITLE type BALTITLE
+      !P_MODE type CHAR03
+    raising
+      CX_BAPI_ERROR .
+  methods CLEAN_UP_MESSAGES
+    importing
+      !P_DATE type SYDATUM
+    raising
+      CX_BAPI_ERROR .
+protected section.
+
+  data AO_HANDLE type ref to ZCL_CRM_BAL_LOG_HANDLE .
+
+  methods SET_HANDLE
+    raising
+      CX_BAPI_ERROR .
+private section.
+
+  methods GET_API
+    returning
+      value(RO_API) type ref to OBJECT .
+ENDCLASS.
+
+
+
+CLASS ZCL_CRM_BAL_LOG IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG->CLEAN_UP_MESSAGES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] P_DATE                         TYPE        SYDATUM
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD clean_up_messages.
+    DATA: lo_api   TYPE REF TO lcl_api,
+          lx_error TYPE REF TO cx_bapi_error.
+
+    lo_api ?= me->get_api( ).
+
+    TRY .
+        lo_api->clean_up_log( p_object = me->av_object
+                              p_date   = p_date ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] P_OBJECT                       TYPE        BALOBJ_D
+* | [--->] P_EXTNUM                       TYPE        BALNREXT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+    me->av_object = p_object.
+    me->av_extnum = p_extnum.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_CRM_BAL_LOG->GET_API
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RO_API                         TYPE REF TO OBJECT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_api.
+    DATA lo_api TYPE REF TO lcl_api.
+
+    lo_api = NEW lcl_api( ).
+    IF lo_api IS BOUND.
+      ro_api = lo_api.
+    ENDIF.
+    FREE lo_api.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG->PUT_MESSAGES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] PT_MESSAGES                    TYPE        BAPIRET2_T
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD put_messages.
+    DATA  lx_error TYPE REF TO cx_bapi_error.
+
+    TRY .
+        IF me->ao_handle IS INITIAL.
+          me->set_handle( ).
+        ENDIF.
+        me->ao_handle->put_messages( pt_messages ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG->SAVE_LOG
+* +-------------------------------------------------------------------------------------------------+
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD save_log.
+    DATA  lx_error TYPE REF TO cx_bapi_error.
+
+    TRY .
+        IF me->ao_handle IS INITIAL.
+          me->set_handle( ).
+        ENDIF.
+        me->ao_handle->save_log( ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method ZCL_CRM_BAL_LOG->SET_HANDLE
+* +-------------------------------------------------------------------------------------------------+
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_handle.
+    DATA: lo_api    TYPE REF TO lcl_api,
+          lx_error  TYPE REF TO cx_bapi_error,
+          lv_handle TYPE balloghndl.
+
+    lo_api ?= me->get_api( ).
+
+    TRY .
+        lo_api->get_log_handle( EXPORTING p_object    = me->av_object
+                                          p_extnumber = me->av_extnum
+                                RECEIVING r_handle    = lv_handle ).
+      CATCH cx_bapi_error INTO lx_error.
+        FREE lo_api.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+    me->ao_handle = NEW zcl_crm_bal_log_handle( lv_handle ).
+    FREE lo_api.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG->SHOW_MESSAGES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] P_TITLE                        TYPE        BALTITLE
+* | [--->] P_MODE                         TYPE        CHAR03
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD show_messages.
+    DATA: lo_api   TYPE REF TO lcl_api,
+          lx_error TYPE REF TO cx_bapi_error.
+
+    lo_api ?= me->get_api( ).
+
+    TRY .
+        lo_api->show_messages( p_object = me->av_object
+                               p_extnum = me->av_extnum
+                               p_title  = p_title
+                               p_mode   = p_mode        ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.

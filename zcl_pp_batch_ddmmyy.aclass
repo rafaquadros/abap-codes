@@ -1,0 +1,64 @@
+CLASS zcl_pp_batch_ddmmyy DEFINITION
+  PUBLIC
+  INHERITING FROM zcl_pp_batch_formatter
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    CONSTANTS  c_rule_type_02 TYPE zbatch_rule_type VALUE '02'.
+    METHODS:
+    get_bath REDEFINITION,
+    get_my_rule_type REDEFINITION.
+  PROTECTED SECTION.
+    METHODS  set_attributes REDEFINITION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS zcl_pp_batch_ddmmyy IMPLEMENTATION.
+  METHOD get_bath.
+    CLEAR r_batch.
+
+    IF me->naming_template IS INITIAL.
+      TRY.
+          me->set_attributes( ).
+*          CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        CATCH cx_bapi_error.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+
+    IF me->batch_naming <> me->naming_template.
+      RETURN.
+    ENDIF.
+
+    r_batch = me->naming_template.
+    REPLACE 'AA' IN r_batch WITH sy-datum+2(2).
+    IF sy-subrc <> 0.
+      REPLACE 'YY' IN r_batch WITH sy-datum+2(2).
+    ENDIF.
+
+    REPLACE: 'MM' IN r_batch WITH sy-datum+4(2),
+             'DD' IN r_batch WITH sy-datum+6(2).
+  ENDMETHOD.
+
+  METHOD get_my_rule_type.
+
+    r_rule_type = c_rule_type_02.
+  ENDMETHOD.
+
+  METHOD set_attributes.
+    TRY.
+        super->set_attributes( ).
+*    CATCH cx_bapi_error. " BAPI Error Exception: Migrated Error Messages Type "E"
+        me->set_template( i_rule_type = c_rule_type_02 ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+      CATCH cx_sql_exception  ##NO_HANDLER
+            cx_parameter_invalid.
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+ENDCLASS.

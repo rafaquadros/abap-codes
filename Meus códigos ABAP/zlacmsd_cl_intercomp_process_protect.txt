@@ -1,0 +1,26 @@
+*"* protected components of class ZLACMSD_CL_INTERCOMP_PROCESS
+*"* do not include other source files here!!!
+protected section.
+
+  data AO_MAT_DOC_ITEMS type ref to ZCL_LIST .
+  data AO_DELIVERIES type ref to ZCL_LIST .
+
+  methods EXPORT_SHIPPING_COND .
+  class-methods IS_PARCIAL_MODE_SET_UP
+    returning
+      value(R_BOOLEAN) type CHAR01 .
+  methods GET_DSD
+    exporting
+      !RT_DSD_ITEMS type CYT_SALE_ITEMS .
+  class-methods DSD_TO_BAPI_ITEMS
+    importing
+      value(PT_IDS) type CYT_SALE_ITEMS
+    exporting
+      value(RT_BAPI_ITEMS) type CYT_DELIVERIES_ITEMS
+    raising
+      CX_SY_SQL_ERROR .
+  methods CREATE_DELIVERIES
+    importing
+      value(RT_DELIVERIES_ITEMS) type CYT_DELIVERIES_ITEMS
+    returning
+      value(PO_DELIVERIES) type ref to ZCL_LIST .

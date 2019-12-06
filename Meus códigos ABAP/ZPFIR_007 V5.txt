@@ -1,0 +1,62 @@
+*&---------------------------------------------------------------------*
+*& Report  ZPFIR_007
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+INCLUDE: zpfir_007_top                           ,   " global Data
+         zpfir_007_c01                           .   " Classes
+* INCLUDE ZPFIR_007_O01                           .  " PBO-Modules
+* INCLUDE ZPFIR_007_I01                           .  " PAI-Modules
+* INCLUDE ZPFIR_007_F01                           .  " FORM-Routines
+AT SELECTION-SCREEN OUTPUT.
+  m_set_separator_activity.
+
+AT SELECTION-SCREEN ON p_file.
+  IF lcl_main=>ao_media IS INITIAL.
+    FREE: o_desktop, o_server.
+    IF p_desk IS NOT INITIAL.
+      CREATE OBJECT o_desktop
+        EXPORTING
+          p_filename = p_file.
+      lcl_main=>ao_media ?= o_desktop.
+      p_file = lcl_main=>ao_media->filename.
+    ELSE.
+      CREATE OBJECT o_server
+        EXPORTING
+          p_filename = p_file.
+      lcl_main=>ao_media ?= o_server.
+    ENDIF.
+  ENDIF.
+
+*AT SELECTION-SCREEN ON RADIOBUTTON GROUP grp2.
+*  m_set_separator_activity.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+  FREE: o_desktop, o_server.
+  p_file = lcl_main=>get_field_value( 'P_FILE' ).
+  IF p_desk IS NOT INITIAL.
+    CREATE OBJECT o_desktop.
+    lcl_main=>ao_media ?= o_desktop.
+    p_file = lcl_main=>ao_media->filename.
+  ELSE.
+    CREATE OBJECT o_server
+      EXPORTING
+        p_filename = p_file.
+    lcl_main=>ao_media ?= o_server.
+  ENDIF.
+
+START-OF-SELECTION.
+  IF p_txt IS NOT INITIAL AND p_sep IS INITIAL.
+* TXT file requires a separator.
+    MESSAGE i101 DISPLAY LIKE 'I'.
+    LEAVE TO CURRENT TRANSACTION.
+  ENDIF.
+
+  lcl_main=>get_data( ).
+
+END-OF-SELECTION.
+  lcl_main=>process_data( ).
+  lcl_main=>house_keeping( ).

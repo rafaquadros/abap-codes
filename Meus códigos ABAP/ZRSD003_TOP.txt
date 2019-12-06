@@ -1,0 +1,686 @@
+*&---------------------------------------------------------------------*
+*& Include ZRSD003_TOP                                    Report ZRSD003
+*&
+*&---------------------------------------------------------------------*
+
+REPORT   zrsd003 MESSAGE-ID zlfi03.
+* Naming notation:
+*  [V][C][T]_[name]
+*  where: .[V] stands for visibility, e.g.: g for global, l for local;
+*         .[C] stands for category, e.g.: a for class attributes,
+*                                         v for variable, c for
+*                                         constants, y for types,
+*                                         w for structured work area,
+*                                         t for tables,
+*                                         f for field-symbols etc;
+*         .[T] stands for type, e.g.: i for integer, d for data, etc.
+* Obs: Structured types and types defined in Abap dictionary do not
+*      have a [T] identification.
+
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It?s a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+*----------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+* TYPES
+*----------------------------------------------------------------------*
+TYPE-POOLS abap.
+*----------------------------------------------------------------------*
+* TABLES
+*----------------------------------------------------------------------*
+TABLES  kna1.
+*----------------------------------------------------------------------*
+* CONSTANTS
+*----------------------------------------------------------------------*
+CONSTANTS  c_kkber TYPE kkber VALUE '1000'.
+*----------------------------------------------------------------------*
+* GLOBAL VARIABLES
+*----------------------------------------------------------------------*
+CLASS lcl_operator DEFINITION DEFERRED.
+DATA  o_operator TYPE REF TO lcl_operator.
+*----------------------------------------------------------------------*
+* SELECTION SCREEN
+*----------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+PARAMETERS p_bukr TYPE t001-bukrs DEFAULT '1000' OBLIGATORY.
+SELECT-OPTIONS s_kunnr FOR kna1-kunnr.
+SELECTION-SCREEN END OF BLOCK b1.
+SELECTION-SCREEN BEGIN OF BLOCK b2 WITH FRAME TITLE text-002.
+PARAMETERS: p_lock  RADIOBUTTON GROUP grp1 DEFAULT 'X',
+            p_unlk  RADIOBUTTON GROUP grp1.
+SELECTION-SCREEN END OF BLOCK b2.
+*--------------------------------------------------------------------*
+* INTERFACES DEFINITIONS
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* INTERFACE  LIF_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This interface defines an interator.
+*--------------------------------------------------------------------*
+INTERFACE lif_iterator.
+  METHODS: next    RETURNING value(ro_object) TYPE REF TO object,
+*--------------------------------------------------------------------*
+* NEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns Next Object.
+*--------------------------------------------------------------------*
+* <-- RO_OBJECT The next object.
+*--------------------------------------------------------------------*
+           hasnext RETURNING value(r_result)  TYPE abap_bool.
+*--------------------------------------------------------------------*
+* HASNEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the result.
+*--------------------------------------------------------------------*
+* <-- R_RESULT The next object.
+*--------------------------------------------------------------------*
+ENDINTERFACE.                    "lif_iterator  PUBLIC
+*----------------------------------------------------------------------*
+* CLASSES DEFINITIONS
+*----------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+* CLASS  LCL_API  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents an API calling mediator.
+*----------------------------------------------------------------------*
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    METHODS: calculate_due_date IMPORTING p_shkzg TYPE shkzg
+                                          p_zfbdt TYPE dzfbdt
+                                          p_zbd1t TYPE dzbd1t
+                                          p_zbd2t TYPE dzbd2t
+                                          p_zbd3t TYPE dzbd3t
+                                          p_rebzg TYPE rebzg
+                               RETURNING value(r_duedt) TYPE faedt_fpos,
+*----------------------------------------------------------------------*
+* CALCULATE_DUE_DATE
+*----------------------------------------------------------------------*
+*       REQUIRES: All required arguments must be provided.
+*       EFFECTS.: Returns the due date related to the arguments
+*                 provided.
+*----------------------------------------------------------------------*
+*  --> P_SHKZG     Debit/Credit Indicator.
+*  --> P_ZFBDT     Baseline Date for Due Date Calculation.
+*  --> P_ZDB1T     Cash Discount Days 1.
+*  --> P_ZBD2T     Cash Discount Days 2.
+*  --> P_ZBD3T     Net Payment Terms Period.
+*  --> P_REBZG     Number of the Invoice the Transaction Belongs to.
+*  <-- R_DUEDT     Due date.
+*----------------------------------------------------------------------*
+             convert_amount IMPORTING p_fcurr  TYPE waers
+                                      p_tcurr  TYPE waers
+                                      p_amount TYPE wrb_curr
+                            RETURNING value(r_amount) TYPE wrb_curr
+                            RAISING cx_bapi_error,
+*----------------------------------------------------------------------*
+* CONVERT_AMOUNT
+*----------------------------------------------------------------------*
+*       REQUIRES: All required arguments must be provided.
+*       EFFECTS.: If an error occurs raises exeception type
+*                 CX_BAPI_ERROR, otherwise returns the amount
+*                 converted to P_TCURR currency.
+*----------------------------------------------------------------------*
+*  --> P_FCURR     From currency.
+*  --> P_TCURR     To currency.
+*  --> P_AMOUNT    Amount in "From currency".
+*  <-- R_AMOUNT    Amount in "To currency".
+*----------------------------------------------------------------------*
+             fill_in_bapiret2 IMPORTING p_type    TYPE bapi_mtype
+                                        p_cl      TYPE symsgid
+                                        p_number  TYPE symsgno
+                                        p_par1    TYPE symsgv
+                                        p_par2    TYPE symsgv
+                                        p_par3    TYPE symsgv
+                                        p_par4    TYPE symsgv
+                              EXPORTING rw_return TYPE bapiret2.
+*----------------------------------------------------------------------*
+* FILL_IN_BAPIRET2
+*----------------------------------------------------------------------*
+*       REQUIRES: All required arguments must be provided.
+*       EFFECTS.: Returns a structure of type BAPIRET2, filled in with
+*                 the message data provided as arguments.
+*----------------------------------------------------------------------*
+*  --> P_TYPE    Categoria de mensagem.
+*  --> P_CL      Classe de mensagem.
+*  --> P_NUMBER  Nº mensagem.
+*  --> P_PAR1, 2, 3, 4  Variáveis das mensagens.
+*  <-- RW_RETURN  Parâmetro de retorno.
+*----------------------------------------------------------------------*
+ENDCLASS.                    "lcl_api DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  LCL_DB  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents an database mediator.
+*----------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    TYPES: BEGIN OF cyw_open_item,
+            bukrs TYPE bukrs,
+            kunnr TYPE kunnr,
+            gjahr TYPE gjahr,
+            belnr TYPE belnr_d,
+            buzei TYPE buzei,
+            shkzg TYPE shkzg,
+            dmbtr TYPE dmbtr,
+            zfbdt TYPE dzfbdt,
+            zbd1t TYPE dzbd1t,
+            zbd2t TYPE dzbd2t,
+            zbd3t TYPE dzbd3t,
+            rebzg TYPE rebzg,
+           END OF cyw_open_item,
+           cyt_open_items TYPE STANDARD TABLE OF cyw_open_item,
+           cyt_customers  TYPE STANDARD TABLE OF kunnr,
+           cyr_kunnr      TYPE RANGE OF kunnr.
+    METHODS: get_blocking_data IMPORTING p_kunnr TYPE kunnr
+                               EXPORTING r_waers TYPE waers
+                                         r_zzbla TYPE zzbla
+                                         r_zzndd TYPE zzndd
+                               RAISING cx_sy_sql_error,
+*----------------------------------------------------------------------*
+* GET_BLOCKING_DATA
+*----------------------------------------------------------------------*
+*       REQUIRES: The customer code must be provided.
+*       EFFECTS.: If the respective record is found returns the related
+*                 fields contents of table ZTFI005, otherwise raises
+*                 exception CX_SY_SQL_ERROR.
+*----------------------------------------------------------------------*
+*  --> P_KUNNR     Customer Number.
+*  <-- R_WAERS     Currency Key.
+*  <-- R_ZZBLA     Blocking amount.
+*  <-- R_ZZNDD     Number of days elapsed since the due date.
+*----------------------------------------------------------------------*
+             get_company_currency IMPORTING p_bukrs TYPE bukrs
+                                  RETURNING value(r_waers) TYPE waers
+                                  RAISING cx_sy_sql_error,
+*----------------------------------------------------------------------*
+* GET_COMPANY_CURRENCY
+*----------------------------------------------------------------------*
+*       REQUIRES: The company code must be provided.
+*       EFFECTS.: If the respective record is found returns the related
+*                 currency registered in table T001, otherwise raises
+*                 exception CX_SY_SQL_ERROR.
+*----------------------------------------------------------------------*
+*  --> P_BUKRS     Company Code.
+*  <-- R_WAERS     Currency Key.
+*----------------------------------------------------------------------*
+             get_customers IMPORTING p_locked     TYPE abap_bool
+                                     pr_kunnr     TYPE cyr_kunnr
+                           EXPORTING rt_customers TYPE cyt_customers
+                           RAISING cx_sy_sql_error,
+*----------------------------------------------------------------------*
+* GET_CUSTOMERS
+*----------------------------------------------------------------------*
+*       REQUIRES: Locked customer indicator.
+*       EFFECTS.: If no related records are found in table KNKK raises
+*                 exception CX_SY_SQL_ERROR, otherwise returns a table
+*                 with related customers numbers.
+*----------------------------------------------------------------------*
+*  --> P_LOCKED     Locked (true)/Unlocked (false) indicator.
+*  <-- RT_CUSTOMERS Table with customers numbers.
+*----------------------------------------------------------------------*
+             get_open_items IMPORTING p_bukrs  TYPE bukrs
+                                      pt_kunnr TYPE cyt_customers
+                            EXPORTING rt_items TYPE cyt_open_items
+                            RAISING cx_sy_sql_error,
+*----------------------------------------------------------------------*
+* GET_OPEN_ITEMS
+*----------------------------------------------------------------------*
+*       REQUIRES: A company code and a table with customers must be
+*                 given.
+*       EFFECTS.: If no related records are found in table BSID raises
+*                 exception CX_SY_SQL_ERROR, otherwise returns a table
+*                 with related BSID records.
+*----------------------------------------------------------------------*
+*  --> P_BUKRS     Company code.
+*  --> PT_KUNNR    Table with customers to be selected.
+*  <-- RT_ITEMS    Table with open items.
+*----------------------------------------------------------------------*
+             get_customer_name IMPORTING p_kunnr TYPE kunnr
+                               RETURNING value(r_name1) TYPE name1_gp
+                               RAISING cx_sy_sql_error.
+*----------------------------------------------------------------------*
+* GET_CUSTOMER_NAME
+*----------------------------------------------------------------------*
+*       REQUIRES: The customer code must be provided.
+*       EFFECTS.: If no related records are found in table KNA1 raises
+*                 exception CX_SY_SQL_ERROR, otherwise returns the name
+*                 found.
+*----------------------------------------------------------------------*
+*  --> P_KUNNR     Customer Number.
+*  <-- R_NAME1     Customer name.
+*----------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: cv_bukrs TYPE bukrs,
+          cv_waers TYPE waers.
+ENDCLASS.                    "lcl_db DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  LCL_CUSTOM_CLASS DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a customized object that uses other
+*           API and database services.
+*----------------------------------------------------------------------*
+CLASS lcl_custom_class DEFINITION ABSTRACT.
+  PROTECTED SECTION.
+    METHODS: get_api RETURNING value(ro_api) TYPE REF TO lcl_api,
+*----------------------------------------------------------------------*
+* GET_API
+*----------------------------------------------------------------------*
+*       EFFECTS.: Returns a API calling mediator.
+*----------------------------------------------------------------------*
+*  <-- RO_API     API calling mediator.
+*----------------------------------------------------------------------*
+             get_db RETURNING value(ro_db) TYPE REF TO lcl_db.
+*----------------------------------------------------------------------*
+* GET_DB
+*----------------------------------------------------------------------*
+*       EFFECTS.: Returns a database mediator.
+*----------------------------------------------------------------------*
+*  <-- RO_DB    Database mediator.
+*----------------------------------------------------------------------*
+ENDCLASS.
+*----------------------------------------------------------------------*
+* CLASS  LCL_LIST_ELEMENT DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a generic elemento of a list.
+*----------------------------------------------------------------------*
+CLASS lcl_list_element DEFINITION ABSTRACT
+                       INHERITING FROM lcl_custom_class.
+  PUBLIC SECTION.
+    METHODS  free ABSTRACT.
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Cleans up an element.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_list_element DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  LCL_OPEN_ITEM  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a payment open item.
+*----------------------------------------------------------------------*
+CLASS lcl_open_item DEFINITION INHERITING FROM lcl_list_element.
+  PUBLIC SECTION.
+    DATA: av_bukrs TYPE bukrs   READ-ONLY,
+          av_waerh TYPE waerh   READ-ONLY,
+          av_gjahr TYPE gjahr   READ-ONLY,
+          av_belnr TYPE belnr_d READ-ONLY,
+          av_buzei TYPE buzei   READ-ONLY,
+          av_shkzg TYPE shkzg   READ-ONLY,
+          av_dmbtr TYPE dmbtr   READ-ONLY,
+          av_zfbdt TYPE dzfbdt  READ-ONLY,
+          av_zbd1t TYPE dzbd1t  READ-ONLY,
+          av_zbd2t TYPE dzbd2t  READ-ONLY,
+          av_zbd3t TYPE dzbd3t  READ-ONLY,
+          av_rebzg TYPE rebzg   READ-ONLY.
+    METHODS: constructor IMPORTING p_bukrs TYPE bukrs
+                                   p_gjahr TYPE gjahr
+                                   p_belnr TYPE belnr_d
+                                   p_buzei TYPE buzei
+                                   p_shkzg TYPE shkzg
+                                   p_dmbtr TYPE dmbtr
+                                   p_zfbdt TYPE dzfbdt
+                                   p_zbd1t TYPE dzbd1t
+                                   p_zbd2t TYPE dzbd2t
+                                   p_zbd3t TYPE dzbd3t
+                                   p_rebzg TYPE rebzg,
+*----------------------------------------------------------------------*
+* CONSTRUCTOR
+*----------------------------------------------------------------------*
+*       REQUIRES: All attributes arguments must be provided.
+*       EFFECTS.: Initializes the object attributes using respective
+*                 parameters arguments.
+*       MODIFIES: Creates an object of type LCL_OPEN_ITEM.
+*----------------------------------------------------------------------*
+*  --> P_BUKRS     Company Code.
+*  --> P_GJAHR     Fiscal Year.
+*  --> P_BELNR     Accounting Document Number.
+*  --> P_BUZEI     Number of Line Item Within Accounting Document.
+*  --> P_SHKZG     Debit/Credit Indicator.
+*  --> P_DMBTR     Amount in Local Currency.
+*  --> P_ZFBDT     Baseline Date for Due Date Calculation.
+*  --> P_ZDB1T     Cash Discount Days 1.
+*  --> P_ZBD2T     Cash Discount Days 2.
+*  --> P_ZBD3T     Net Payment Terms Period.
+*  --> P_REBZG     Number of the Invoice the Transaction Belongs to.
+*----------------------------------------------------------------------*
+              get_due_date RETURNING value(r_duedt) TYPE datum,
+*----------------------------------------------------------------------*
+* GET_DUE_DATE
+*----------------------------------------------------------------------*
+*       EFFECTS.: Returns the due date of the open item.
+*----------------------------------------------------------------------*
+*  <-- R_DUEDT     Due date.
+*----------------------------------------------------------------------*
+             set_local_currency,
+*----------------------------------------------------------------------*
+* SET_LOCAL_CURRENCY
+*----------------------------------------------------------------------*
+*       MODIFIES: Sets the respective local currency for the respecitve
+*                 instance of this class.
+*----------------------------------------------------------------------*
+             free REDEFINITION.
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Cleans up the attributes.
+*--------------------------------------------------------------------*
+ENDCLASS.                    "lcl_open_item DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  LCL_ITEMS_LIST
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a list of any objects.
+*----------------------------------------------------------------------*
+CLASS lcl_items_list DEFINITION.
+  PUBLIC SECTION.
+    TYPES: y_item   TYPE REF TO lcl_list_element,
+           ty_items TYPE STANDARD TABLE OF y_item.
+    METHODS: add IMPORTING value(po_item)
+                                         TYPE REF TO lcl_list_element,
+*--------------------------------------------------------------------*
+* ADD
+*--------------------------------------------------------------------*
+*       REQUIRES: An object must be given.
+*       MODIFIES: Adds up an item to the this list.
+*--------------------------------------------------------------------*
+*  --> PO_ITEM    Item.
+*--------------------------------------------------------------------*
+             get_iterator RETURNING value(ro_iterator)
+                                               TYPE REF TO lif_iterator,
+*--------------------------------------------------------------------*
+* GET_ITERATOR
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns an item list iterator.
+*--------------------------------------------------------------------*
+* <-- RO_ITERATOR    The iterator.
+*--------------------------------------------------------------------*
+             free.
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Releases internal table of items.
+*       MODIFIES:  The iterator gets no elements.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA  at_items TYPE ty_items.
+ENDCLASS.                    "lcl_items_list DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_ITEM_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class represents an interator of financial document
+*           items.
+*--------------------------------------------------------------------*
+CLASS lcl_item_iterator DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES lif_iterator.
+    ALIASES: next    FOR lif_iterator~next,
+             hasnext FOR lif_iterator~hasnext.
+    METHODS: constructor IMPORTING value(pt_items)
+                                          TYPE lcl_items_list=>ty_items.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       REQUIRES: A table holding items must be given.
+*       MODIFIES: Creates an object of type lcl_item_iterator.
+*--------------------------------------------------------------------*
+*  --> PT_ITEMS    Table of items.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA  at_items TYPE lcl_items_list=>ty_items.
+ENDCLASS.                    "lcl_item_iterator DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  LCL_CUSTOMER  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a customer.
+*----------------------------------------------------------------------*
+CLASS lcl_customer DEFINITION INHERITING FROM lcl_list_element.
+  PUBLIC SECTION.
+    DATA: av_kunnr  TYPE kunnr     READ-ONLY,
+          av_name1  TYPE name1_gp  READ-ONLY,
+          av_curlk  TYPE waers     READ-ONLY,
+          av_excep  TYPE abap_bool READ-ONLY,
+          av_zzbla  TYPE zzbla     READ-ONLY,
+          av_zzndd  TYPE zzndd     READ-ONLY,
+          av_crblb  TYPE crblb_cm  READ-ONLY.
+    METHODS: constructor IMPORTING p_kunnr  TYPE kunnr
+                                   p_locked TYPE abap_bool,
+*----------------------------------------------------------------------*
+* CONSTRUCTOR
+*----------------------------------------------------------------------*
+*       REQUIRES: The customer code and the locking indicator must be
+*                 provided.
+*       EFFECTS.: Initializes the key attribute.
+*       MODIFIES: Creates an object of type LCL_CUSTOMER.
+*----------------------------------------------------------------------*
+*  --> P_KUNNR     Customer Number.
+*  --> P_LOCKED    Locked/Unlocked indicator.
+*----------------------------------------------------------------------*
+             set_name,
+*----------------------------------------------------------------------*
+* SET_NAME
+*----------------------------------------------------------------------*
+*       MODIFIES: Fill in the customer name attribute.
+*----------------------------------------------------------------------*
+             set_exception_data,
+*----------------------------------------------------------------------*
+* SET_EXEPTION_DATA
+*----------------------------------------------------------------------*
+*       MODIFIES: Fill in exeption related data of the respective
+*                 instance of an object of the type LCL_CUSTOMER.
+*----------------------------------------------------------------------*
+             set_open_items IMPORTING value(po_list)
+                                             TYPE REF TO lcl_items_list,
+*----------------------------------------------------------------------*
+* SET_OPEN_ITEMS
+*----------------------------------------------------------------------*
+*       MODIFIES: Assigns an open items list to a customer.
+*----------------------------------------------------------------------*
+*  --> P0_LIST     Open items list.
+*----------------------------------------------------------------------*
+             get_amount_older_than IMPORTING p_zzndd TYPE zzndd
+                                             p_waers TYPE waers
+                                RETURNING value(r_amount) TYPE wrb_curr,
+*----------------------------------------------------------------------*
+* GET_AMOUNT_OLDER_THAN
+*----------------------------------------------------------------------*
+*       REQUIRES: The number of elapsed days since the due date to be
+*                 considered and the currency in which the total
+*                 amount shall be expressed must be given.
+*       EFFECTS.: Returns the total amount of open items, which have
+*                 exceded the given limit.
+*----------------------------------------------------------------------*
+*  --> P_ZZNDD     Number of days elapsed since the due date.
+*  --> P_WAERS     Currency in which the sum amount must be returned.
+*  <-- R_AMOUNT    Amount in Local Currency.
+*----------------------------------------------------------------------*
+             print_open_items IMPORTING p_zzndd TYPE zzndd
+                                        p_waers TYPE waers,
+*----------------------------------------------------------------------*
+* PRINT_OPEN_ITEMS
+*----------------------------------------------------------------------*
+*       REQUIRES: The number of elapsed days since the due date to be
+*                 considered and the currency in which the total
+*                 amount shall be expressed must be given.
+*       EFFECTS.: Prints out the open items which the due dated exceeds
+*                 the number of days provide and their amount sum.
+*----------------------------------------------------------------------*
+*  --> P_ZZNDD     Number of days elapsed since the due date.
+*  --> P_WAERS     Currency in which the sum amount must be returned.
+*----------------------------------------------------------------------*
+             fd32 IMPORTING p_lock TYPE abap_bool
+                  RAISING cx_bapi_error,
+*----------------------------------------------------------------------*
+* FD32
+*----------------------------------------------------------------------*
+*       REQUIRES: The lock indicator must be provided.
+*       EFFECTS.: Process transaction FD32 in order to lock or unlock
+*                 the customer, depending on the argument provided to
+*                 P_LOCK. If an error occurs raises exception
+*                 CX_BAPI_ERROR.
+*----------------------------------------------------------------------*
+*  --> P_LOCK     Lock (true)/Unlock (false) indicator.
+*----------------------------------------------------------------------*
+             set_operation_failed IMPORTING value(px_error)
+                                              TYPE REF TO cx_bapi_error,
+*--------------------------------------------------------------------*
+* SET_OPERATION_FAILED
+*--------------------------------------------------------------------*
+*       REQUIRES: An exception object must be provide.
+*       MODIFIES:  Sets the internal error object.
+*--------------------------------------------------------------------*
+*  --> PX_ERROR    An exception object.
+*----------------------------------------------------------------------*
+             has_failed RETURNING value(r_bool) TYPE abap_bool,
+*--------------------------------------------------------------------*
+* HAS_FAILED
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns TRUE if the error object is bound.
+*--------------------------------------------------------------------*
+*  <-- R_BOOL   Boolean indicator.
+*----------------------------------------------------------------------*
+             print_messages,
+*--------------------------------------------------------------------*
+* PRINT_MESSAGES
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Prints the messages stored in the error object.
+*--------------------------------------------------------------------*
+             free REDEFINITION.
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Releases the list of open items.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: ao_open_items TYPE REF TO lcl_items_list,
+          ax_error      TYPE REF TO cx_bapi_error.
+ENDCLASS.                    "lcl_customer DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  lcl_operator  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents a generic operator that executes
+*           the operation specified by the user option.
+*----------------------------------------------------------------------*
+CLASS lcl_operator DEFINITION ABSTRACT INHERITING FROM lcl_custom_class.
+  PUBLIC SECTION.
+    CLASS-METHODS  get_instance RETURNING value(ro_operator)
+                                               TYPE REF TO lcl_operator.
+*----------------------------------------------------------------------*
+*       MODIFIES: Provides the program operator according to the user
+*                 option for Locking/Unlocking customers.
+*----------------------------------------------------------------------*
+    DATA: av_zzbla    TYPE zzbla     READ-ONLY,
+          av_zzndd    TYPE zzndd     READ-ONLY,
+          av_waers    TYPE waers     READ-ONLY,
+          av_failed   TYPE abap_bool READ-ONLY.
+    METHODS: set_customers_list IMPORTING p_locked TYPE abap_bool,
+*----------------------------------------------------------------------*
+* SET_CUSTOMERS_LIST
+*----------------------------------------------------------------------*
+*       REQUIRES: Locked customer indicator.
+*       MODIFIES: Creates the list of locked or unlocked customers
+*                 depending on the argument provided for P_LOCKED.
+*----------------------------------------------------------------------*
+*  --> P_LOCKED   Locked (true)/Unlocked (false) indicator.
+*----------------------------------------------------------------------*
+         is_customers_list_empty RETURNING value(r_bool) TYPE abap_bool,
+*----------------------------------------------------------------------*
+* IS_CUSTOMERS_LIST_EMPTY
+*----------------------------------------------------------------------*
+*       MODIFIES: Returns TRUE if the customers list is empty.
+*----------------------------------------------------------------------*
+*   <-- R_BOOL   Boolean indicator.
+*----------------------------------------------------------------------*
+             do IMPORTING p_lock TYPE abap_bool,
+*----------------------------------------------------------------------*
+* DO
+*----------------------------------------------------------------------*
+*       EFFECTS.: Does what the operator instance should do.
+*----------------------------------------------------------------------*
+             show_results ABSTRACT,
+*----------------------------------------------------------------------*
+* SHOW_RESULTS
+*----------------------------------------------------------------------*
+*       EFFECTS.: Shows the results of operator's action.
+*----------------------------------------------------------------------*
+             show_fails,
+*----------------------------------------------------------------------*
+* SHOW_FAILS
+*----------------------------------------------------------------------*
+*       EFFECTS.: Shows the fails on action.
+*----------------------------------------------------------------------*
+             free.
+*--------------------------------------------------------------------*
+* FREE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Releases operator's elements.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA ao_customers_list TYPE REF TO lcl_items_list.
+ENDCLASS.                    "lcl_operator DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  lcl_locker  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents an operator that locks customers.
+*----------------------------------------------------------------------*
+CLASS lcl_locker DEFINITION INHERITING FROM lcl_operator.
+  PUBLIC SECTION.
+    METHODS  show_results REDEFINITION.
+ENDCLASS.                    "lcl_locker DEFINITION
+*----------------------------------------------------------------------*
+* CLASS  lcl_unlocker  DEFINITION
+* -------------------------------------------------------------------- *
+* OVERVIEW: This class represents an operator that unlocks customers.
+*----------------------------------------------------------------------*
+CLASS lcl_unlocker DEFINITION INHERITING FROM lcl_operator.
+  PUBLIC SECTION.
+    METHODS  show_results REDEFINITION.
+ENDCLASS.                    "lcl_unlocker DEFINITION
+*--------------------------------------------------------------------*
+* MACROS
+*--------------------------------------------------------------------*
+DEFINE m_fill_in_bdc.
+  if &1 = 'X'.
+    move: &2 to lw_bdc-program,
+          &3 to lw_bdc-dynpro,
+          &1 to lw_bdc-dynbegin.
+  else.
+    move: &2 to lw_bdc-fnam,
+          &3 to lw_bdc-fval.
+  endif.
+  append lw_bdc to lt_bdc.
+  clear lw_bdc.
+END-OF-DEFINITION.
+DEFINE m_customer_header.
+  if lo_customer->av_excep = abap_true.
+    lv_zzndd = lo_customer->av_zzndd.
+    lv_waers = lo_customer->av_curlk.
+    lv_zzbla = lo_customer->av_zzbla.
+  else.
+    lv_zzndd = me->av_zzndd.
+    lv_waers = me->av_waers.
+    lv_zzbla = me->av_zzbla.
+  endif.
+  write:  /5 lo_customer->av_kunnr, lo_customer->av_name1.
+  write: /10 'Criteria:'(007),
+             'Minimum of days elapsed since due date -'(008),
+             lv_zzndd, 'days/'(009),
+             'Minimum total amount of open items -'(010),
+             lv_zzbla currency lv_waers, lv_waers.
+END-OF-DEFINITION.

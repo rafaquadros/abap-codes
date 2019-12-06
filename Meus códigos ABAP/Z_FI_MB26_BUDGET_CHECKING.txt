@@ -1,0 +1,110 @@
+function z_fi_mb26_budget_checking.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  TABLES
+*"      T_BSEG STRUCTURE  BSEG
+*"      T_BKPF STRUCTURE  BKPF
+*"  EXCEPTIONS
+*"      ERROR_MESSAGE
+*"----------------------------------------------------------------------
+  data: lo_orc_mensal type ref to zfi_t_fi_orcmensal,
+        lo_area       type ref to zsm_fi_budget,
+        lo_root       type ref to zcl_fi_budget_root,
+        ls_bkpf       type bkpf ,
+        ls_return     type bapiret2,
+        lt_return     type bapiret2_tab,
+        lv_flag       type flag,
+        lt_bseg       type standard table of bseg,
+        ls_tvarvc     type tvarvc.
+  field-symbols: <lw_bkpf> type bkpf,
+                 <lw_bseg> TYPE bseg.
+  define lm_raise_message.
+    read table lt_return into ls_return with key type = 'E'.
+    if sy-subrc eq 0.
+      message
+           id ls_return-id
+         type ls_return-type
+       number ls_return-number
+         with ls_return-message_v1
+              ls_return-message_v2
+              ls_return-message_v3
+              ls_return-message_v4
+      raising error_message.
+    endif.
+  end-of-definition.
+
+  read table t_bkpf index 1 assigning <lw_bkpf>.
+  if sy-subrc <> 0 or t_bseg[] is initial.
+    return.
+  endif.
+
+  if <lw_bkpf> is assigned.
+    if <lw_bkpf>-tcode = 'MB26'.
+
+      select single * from tvarvc
+      into ls_tvarvc
+      where name = 'ZORCMENSAL' and
+      low = 'X'.
+      check sy-subrc eq 0.
+
+      read table t_bkpf into ls_bkpf index 1.
+      lt_bseg = t_bseg[].
+      if ls_bkpf-tcode = 'MB26'.
+        delete lt_bseg where bschl <> '81'.
+      else.
+        delete lt_bseg where bschl ne '40'.
+      endif.
+      LOOP AT lt_bseg ASSIGNING <lw_bseg>.
+        IF <lw_bseg>-fistl is INITIAL.
+          <lw_bseg>-fistl = <lw_bseg>-kostl.
+        ENDIF.
+      ENDLOOP.
+      create object lo_orc_mensal
+        exporting
+          it_bseg  = lt_bseg
+          iv_budat = ls_bkpf-budat.
+* lançamento normal
+      lt_return = lo_orc_mensal->zfi_if_orcmensal~validate( ).
+      read table lt_return with key type = 'E' TRANSPORTING NO FIELDS.
+      if sy-subrc = 0.
+        if sy-tcode <> 'MB26'.
+          lm_raise_message.
+        else.
+****get a pointer to the Shared Area
+          DO 3 TIMES.
+            try.
+                lo_area = zsm_fi_budget=>attach_for_write(
+                          attach_mode = cl_shm_area=>attach_mode_wait
+                                wait_time   = 1 ).
+                exit.
+              catch cx_shm_no_active_version
+                    cx_shm_pending_lock_removed
+                    cx_shm_change_lock_active
+                    cx_shm_version_limit_exceeded
+                    cx_shm_exclusive_lock_active.
+                wait up to 1 seconds.
+            endtry.
+          ENDDO.
+          IF lo_area is INITIAL.
+            lm_raise_message.
+          ENDIF.
+****Create an instance of our root
+          create object lo_root area handle lo_area.
+
+*****Set the Initial value for our table
+          call method lo_root->set_budget_messages
+            exporting
+              pt_return = lt_return.
+
+****Set the root back into the Area
+          lo_area->set_root(  lo_root ).
+
+****Commit and detatch
+          lo_area->detach_commit( ).
+* Leave current transaction
+          leave to current transaction and skip first screen.
+        endif.
+      endif.
+    endif.
+  endif.
+endfunction.

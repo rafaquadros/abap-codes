@@ -1,0 +1,1509 @@
+CLASS zcl_pp_batch_model DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    CLASS-METHODS class_constructor .
+    CLASS-METHODS get_material_type
+      IMPORTING
+        !i_material            TYPE matnr
+      RETURNING
+        VALUE(r_material_type) TYPE mtart .
+    CLASS-METHODS get_highest_timestamp
+      RETURNING
+        VALUE(r_timestamp) TYPE timestamp .
+    CLASS-METHODS commit
+      RAISING
+        cx_bapi_error .
+    METHODS get_planned
+      RETURNING
+        VALUE(rt_planned) TYPE zpptt001 .
+    METHODS get_current
+      RETURNING
+        VALUE(rt_current) TYPE zpptt001 .
+    METHODS get_history
+      RETURNING
+        VALUE(rt_history) TYPE zpptt001 .
+    METHODS set_planned
+      IMPORTING
+        !it_planned TYPE zpptt001
+      RAISING
+        cx_bapi_error .
+    METHODS set_current
+      IMPORTING
+        !it_current TYPE zpptt001
+      RAISING
+        cx_bapi_error .
+    METHODS set_last_mutable_part
+      IMPORTING
+        !is_keys             TYPE zpps001_keys
+        !i_last_mutable_part TYPE zbatch_last_mutable_part
+      RAISING
+        cx_bapi_error .
+    METHODS set_last_mutable_part_rfc
+      IMPORTING
+        !is_keys             TYPE zpps001_keys
+        !i_last_mutable_part TYPE zbatch_last_mutable_part
+      RAISING
+        cx_bapi_error .
+    METHODS has_current
+      RETURNING
+        VALUE(r_bool) TYPE abap_bool .
+    METHODS:
+      has_history RETURNING VALUE(r_bool) TYPE abap_bool,
+      has_planned RETURNING VALUE(r_bool) TYPE abap_bool.
+    METHODS:
+      get_manual_batch IMPORTING is_keys        TYPE zpps001_keys
+                       RETURNING VALUE(r_batch) TYPE charg
+                       RAISING   cx_bapi_error,
+      get_suffix       IMPORTING is_keys         TYPE zpps001_keys
+                       RETURNING VALUE(r_suffix) TYPE zsufix
+                       RAISING   cx_bapi_error,
+      get_verid        IMPORTING is_keys        TYPE zpps001_keys
+                       RETURNING VALUE(r_verid) TYPE verid
+                       RAISING   cx_bapi_error,
+      get_prod_date    IMPORTING is_keys            TYPE zpps001_keys
+                       RETURNING VALUE(r_prod_date) TYPE dats
+                       RAISING   cx_bapi_error,
+      refresh.
+  PROTECTED SECTION.
+
+    TYPES:
+      BEGIN OF ys_material_type,
+        material      TYPE matnr,
+        material_type TYPE mtart,
+      END OF ys_material_type .
+    TYPES:
+      yt_material_type TYPE HASHED TABLE OF ys_material_type WITH UNIQUE KEY material .
+
+    CLASS-DATA: t_material_type TYPE yt_material_type,
+                highest_date    TYPE timestamp.
+
+    DATA t_planned TYPE zpptt001 .
+    DATA t_current TYPE zpptt001 .
+    DATA t_history TYPE zpptt001 .
+    DATA: count_current TYPE int4,
+          count_history TYPE int4,
+          count_planned TYPE int4.
+
+
+    METHODS check_settings
+      IMPORTING
+        !it_settings TYPE zpptt001
+      RAISING
+        cx_bapi_error .
+    METHODS insert_settings
+      IMPORTING
+        !it_settings TYPE zpptt001
+      RAISING
+        cx_os_object_existing .
+    METHODS update_settings
+      IMPORTING
+                !it_settings TYPE zpptt001
+      RAISING   cx_os_object_not_found.
+    METHODS delete_settings
+      IMPORTING
+                !it_settings TYPE zpptt001
+      RAISING   cx_os_object_not_found .
+    METHODS:
+      delimit_related_current IMPORTING !is_setting TYPE zpps001,
+      undelimit_related_previous IMPORTING !is_setting TYPE zpps001.
+  PRIVATE SECTION.
+    METHODS:
+      check_plant         IMPORTING i_plant TYPE         werks_d RAISING cx_bapi_error,
+      query_plant         IMPORTING i_plant TYPE         werks_d RAISING cx_sy_sql_error,
+      check_material_type IMPORTING i_material_type TYPE mtart   RAISING cx_bapi_error,
+      query_material_type IMPORTING i_material_type TYPE mtart   RAISING cx_sy_sql_error,
+      check_material_code IMPORTING i_material      TYPE matnr   RAISING cx_bapi_error,
+      query_material_code IMPORTING i_material      TYPE matnr   RAISING cx_sy_sql_error.
+ENDCLASS.
+
+
+
+CLASS ZCL_PP_BATCH_MODEL IMPLEMENTATION.
+
+
+  METHOD check_material_code.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    TRY.
+        me->query_material_code( i_material = i_material ).
+*        CATCH cx_sy_sql_error. " SQL error
+      CATCH cx_sy_sql_error.
+        MESSAGE e033(zpp) WITH i_material INTO l_message. "Invalid Material Code
+        m_raise_bapi_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD check_material_type.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    TRY.
+        me->query_material_type( i_material_type = i_material_type ).
+*          CATCH cx_sy_sql_error. " SQL error
+      CATCH cx_sy_sql_error.
+        MESSAGE e032(zpp) WITH i_material_type INTO l_message. "Invalid Material Type
+        m_raise_bapi_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD check_plant.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    IF i_plant IS INITIAL.
+      MESSAGE e030(zpp) INTO l_message. "Plant must be provided
+      m_raise_bapi_error.
+    ELSE.
+      TRY.
+          me->query_plant( i_plant = i_plant ).
+*            CATCH cx_sy_sql_error
+        CATCH cx_sy_sql_error.
+          MESSAGE e029(zpp) WITH i_plant INTO l_message. "Plant invalid
+          m_raise_bapi_error.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD check_settings.
+    DATA: lx_error  TYPE REF TO cx_bapi_error,
+          lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    LOOP AT it_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      TRY.
+          check_plant( <ls_setting>-plant ).
+        CATCH cx_bapi_error INTO lx_error.
+          APPEND LINES OF lx_error->status TO lt_return.
+      ENDTRY.
+
+      IF <ls_setting>-mtart IS INITIAL AND <ls_setting>-matnr IS INITIAL.
+        MESSAGE e031(zpp).
+        m_add_message.
+      ELSEIF <ls_setting>-mtart IS NOT INITIAL.
+        TRY.
+            check_material_type( <ls_setting>-mtart ).
+          CATCH cx_bapi_error INTO lx_error.
+            APPEND LINES OF lx_error->status TO lt_return.
+        ENDTRY.
+      ENDIF.
+      IF <ls_setting>-matnr IS NOT INITIAL.
+        TRY.
+            check_material_code( <ls_setting>-matnr ).
+          CATCH cx_bapi_error INTO lx_error.
+            APPEND LINES OF lx_error->status TO lt_return.
+        ENDTRY.
+      ENDIF.
+    ENDLOOP.
+    IF line_exists( lt_return[ type = 'E' ] ).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD class_constructor.
+
+    highest_date = get_highest_timestamp( ).
+  ENDMETHOD.
+
+
+  METHOD commit.
+    DATA: ls_return TYPE bapiret2,
+          lt_return TYPE bapiret2_t.
+
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        wait   = abap_true                 " Use of Command `COMMIT AND WAIT`
+      IMPORTING
+        return = ls_return.                 " Return Messages
+    IF ls_return-type CA 'AE'.
+      APPEND ls_return TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD delete_settings.
+
+
+    LOOP AT it_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      TRY.
+          zca_prs_zppt001=>agent->delete_persistent(
+            EXPORTING
+              i_plant  =  <ls_setting>-plant    " Business Key
+              i_mtart  =  <ls_setting>-mtart    " Business Key
+              i_matnr  =  <ls_setting>-matnr    " Business Key
+              i_zzfrom =  <ls_setting>-zzfrom   " Business Key
+          ).
+*            CATCH cx_os_object_not_existing. " Object Services: Object Does not Exist
+          me->undelimit_related_previous( is_setting = <ls_setting> ).
+        CATCH cx_os_object_not_existing INTO DATA(lx_error).
+          RAISE EXCEPTION lx_error.
+      ENDTRY.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD delimit_related_current.
+    DATA: lr_query TYPE REF TO cl_os_query,
+          lr_expr  TYPE REF TO if_os_query_filter_expr,
+          lr_entry TYPE REF TO zcl_prs_zppt001,
+          l_val    TYPE string.
+
+    IF is_setting-active = abap_false.
+      RETURN.
+    ENDIF.
+
+    TRY.
+        lr_query ?= cl_os_system=>get_query_manager( )->create_query( ).
+
+        l_val = is_setting-plant.
+        DATA(lr_filter) = lr_query->if_os_query_expr_factory~create_operator_expr(
+                      i_attr1        = 'PLANT'
+                      i_operator     = '='
+                      i_val          = l_val
+*                  i_val_w_quotes =
+*                  i_idx          =
+*                  i_attr2        =
+                    ).
+*                CATCH cx_os_query_expr_fact_error.
+
+        l_val = is_setting-mtart.
+        lr_expr = lr_query->if_os_query_expr_factory~create_operator_expr(
+                    i_attr1        = 'MTART'
+                    i_operator     = '='
+                    i_val          = l_val
+*                i_val_w_quotes =
+*                i_idx          =
+*                i_attr2        =
+                  ).
+*              CATCH cx_os_query_expr_fact_error.
+
+        lr_filter = lr_query->if_os_query_expr_factory~create_and_expr(
+                      i_expr1 = lr_filter
+                      i_expr2 = lr_expr
+                    ).
+
+        l_val = is_setting-matnr.
+        lr_expr = lr_query->if_os_query_expr_factory~create_operator_expr(
+                   i_attr1        = 'MATNR'
+                   i_operator     = '='
+                   i_val          = l_val
+*                i_val_w_quotes =
+*                i_idx          =
+*                i_attr2        =
+                 ).
+*              CATCH cx_os_query_expr_fact_error.
+
+        lr_filter = lr_query->if_os_query_expr_factory~create_and_expr(
+                      i_expr1 = lr_filter
+                      i_expr2 = lr_expr
+                    ).
+
+        DATA(lr_order) = lr_query->if_os_query_expr_factory~create_ordering_expr( ).
+        lr_order->append_descending( i_attr = 'ZZFROM'  ).
+
+        lr_query->if_os_query~set_filter_expr( lr_filter ).
+        lr_query->if_os_query~set_ordering_expr( i_ordering_expr = lr_order ).
+
+        DATA(lt_entries) = zca_prs_zppt001=>agent->if_os_ca_persistency~get_persistent_by_query(
+                             i_query         = lr_query
+*                             i_parameter_tab =
+*                             i_par1          =
+*                             i_par2          =
+*                             i_par3          =
+*                             i_subclasses    = oscon_false
+*                             i_upto          = 0
+*                             i_options       = IF_OS_QUERY_OPTIONS=>DEFAULT_OPTIONS
+                           ).
+*                           CATCH cx_os_object_not_found. " Object Services: Object not Found
+*                           CATCH cx_os_query_error.      " Object Services: Query Error
+
+        LOOP AT lt_entries ASSIGNING FIELD-SYMBOL(<lr_entry>).
+          lr_entry ?= <lr_entry>.
+          TRY.
+              IF lr_entry->get_zzfrom( ) > is_setting-zzfrom OR lr_entry->get_zzto( ) < highest_date.
+*             CATCH cx_os_object_not_found. " Object Services: Object not Found.
+                CONTINUE.
+              ENDIF.
+
+              lr_entry->set_zzto( i_zzto = is_setting-zzfrom ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+            CATCH cx_os_object_not_found ##NO_HANDLER.
+          ENDTRY.
+        ENDLOOP.
+
+      CATCH cx_os_object_not_found ##NO_HANDLER
+            cx_os_query_error.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD get_current.
+
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp,
+          l_delete        TYPE c.
+
+    IF me->t_current IS NOT INITIAL.
+      rt_current = me->t_current.
+      RETURN.
+    ELSE.
+      CLEAR rt_current.
+    ENDIF.
+
+
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT PLANT, MTART, MATNR, ZZFROM, ZZTO, ACTIVE, RULE_TYPE, NAMING_COMMENTS, PREFIX, MUTABLE_PART, LAST_MUTABLE_PART, ZVERID, ZSUFIX, PROD_DATE_MN, ACHARG, IMPL_TIME, DELETED ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ZZFROM <= `  && l_timestamp &&
+                        ` AND ZZTO >= `    && l_timestamp &&
+* INI MOD - Denilson P.Pina - 08.02.2019
+                        ` AND DELETED = '` && l_delete && `' `  .
+* FIM MOD - Denilson P.Pina - 08.02.2019
+
+** INI MOD - Denilson P.Pina - 08.02.2019
+*                        ` ) OR ( MANDT  = '`  && sy-mandt && `' ` &&
+*                        `AND DELETED = '` && l_delete && `' ) `  .
+** FIM MOD - Denilson P.Pina - 08.02.2019
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param_table(
+          EXPORTING
+            itab_ref             =  REF #( me->t_current )                " Reference to Output Variable
+*            corresponding_fields =                  " List of Columns of the Internal Table
+*            lob_fields           =                  " List of LOB Fields
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next_package(
+*            upto = 0
+        ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type.
+        lr_query->close( ).
+      CATCH cx_sql_exception INTO DATA(lr_sql).
+      CATCH cx_parameter_invalid INTO DATA(lr_param).
+    ENDTRY.
+
+    rt_current = me->t_current.
+
+  ENDMETHOD.
+
+
+  METHOD get_highest_timestamp.
+
+    DATA lr_dref    TYPE REF TO data.
+    FIELD-SYMBOLS <l_highest> TYPE timestamp.
+
+    CLEAR r_timestamp.
+
+    CREATE DATA lr_dref TYPE timestamp.
+    ASSIGN lr_dref->* TO <l_highest>.
+    lr_dref = cl_abap_exceptional_values=>get_max_value( in = <l_highest> ).
+    ASSIGN lr_dref->* TO <l_highest>.
+
+    r_timestamp = <l_highest>.
+
+
+  ENDMETHOD.
+
+
+  METHOD get_history.
+
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp.
+
+    IF me->t_history IS NOT INITIAL.
+      rt_history = me->t_history.
+      RETURN.
+    ELSE.
+      CLEAR rt_history.
+    ENDIF.
+
+    DATA(l_delete) = abap_true.
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT PLANT, MTART, MATNR, ZZFROM, ZZTO, ACTIVE, RULE_TYPE, NAMING_COMMENTS, PREFIX, MUTABLE_PART, LAST_MUTABLE_PART, ZVERID, ZSUFIX, PROD_DATE_MN, ACHARG, IMPL_TIME, DELETED ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE ( MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ZZFROM < `  && l_timestamp &&
+                        ` AND ZZTO < `    && l_timestamp && `) ` &&
+** INI MOD - Denilson P.Pina - 08.02.2019
+                        ` OR ( MANDT  = '`  && sy-mandt && `' ` &&
+                        ` AND DELETED = '` && l_delete && `' ) `  .
+** FIM MOD - Denilson P.Pina - 08.02.2019
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param_table(
+          EXPORTING
+            itab_ref             =  REF #( me->t_history )                " Reference to Output Variable
+*            corresponding_fields =                  " List of Columns of the Internal Table
+*            lob_fields           =                  " List of LOB Fields
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next_package(
+*            upto = 0
+        ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type.
+        lr_query->close( ).
+      CATCH cx_sql_exception INTO DATA(lr_sql).
+      CATCH cx_parameter_invalid INTO DATA(lr_param).
+    ENDTRY.
+
+    rt_history = me->t_history.
+
+  ENDMETHOD.
+
+
+  METHOD get_manual_batch.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_batch.
+
+    TRY.
+        DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+               i_plant  = is_keys-plant
+               i_mtart  = is_keys-mtart
+               i_matnr  = is_keys-matnr
+               i_zzfrom = is_keys-zzfrom
+             ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+      CATCH cx_os_object_not_found.
+        TRY.
+            lr_entry = zca_prs_zppt001=>agent->get_persistent(
+                         i_plant  = is_keys-plant
+                         i_mtart  = is_keys-mtart
+                         i_matnr  = space
+                         i_zzfrom = is_keys-zzfrom
+                       ).
+*                       CATCH cx_os_object_not_found. " Object Services: Object not Found
+          CATCH cx_os_object_not_found INTO DATA(lx_not_found).
+        ENDTRY.
+    ENDTRY.
+
+    IF lx_not_found IS BOUND.
+      MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id         = sy-msgid.
+      <ls_return>-type       = sy-msgty.
+      <ls_return>-number     = sy-msgno.
+      <ls_return>-message    = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ELSE.
+      TRY.
+
+          r_batch = lr_entry->get_acharg( ).
+*                    CATCH cx_os_object_not_found. " Object Services: Object not Found
+        CATCH cx_os_object_not_found.
+          MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+          APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+          <ls_return>-id         = sy-msgid.
+          <ls_return>-type       = sy-msgty.
+          <ls_return>-number     = sy-msgno.
+          <ls_return>-message    = l_message.
+          <ls_return>-message_v1 = sy-msgv1.
+          <ls_return>-message_v2 = sy-msgv2.
+          <ls_return>-message_v3 = sy-msgv3.
+          <ls_return>-message_v4 = sy-msgv4.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = lt_return.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_material_type.
+
+    DATA: ls_material_type TYPE ys_material_type,
+          l_sql_statement  TYPE string.
+
+    CLEAR r_material_type.
+
+    READ TABLE t_material_type WITH KEY material = i_material ASSIGNING FIELD-SYMBOL(<ls_material_type>).
+    IF sy-subrc = 0.
+      r_material_type = <ls_material_type>-material_type.
+      RETURN.
+    ELSE.
+      l_sql_statement = `SELECT MATNR, MTART ` &&
+                        `  FROM MARA ` &&
+                        ` WHERE MANDT = '` &&  sy-mandt && `' ` &&
+                        `   AND MATNR = '` &&  i_material && `'`.
+      TRY.
+          DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+          )->execute_query(
+            statement   = l_sql_statement
+*          hold_cursor = space
+          ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+          lr_query->set_param_struct(
+            EXPORTING
+              struct_ref           =  REF #( ls_material_type )                " Reference to Output Variable
+*              corresponding_fields =                  " List of Fields of the Output Structure
+*              lob_fields           =                  " LOB Fields
+          ).
+*          CATCH cx_parameter_invalid. " Superclass for Parameter Error
+          lr_query->next( ).
+*          CATCH cx_sql_exception.          " Exception Class for SQL Error
+*          CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+          lr_query->close( ).
+
+          IF ls_material_type IS NOT INITIAL.
+            INSERT ls_material_type INTO TABLE t_material_type.
+          ENDIF.
+        CATCH cx_sql_exception ##NO_HANDLER
+             cx_parameter_invalid.
+      ENDTRY.
+
+      r_material_type = ls_material_type-material_type.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD get_planned.
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp.
+
+    IF me->t_planned IS NOT INITIAL.
+      rt_planned = me->t_planned.
+      RETURN.
+    ELSE.
+      CLEAR rt_planned.
+    ENDIF.
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT PLANT, MTART, MATNR, ZZFROM, ZZTO, ACTIVE, RULE_TYPE, NAMING_COMMENTS, PREFIX, MUTABLE_PART, LAST_MUTABLE_PART, ZVERID, ZSUFIX, PROD_DATE_MN, ACHARG, IMPL_TIME, DELETED ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ZZFROM > `   && l_timestamp.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param_table(
+          EXPORTING
+            itab_ref             =  REF #( me->t_planned )                " Reference to Output Variable
+*            corresponding_fields =                  " List of Columns of the Internal Table
+*            lob_fields           =                  " List of LOB Fields
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next_package(
+*            upto = 0
+        ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type.
+        lr_query->close( ).
+      CATCH cx_sql_exception INTO DATA(lr_sql).
+      CATCH cx_parameter_invalid INTO DATA(lr_parm).
+    ENDTRY.
+
+    rt_planned = me->t_planned.
+
+  ENDMETHOD.
+
+
+  METHOD get_prod_date.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_prod_date.
+
+    TRY.
+        DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+               i_plant  = is_keys-plant
+               i_mtart  = is_keys-mtart
+               i_matnr  = is_keys-matnr
+               i_zzfrom = is_keys-zzfrom
+             ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+      CATCH cx_os_object_not_found.
+        TRY.
+            lr_entry = zca_prs_zppt001=>agent->get_persistent(
+                         i_plant  = is_keys-plant
+                         i_mtart  = is_keys-mtart
+                         i_matnr  = space
+                         i_zzfrom = is_keys-zzfrom
+                       ).
+*                       CATCH cx_os_object_not_found. " Object Services: Object not Found
+          CATCH cx_os_object_not_found INTO DATA(lx_not_found).
+        ENDTRY.
+    ENDTRY.
+
+    IF lx_not_found IS BOUND.
+      MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id         = sy-msgid.
+      <ls_return>-type       = sy-msgty.
+      <ls_return>-number     = sy-msgno.
+      <ls_return>-message    = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ELSE.
+      TRY.
+
+          r_prod_date = lr_entry->get_prod_date_mn( ).
+*                        CATCH cx_os_object_not_found. " Object Services: Object not Found.
+        CATCH cx_os_object_not_found.
+          MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+          APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+          <ls_return>-id         = sy-msgid.
+          <ls_return>-type       = sy-msgty.
+          <ls_return>-number     = sy-msgno.
+          <ls_return>-message    = l_message.
+          <ls_return>-message_v1 = sy-msgv1.
+          <ls_return>-message_v2 = sy-msgv2.
+          <ls_return>-message_v3 = sy-msgv3.
+          <ls_return>-message_v4 = sy-msgv4.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = lt_return.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_suffix.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_suffix.
+
+    TRY.
+        DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+               i_plant  = is_keys-plant
+               i_mtart  = is_keys-mtart
+               i_matnr  = is_keys-matnr
+               i_zzfrom = is_keys-zzfrom
+             ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+      CATCH cx_os_object_not_found.
+        TRY.
+            lr_entry = zca_prs_zppt001=>agent->get_persistent(
+                         i_plant  = is_keys-plant
+                         i_mtart  = is_keys-mtart
+                         i_matnr  = space
+                         i_zzfrom = is_keys-zzfrom
+                       ).
+*                       CATCH cx_os_object_not_found. " Object Services: Object not Found
+          CATCH cx_os_object_not_found INTO DATA(lx_not_found).
+        ENDTRY.
+    ENDTRY.
+
+    IF lx_not_found IS BOUND.
+      MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id         = sy-msgid.
+      <ls_return>-type       = sy-msgty.
+      <ls_return>-number     = sy-msgno.
+      <ls_return>-message    = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ELSE.
+      TRY.
+
+          r_suffix = lr_entry->get_zsufix( ).
+*                     CATCH cx_os_object_not_found. " Object Services: Object not Found
+        CATCH cx_os_object_not_found.
+          MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+          APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+          <ls_return>-id         = sy-msgid.
+          <ls_return>-type       = sy-msgty.
+          <ls_return>-number     = sy-msgno.
+          <ls_return>-message    = l_message.
+          <ls_return>-message_v1 = sy-msgv1.
+          <ls_return>-message_v2 = sy-msgv2.
+          <ls_return>-message_v3 = sy-msgv3.
+          <ls_return>-message_v4 = sy-msgv4.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = lt_return.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_verid.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_verid.
+
+    TRY.
+        DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+               i_plant  = is_keys-plant
+               i_mtart  = is_keys-mtart
+               i_matnr  = is_keys-matnr
+               i_zzfrom = is_keys-zzfrom
+             ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+      CATCH cx_os_object_not_found.
+        TRY.
+            lr_entry = zca_prs_zppt001=>agent->get_persistent(
+                         i_plant  = is_keys-plant
+                         i_mtart  = is_keys-mtart
+                         i_matnr  = space
+                         i_zzfrom = is_keys-zzfrom
+                       ).
+*                       CATCH cx_os_object_not_found. " Object Services: Object not Found
+          CATCH cx_os_object_not_found INTO DATA(lx_not_found).
+        ENDTRY.
+    ENDTRY.
+
+    IF lx_not_found IS BOUND.
+      MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id         = sy-msgid.
+      <ls_return>-type       = sy-msgty.
+      <ls_return>-number     = sy-msgno.
+      <ls_return>-message    = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ELSE.
+      TRY.
+
+          r_verid = lr_entry->get_zverid( ).
+*                    CATCH cx_os_object_not_found. " Object Services: Object not Found
+        CATCH cx_os_object_not_found.
+          MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+          APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+          <ls_return>-id         = sy-msgid.
+          <ls_return>-type       = sy-msgty.
+          <ls_return>-number     = sy-msgno.
+          <ls_return>-message    = l_message.
+          <ls_return>-message_v1 = sy-msgv1.
+          <ls_return>-message_v2 = sy-msgv2.
+          <ls_return>-message_v3 = sy-msgv3.
+          <ls_return>-message_v4 = sy-msgv4.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = lt_return.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD has_current.
+
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp.
+
+    IF me->count_current IS NOT INITIAL.
+      r_bool = abap_true.
+      RETURN.
+    ELSE.
+      r_bool = abap_false.
+    ENDIF.
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT COUNT(*) ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ZZFROM <= `  && l_timestamp &&
+                        ` AND ZZTO >= `    && l_timestamp.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref = REF #( me->count_current )                 " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception ##NO_HANDLER
+            cx_parameter_invalid.
+    ENDTRY.
+
+    IF me->count_current > 0.
+      r_bool = abap_true.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD has_history.
+
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp.
+
+    IF me->count_history IS NOT INITIAL.
+      r_bool = abap_true.
+      RETURN.
+    ELSE.
+      r_bool = abap_false.
+    ENDIF.
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT COUNT(*) ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ( ZZFROM < `  && l_timestamp &&
+                               ` AND ZZTO < `    && l_timestamp && ` ) ` &&
+                        `  OR DELETED = '` && abap_true  && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( me->count_history )                " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception ##NO_HANDLER
+            cx_parameter_invalid.
+    ENDTRY.
+
+    IF me->count_history IS NOT INITIAL.
+      r_bool = abap_true.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD has_planned.
+    DATA: l_sql_statement TYPE string,
+          l_timestamp     TYPE timestamp.
+
+    IF me->count_planned IS NOT INITIAL.
+      r_bool = abap_true.
+      RETURN.
+    ELSE.
+      r_bool = abap_false.
+    ENDIF.
+
+    GET TIME STAMP FIELD l_timestamp.
+    l_sql_statement = `SELECT COUNT(*) ` &&
+                        `FROM ZPPT001 `    &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND ZZFROM > `  && l_timestamp.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( me->count_planned )                " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception ##NO_HANDLER
+            cx_parameter_invalid.
+    ENDTRY.
+
+    IF me->count_planned IS NOT INITIAL.
+      r_bool = abap_true.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD insert_settings.
+
+
+    LOOP AT it_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      TRY.
+          delimit_related_current( is_setting = <ls_setting> ).
+
+          DATA(lr_entry) = zca_prs_zppt001=>agent->create_persistent(
+              EXPORTING
+                i_plant  =  <ls_setting>-plant    " Business Key
+                i_mtart  =  <ls_setting>-mtart    " Business Key
+                i_matnr  =  <ls_setting>-matnr    " Business Key
+                i_zzfrom =  <ls_setting>-zzfrom   " Business Key
+                  ).
+*                        CATCH cx_os_object_existing. " Object Services: Object Exists
+          lr_entry->set_zzto( i_zzto = <ls_setting>-zzto ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found.
+          lr_entry->set_rule_type( i_rule_type = <ls_setting>-rule_type ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_naming_comments( i_naming_comments = <ls_setting>-naming_comments ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_active( i_active = <ls_setting>-active ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_prefix( i_prefix = <ls_setting>-prefix ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+
+          lr_entry->set_impl_time( i_impl_time = <ls_setting>-impl_time ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+* INI_MOD-001 - 21.01.2019 - Denilson P.Pina
+
+          lr_entry->set_zverid( <ls_setting>-zverid ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_zsufix( <ls_setting>-zsufix ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_prod_date_mn( i_prod_date_mn = <ls_setting>-prod_date_mn ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found.
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_acharg( <ls_setting>-acharg ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+
+* FIM_MOD-001 - 21.01.2019 - Denilson P.Pina
+
+
+        CATCH cx_os_object_existing INTO DATA(lx_error).
+          RAISE EXCEPTION lx_error.
+      ENDTRY.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD query_material_code.
+    DATA: l_sql_statement TYPE string,
+          l_count         TYPE i.
+
+    l_sql_statement = `SELECT COUNT(*) `   &&
+                        `FROM MARA `       &&
+                       `WHERE MANDT  = '`  && sy-mandt    && `' ` &&
+                         `AND MATNR  = '`   && i_material && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( l_count ) " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception
+            cx_parameter_invalid.
+        RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDTRY.
+
+    IF l_count IS INITIAL.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD query_material_type.
+    DATA: l_sql_statement TYPE string,
+          l_count         TYPE i.
+
+    l_sql_statement = `SELECT COUNT(*) `   &&
+                        `FROM T134 `       &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND MTART  = '`   && i_material_type && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( l_count ) " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception
+            cx_parameter_invalid.
+        RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDTRY.
+
+    IF l_count IS INITIAL.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD query_plant.
+    DATA: l_sql_statement TYPE string,
+          l_count         TYPE i.
+
+    l_sql_statement = `SELECT COUNT(*) `   &&
+                        `FROM T001W `      &&
+                       `WHERE MANDT  = '`  && sy-mandt && `' ` &&
+                         `AND WERKS  = '`   && i_plant && `' `.
+
+    TRY.
+        DATA(lr_query) = NEW cl_sql_statement(
+*          con_ref            =
+*          tab_name_for_trace =
+        )->execute_query(
+          statement   = l_sql_statement
+*          hold_cursor = space
+        ).
+*        CATCH cx_sql_exception.     " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->set_param(
+          EXPORTING
+            data_ref =  REF #( l_count ) " Reference to Output Variable
+*            pos      =                  " 2 byte integer (signed)
+*            ind_ref  =                  " Reference to Indicator Variable
+*            is_lob   = space            " Is an LOB Column References on the Database?
+        ).
+*        CATCH cx_parameter_invalid. " Superclass for Parameter Error
+        lr_query->next( ).
+*        CATCH cx_sql_exception.          " Exception Class for SQL Error
+*        CATCH cx_parameter_invalid_type. " Parameter with Invalid Type
+        lr_query->close( ).
+      CATCH cx_sql_exception
+            cx_parameter_invalid.
+        RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDTRY.
+
+    IF l_count IS INITIAL.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD refresh.
+    CLEAR: me->t_current, me->t_history, me->t_planned, me->count_current, me->count_history, me->count_planned.
+  ENDMETHOD.
+
+
+  METHOD set_current.
+
+    DATA: lx_error   TYPE REF TO cx_bapi_error,
+          lt_changes TYPE zpptt001.
+
+    DATA(lt_current) = it_current.
+    SORT lt_current BY plant mtart matnr zzfrom.
+
+    DATA(lt_current_db) = me->get_current( ).
+    LOOP AT lt_current ASSIGNING FIELD-SYMBOL(<ls_current>).
+      IF line_exists( lt_current_db[ plant  = <ls_current>-plant
+                                     mtart  = <ls_current>-mtart
+                                     matnr  = <ls_current>-matnr
+                                     zzfrom = <ls_current>-zzfrom ] ).
+
+        APPEND <ls_current> TO lt_changes.
+      ENDIF.
+    ENDLOOP.
+
+    TRY.
+        me->check_settings( lt_changes ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+    me->update_settings( lt_changes ).
+
+    CLEAR me->t_current.
+
+  ENDMETHOD.
+
+
+  METHOD set_last_mutable_part.
+
+    CALL FUNCTION 'ZBATCH_UPD_LAST_MUTABLE_PART'
+      IN BACKGROUND TASK AS SEPARATE UNIT
+      EXPORTING
+        is_keys             = is_keys
+        i_last_mutable_part = i_last_mutable_part.
+
+  ENDMETHOD.
+
+
+  METHOD set_last_mutable_part_rfc.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    DATA(l_mtart) = is_keys-mtart.
+    IF l_mtart IS INITIAL.
+      l_mtart = get_material_type( i_material = is_keys-matnr ).
+    ENDIF.
+
+    TRY.
+        DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+               i_plant  = is_keys-plant
+               i_mtart  = l_mtart
+               i_matnr  = is_keys-matnr
+               i_zzfrom = is_keys-zzfrom
+             ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+      CATCH cx_os_object_not_found.
+        TRY.
+            lr_entry = zca_prs_zppt001=>agent->get_persistent(
+                         i_plant  = is_keys-plant
+                         i_mtart  = l_mtart
+                         i_matnr  = space
+                         i_zzfrom = is_keys-zzfrom
+                       ).
+*                       CATCH cx_os_object_not_found. " Object Services: Object not Found
+          CATCH cx_os_object_not_found INTO DATA(lx_not_found).
+        ENDTRY.
+    ENDTRY.
+
+    IF lx_not_found IS BOUND.
+      MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id         = sy-msgid.
+      <ls_return>-type       = sy-msgty.
+      <ls_return>-number     = sy-msgno.
+      <ls_return>-message    = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ELSE.
+      TRY.
+
+          lr_entry->set_last_mutable_part( i_last_mutable_part = i_last_mutable_part ).
+*              CATCH cx_os_object_not_found. " Object Services: Object not Found
+        CATCH cx_os_object_not_found.
+          MESSAGE e000(zpp) WITH 'Entry not found in Batch rules settings.'(m01) INTO l_message.
+          APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+          <ls_return>-id         = sy-msgid.
+          <ls_return>-type       = sy-msgty.
+          <ls_return>-number     = sy-msgno.
+          <ls_return>-message    = l_message.
+          <ls_return>-message_v1 = sy-msgv1.
+          <ls_return>-message_v2 = sy-msgv2.
+          <ls_return>-message_v3 = sy-msgv3.
+          <ls_return>-message_v4 = sy-msgv4.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = lt_return.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD set_planned.
+
+    DATA: lx_error      TYPE REF TO cx_bapi_error,
+          lt_insertions TYPE zpptt001,
+          lt_exclusions TYPE zpptt001,
+          lt_changes    TYPE zpptt001.
+
+    DATA(lt_planned) = it_planned.
+    SORT lt_planned BY plant mtart matnr zzfrom.
+    DELETE ADJACENT DUPLICATES FROM lt_planned COMPARING plant mtart matnr zzfrom.
+
+    DATA(lt_planned_db) = me->get_planned( ).
+    LOOP AT lt_planned ASSIGNING FIELD-SYMBOL(<ls_planned>).
+      READ TABLE lt_planned_db TRANSPORTING NO FIELDS WITH KEY plant = <ls_planned>-plant
+                                                               mtart = <ls_planned>-mtart
+                                                               matnr = <ls_planned>-matnr
+                                                               zzfrom = <ls_planned>-zzfrom.
+      IF sy-subrc <> 0.
+        APPEND <ls_planned> TO lt_insertions.
+      ELSE.
+        APPEND <ls_planned> TO lt_changes.
+      ENDIF.
+    ENDLOOP.
+
+    LOOP AT lt_planned_db ASSIGNING FIELD-SYMBOL(<ls_planned_db>).
+      READ TABLE lt_planned TRANSPORTING NO FIELDS WITH KEY plant = <ls_planned_db>-plant
+                                                            mtart = <ls_planned_db>-mtart
+                                                            matnr = <ls_planned_db>-matnr
+                                                            zzfrom = <ls_planned_db>-zzfrom.
+      IF sy-subrc <> 0.
+        APPEND <ls_planned_db> TO lt_exclusions.
+      ENDIF.
+
+    ENDLOOP.
+
+    TRY.
+        me->check_settings( lt_insertions ).
+        me->check_settings( lt_changes ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+    me->delete_settings( lt_exclusions ).
+    me->update_settings( lt_changes ).
+    me->insert_settings( lt_insertions ).
+
+    CLEAR me->t_planned.
+
+
+  ENDMETHOD.
+
+
+  METHOD undelimit_related_previous.
+    DATA: lr_query TYPE REF TO cl_os_query,
+          lr_expr  TYPE REF TO if_os_query_filter_expr,
+          lr_entry TYPE REF TO zcl_prs_zppt001,
+          l_val    TYPE string.
+
+    TRY.
+        lr_query ?= cl_os_system=>get_query_manager( )->create_query( ).
+
+        l_val = is_setting-plant.
+        DATA(lr_filter) = lr_query->if_os_query_expr_factory~create_operator_expr(
+                      i_attr1        = 'PLANT'
+                      i_operator     = '='
+                      i_val          = l_val
+*                  i_val_w_quotes =
+*                  i_idx          =
+*                  i_attr2        =
+                    ).
+*                CATCH cx_os_query_expr_fact_error.
+
+        l_val = is_setting-mtart.
+        lr_expr = lr_query->if_os_query_expr_factory~create_operator_expr(
+                    i_attr1        = 'MTART'
+                    i_operator     = '='
+                    i_val          = l_val
+*                i_val_w_quotes =
+*                i_idx          =
+*                i_attr2        =
+                  ).
+*              CATCH cx_os_query_expr_fact_error.
+
+        lr_filter = lr_query->if_os_query_expr_factory~create_and_expr(
+                      i_expr1 = lr_filter
+                      i_expr2 = lr_expr
+                    ).
+
+        l_val = is_setting-matnr.
+        lr_expr = lr_query->if_os_query_expr_factory~create_operator_expr(
+                   i_attr1        = 'MATNR'
+                   i_operator     = '='
+                   i_val          = l_val
+*                i_val_w_quotes =
+*                i_idx          =
+*                i_attr2        =
+                 ).
+*              CATCH cx_os_query_expr_fact_error.
+
+        lr_filter = lr_query->if_os_query_expr_factory~create_and_expr(
+                      i_expr1 = lr_filter
+                      i_expr2 = lr_expr
+                    ).
+
+        DATA(lr_order) = lr_query->if_os_query_expr_factory~create_ordering_expr( ).
+        lr_order->append_descending( i_attr = 'ZZFROM'  ).
+
+        lr_query->if_os_query~set_filter_expr( lr_filter ).
+        lr_query->if_os_query~set_ordering_expr( i_ordering_expr = lr_order ).
+
+        DATA(lt_entries) = zca_prs_zppt001=>agent->if_os_ca_persistency~get_persistent_by_query(
+                             i_query         = lr_query
+*                             i_parameter_tab =
+*                             i_par1          =
+*                             i_par2          =
+*                             i_par3          =
+*                             i_subclasses    = oscon_false
+*                             i_upto          = 0
+*                             i_options       = IF_OS_QUERY_OPTIONS=>DEFAULT_OPTIONS
+                           ).
+*                           CATCH cx_os_object_not_found. " Object Services: Object not Found
+*                           CATCH cx_os_query_error.      " Object Services: Query Error
+
+        LOOP AT lt_entries ASSIGNING FIELD-SYMBOL(<lr_entry>).
+          lr_entry ?= <lr_entry>.
+
+          TRY.
+              IF lr_entry->get_zzfrom( ) > is_setting-zzfrom OR lr_entry->get_zzto( ) = highest_date.
+*             CATCH cx_os_object_not_found. " Object Services: Object not Found.
+                CONTINUE.
+              ENDIF.
+
+              lr_entry->set_zzto( i_zzto = get_highest_timestamp( ) ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+              EXIT.
+            CATCH cx_os_object_not_found ##NO_HANDLER.
+          ENDTRY.
+        ENDLOOP.
+
+      CATCH cx_os_object_not_found ##NO_HANDLER
+            cx_os_query_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD update_settings.
+
+
+    LOOP AT it_settings ASSIGNING FIELD-SYMBOL(<ls_setting>).
+      TRY.
+          delimit_related_current(
+              EXPORTING
+                is_setting = <ls_setting>
+            ).
+
+          DATA(lr_entry) = zca_prs_zppt001=>agent->get_persistent(
+                             i_plant  = <ls_setting>-plant
+                             i_mtart  = <ls_setting>-mtart
+                             i_matnr  = <ls_setting>-matnr
+                             i_zzfrom = <ls_setting>-zzfrom
+                           ).
+*                             CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_active( i_active = <ls_setting>-active ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_rule_type( i_rule_type = <ls_setting>-rule_type ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_naming_comments( i_naming_comments = <ls_setting>-naming_comments ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_zzto( i_zzto = <ls_setting>-zzto ).
+*            CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_prefix( i_prefix = <ls_setting>-prefix ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_mutable_part( i_mutable_part = <ls_setting>-mutable_part ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+
+* INI_MOD-001 - 21.01.2019 - Denilson P.Pina
+
+          lr_entry->set_zverid( <ls_setting>-zverid ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_zsufix( <ls_setting>-zsufix ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_prod_date_mn( i_prod_date_mn = <ls_setting>-prod_date_mn ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+          lr_entry->set_acharg( <ls_setting>-acharg ).
+*          CATCH cx_os_object_not_found. " Object Services: Object not Found
+
+
+          lr_entry->set_impl_time( <ls_setting>-impl_time ).
+
+          lr_entry->set_deleted( <ls_setting>-deleted ).
+
+* FIM_MOD-001 - 21.01.2019 - Denilson P.Pina
+        CATCH cx_os_object_not_found INTO DATA(lx_error).
+          RAISE EXCEPTION lx_error.
+      ENDTRY.
+    ENDLOOP.
+
+  ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,34 @@
+METHOD constructor.
+  DATA: lvc_key TYPE char15,
+        lvc_typeid TYPE sibftypeid.
+*  DATA lvc_flag(1) TYPE c.
+*  WHILE lvc_flag IS INITIAL.
+*
+*  ENDWHILE.
+  IF p_key IS INITIAL.
+    lvc_key = ao_db->get_key( ).
+  ELSE.
+    lvc_key = p_key.
+  ENDIF.
+  IF p_typeid IS INITIAL.
+    lvc_typeid = 'ZLACMSD_CL_004'.
+  ELSE.
+    lvc_typeid = p_typeid.
+  ENDIF.
+
+  super->constructor( p_key = lvc_key
+                      p_typeid = lvc_typeid ).
+  IF pt_item_data[] IS NOT INITIAL.
+    at_item_data[] = pt_item_data[].
+    ao_db->set_item_data_persist(
+     EXPORTING
+       p_instid        = aw_persist_ref-instid
+       pt_item_data = pt_item_data[] ).
+  ELSE.
+    ao_db->get_item_data_persist(
+     EXPORTING
+       p_instid        = aw_persist_ref-instid
+     IMPORTING
+       rt_item_data = at_item_data[] ).
+  ENDIF.
+ENDMETHOD.

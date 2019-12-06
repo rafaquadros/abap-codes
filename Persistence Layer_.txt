@@ -1,0 +1,77 @@
+CLASS lcl_main IMPLEMENTATION.
+  METHOD read.
+* You should note that the query service does provide quite a few capabilities. You can build sort and filter conditions into the query. However, as of SAP NetWeaver 7.0, there is not a one-to-one replacement for everything that you can accomplish in an ABAP Open SQL WHERE condition. One of the main gaps that still remains is the support for the ABAP IN clause. Therefore, if you have select-options or parameters as part of your query condition, you will have to resort to using SQL.  
+    DATA: lo_agent     TYPE REF TO zca_mm_tprocess,
+          lo_pers_obj  TYPE REF TO zcl_mm_tprocess,
+          lt_objects   TYPE osreftab,
+          lo_query_mng TYPE REF TO if_os_query_manager,
+          lo_query     TYPE REF TO cl_os_query,
+          lo_exp1      TYPE REF TO if_os_query_filter_expr,
+          lo_exp2      TYPE REF TO if_os_query_filter_expr,
+          lo_filter    TYPE REF TO if_os_query_filter_expr,
+          lo_line      TYPE REF TO zcl_mm_tprocess,
+          lw_entry     TYPE zmm_sprocess_comm,
+          lr_par1      TYPE RANGE OF zmm_eprocess,
+          lr_par2      TYPE RANGE OF zmm_eprocess.
+    FIELD-SYMBOLS <lo_entry> TYPE REF TO object.
+
+    TRY .
+      lo_agent     = zca_mm_tprocess=>agent.
+      lo_query_mng = cl_os_system=>get_query_manager( ).
+      lo_query     ?= lo_query_mng->create_query( ).
+      IF ( pr_procs IS NOT INITIAL and pr_mproc is not initial ) or
+         ( pr_procs is initial     and pr_procs is initial ).
+        lo_exp2 =
+               lo_query->if_os_query_expr_factory~create_operator_expr(
+                             i_attr1    = 'PROCS'
+                             i_operator = 'IN'
+                             i_attr2    = 'PAR2').
+        lr_par2 = pr_procs.
+        lo_exp1 =
+               lo_query->if_os_query_expr_factory~create_operator_expr(
+                             i_attr1    = 'MPROC'
+                             i_operator = 'IN'
+                             i_attr2    = 'PAR1').
+        lr_par1 = pr_mproc.
+      elseif pr_procs is not initial.
+        lo_exp1 =
+               lo_query->if_os_query_expr_factory~create_operator_expr(
+                             i_attr1    = 'PROCS'
+                             i_operator = 'IN'
+                             i_attr2    = 'PAR1').
+        lr_par1 = pr_procs.
+      elseif pr_mproc is not initial.
+        lo_exp1 =
+               lo_query->if_os_query_expr_factory~create_operator_expr(
+                             i_attr1    = 'MPROC'
+                             i_operator = 'IN'
+                             i_attr2    = 'PAR1').
+        lr_par1 = pr_mproc.
+      ENDIF.
+      IF lo_exp2 IS BOUND AND lo_exp1 IS BOUND.
+        lo_filter = lo_query->if_os_query_expr_factory~create_and_expr(
+                                 i_expr1 = lo_exp1
+                                 i_expr2 = lo_exp2 ).
+      ELSEIF lo_exp1 IS BOUND.
+        lo_filter = lo_exp1.
+      ELSE.
+        RETURN.
+      ENDIF.
+      lt_objects =
+                lo_agent->if_os_ca_persistency~get_persistent_by_query(
+                              i_query = lo_query
+                              i_par1  = lr_par1
+                              i_par2  = lr_par2 ).
+      LOOP AT lt_objects ASSIGNING <lo_entry> CASTING.
+        lo_line ?= <lo_entry>.
+        lw_entry-procs = lo_line->get_procs( ).
+        lw_entry-mproc = lo_line->get_mproc( ).
+        lw_entry-stext = lo_line->get_stext( ).
+        INSERT lw_entry INTO TABLE rt_data.
+        CLEAR lw_entry.
+      ENDLOOP.
+    CATCH cx_os_object_not_found
+          cx_os_query_error.
+          RETURN.
+    ENDTRY.
+  ENDMETHOD.

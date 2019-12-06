@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="ZCL_NUMBER">
+ <CLAS CLSNAME="ZCL_NUMBER" VERSION="1" LANGU="E" DESCRIPT="Number" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" WITH_UNIT_TESTS="X" DURATION_TYPE="0 " RISK_LEVEL="0 ">
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <localTestClasses>*&quot;* use this source file for your ABAP unit test classes
+CLASS lcl_tester DEFINITION FOR TESTING
+                 RISK LEVEL HARMLESS
+                 DURATION SHORT
+                 INHERITING FROM cl_aunit_assert.
+  PUBLIC SECTION.
+    CONSTANTS: c_pi                TYPE string VALUE &apos;3.1416000000000E+00&apos;,
+               c_not_number        TYPE string VALUE &apos;Not a number!&apos;,
+               c_different_numbers TYPE string VALUE &apos;&amp;1 and &amp;2 are different numbers!&apos;,
+               c_3                 TYPE n      VALUE 3.
+
+  PRIVATE SECTION.
+    METHODS: tst_number_float   FOR TESTING,
+      tst_number_integer FOR TESTING,
+      tst_amount FOR TESTING.
+ENDCLASS.                    &quot;lcl_tester DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_tester IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_tester IMPLEMENTATION.
+  METHOD tst_number_float.
+    DATA: lo_number TYPE REF TO zcl_number,
+          lf_pi     TYPE f,
+          ls_pi     TYPE string,
+          ls_msg    TYPE string.
+* Setup parameters for the call...
+    lf_pi = 62832 / 20000.
+    CREATE OBJECT lo_number
+      EXPORTING
+        i_value = lf_pi.
+    IF sy-subrc &lt;&gt; 0.
+      &quot;MESSAGE e900 INTO ls_msg. &quot;Not a number!
+      ls_msg = c_not_number.
+      fail( msg = ls_msg ).
+    ENDIF.
+* Perform the call
+    ls_pi = lo_number-&gt;get( ).
+* Check returned values
+    &quot;MESSAGE e901 WITH ls_pi c_pi INTO ls_msg. &quot; &amp;1 and &amp;1 are different numbers!
+    ls_msg = c_different_numbers.
+    REPLACE: &apos;&amp;1&apos; IN ls_msg WITH ls_pi,
+             &apos;&amp;2&apos; IN ls_msg WITH c_pi.
+    assert_equals( exp = c_pi
+                   act = ls_pi
+                   msg = ls_msg ).
+  ENDMETHOD.                    &quot;tst_number_float
+  METHOD tst_number_integer.
+    &quot;CONSTANTS c_pi TYPE int4 VALUE 3.
+    DATA: lo_number TYPE REF TO zcl_number,
+          li_pi     TYPE int4,
+          ln_pi     TYPE n,
+          ls_msg    TYPE string.
+* Setup parameters for the call...
+    li_pi = 62832 / 20000.
+    CREATE OBJECT lo_number
+      EXPORTING
+        i_value = li_pi.
+    IF sy-subrc &lt;&gt; 0.
+      &quot;MESSAGE e900 INTO ls_msg.
+      ls_msg = c_not_number.
+      fail( msg = ls_msg ).
+    ENDIF.
+* Perform the call
+    ln_pi = lo_number-&gt;get_integer( ).
+* Check returned values
+    &quot;MESSAGE e901 WITH ls_pi c_pi INTO ls_msg.
+    ls_msg = c_different_numbers.
+    REPLACE: &apos;&amp;1&apos; IN ls_msg WITH ln_pi,
+             &apos;&amp;2&apos; IN ls_msg WITH c_3.
+    assert_equals( exp = c_3
+                   act = ln_pi
+                   msg = ls_msg ).
+  ENDMETHOD.                    &quot;tst_number_integer
+  METHOD tst_amount.
+    CONSTANTS  lc_value TYPE kwert VALUE &apos;5473.47&apos;.
+    DATA: lo_number TYPE REF TO zcl_number,
+          lv_amount TYPE char20,
+          ls_msg    TYPE string.
+
+* Setup parameters for the call...
+    WRITE lc_value TO lv_amount CURRENCY &apos;BRL&apos;.
+    CREATE OBJECT lo_number
+      EXPORTING
+        i_value = lv_amount.
+    IF sy-subrc &lt;&gt; 0.
+      &quot;MESSAGE e900 INTO ls_msg.
+      ls_msg = c_not_number.
+      fail( msg = ls_msg ).
+    ENDIF.
+* Perform the call
+    DATA(ls_value) = lo_number-&gt;get( ).
+* Check returned values
+    &quot;MESSAGE e901 WITH ls_pi c_pi INTO ls_msg.
+    ls_msg = c_different_numbers.
+    lv_amount = lc_value.
+    SHIFT lv_amount LEFT DELETING LEADING space.
+    REPLACE: &apos;&amp;1&apos; IN ls_msg WITH ls_value,
+             &apos;&amp;2&apos; IN ls_msg WITH lv_amount.
+    assert_equals( exp = lc_value
+                   act = ls_value
+                   msg = lv_amount ).
+  ENDMETHOD.
+ENDCLASS.                    &quot;lcl_tester IMPLEMENTATION</localTestClasses>
+  <attribute CLSNAME="ZCL_NUMBER" CMPNAME="A_VALUE" VERSION="1" LANGU="E" EXPOSURE="2" STATE="1" EDITORDER="1 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="STRING" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_NUMBER" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="E" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="2" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_NUMBER" CMPNAME="CONSTRUCTOR" SCONAME="I_VALUE" VERSION="1" LANGU="E" DESCRIPT="Value as string" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ANY"/>
+   <exception CLSNAME="ZCL_NUMBER" CMPNAME="CONSTRUCTOR" SCONAME="EXCP_NOT_NUMBER" VERSION="1" LANGU="E" DESCRIPT="EXCP_NOT_NUMBER" MTDTYPE="2" EDITORDER="1 "/>
+   <source>METHOD constructor.
+
+* This method creates an object Number, removing non numeric characters
+* from the original input.
+  CONSTANTS: c_point(1) TYPE c VALUE &apos;.&apos;,
+             c_comma(1) TYPE c VALUE &apos;,&apos;.
+  DATA: lc_value(20)      TYPE c,
+        lw_usdefaults     TYPE usdefaults,
+        lc_decimal_spt(1) TYPE c,
+        lc_milhar_spt(1)  TYPE c.
+
+  WRITE i_value TO lc_value.
+  IF lc_value CN &apos; .,-+0123456789E&apos;.
+    RAISE excp_not_number.
+  ENDIF.
+* gets user defaults
+  CALL FUNCTION &apos;SUSR_USER_READ&apos;
+    EXPORTING
+      user_name     = sy-uname
+    IMPORTING
+      user_defaults = lw_usdefaults.
+
+  CASE lw_usdefaults-dcpfm.
+    WHEN space.
+      MOVE: c_point TO lc_milhar_spt,
+            c_comma TO lc_decimal_spt.
+    WHEN &apos;X&apos;.
+      MOVE: c_comma TO lc_milhar_spt,
+            c_point TO lc_decimal_spt.
+    WHEN OTHERS.
+      MOVE: space   TO lc_milhar_spt,
+            c_comma TO lc_decimal_spt.
+  ENDCASE.
+
+
+  IF lc_milhar_spt &lt;&gt; space.
+    REPLACE ALL OCCURRENCES OF lc_milhar_spt IN lc_value WITH space.
+  ENDIF.
+
+  REPLACE lc_decimal_spt IN lc_value WITH c_point.
+
+  CONDENSE lc_value NO-GAPS.
+
+  MOVE lc_value TO a_value.
+ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_NUMBER" CMPNAME="GET" VERSION="1" LANGU="E" DESCRIPT="Returns the number as a string." EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_NUMBER" CMPNAME="GET" SCONAME="R_VALUE" VERSION="1" LANGU="E" DESCRIPT="Value" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="STRING"/>
+   <source>method GET.
+
+* This method reveals the value of the object Numbar
+    MOVE a_value TO r_value.
+
+endmethod.</source>
+  </method>
+  <method CLSNAME="ZCL_NUMBER" CMPNAME="GET_INTEGER" VERSION="1" LANGU="E" DESCRIPT="Returns the numbers as a integer." EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_NUMBER" CMPNAME="GET_INTEGER" SCONAME="R_VALUE" VERSION="1" LANGU="E" DESCRIPT="The integer" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="INT4"/>
+   <source>METHOD get_integer.
+  DATA lf_number     TYPE decfloat34.
+
+  lf_number = me-&gt;a_value.
+  lf_number = round( val = lf_number
+                     dec = 0
+                     mode = cl_abap_math=&gt;round_half_up ).
+  r_value = lf_number.
+ENDMETHOD.</source>
+  </method>
+ </CLAS>
+</nugget>

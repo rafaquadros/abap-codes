@@ -1,0 +1,15 @@
+DEFINE m_add_message.
+  APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+  <ls_return>-id         = sy-msgid.
+  <ls_return>-type       = sy-msgty.
+  <ls_return>-number     = sy-msgno.
+  <ls_return>-message    = l_message.
+  <ls_return>-message_v1 = sy-msgv1.
+END-OF-DEFINITION.
+
+DEFINE m_raise_bapi_error.
+  m_add_message.
+  RAISE EXCEPTION TYPE cx_bapi_error
+    EXPORTING
+      status = lt_return.
+END-OF-DEFINITION.

@@ -1,0 +1,119 @@
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
+*--------------------------------------------------------------------*
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It is a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* Class LCL_API
+*  OVERVIEW: Objects of this class mediates API calls. It aims to
+*            isolate this development from external dependencies, as
+*            might be desirable in tests.
+*            The instances of this object is provided by the private
+*            method GET_API of the main class (ZCL_CRM_BAL_LOG_HANDLE).
+*            By redefining the method GET_API one can  provide
+*            appropriated stubs, which must redefine the desired methods
+*            of LCL_API, instead of accessing the real APIs.
+*--------------------------------------------------------------------*
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    METHODS: put_messages IMPORTING p_handle TYPE balloghndl
+                                    pt_msg   TYPE bapiret2_t
+                                    p_level  TYPE ballevel
+                          RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* Method PUT_MESSAGES
+*--------------------------------------------------------------------*
+*       REQUIRES: The log handle, the messages to be published and
+*                 their detail level must be provided.
+*       EFFECTS.: If the API BAL_LOG_MSG_ADD returns an error raises
+*                 exception CX_BAPI_ERROR.
+*       MODIFIES: Publishes the messages in the log.
+*----------------------------------------------------------------------*
+*  -->  P_HANDLE     Application Log: Log Handle.
+*  -->  PT_MESSAGES  Table with messages.
+*  -->  P_LEVEL      Application Log: Level of detail.
+*----------------------------------------------------------------------*
+             save_log IMPORTING p_handle TYPE balloghndl
+                      RAISING cx_bapi_error.
+*--------------------------------------------------------------------*
+* Method SAVE_LOG
+*--------------------------------------------------------------------*
+*       REQUIRES: The log handle must be provided.
+*       EFFECTS.: If the API BAL_DB_SAVE returns an error raises
+*                 exception CX_BAPI_ERROR.
+*       MODIFIES: Saves the messages published in the database.
+*----------------------------------------------------------------------*
+ENDCLASS.
+CLASS lcl_api IMPLEMENTATION.
+  METHOD put_messages.
+    DATA: lw_msg        TYPE bal_s_msg,
+          lw_return     TYPE bapiret2,
+          lt_return     TYPE bapiret2_t,
+          lvc_dummy(1)  TYPE c.
+
+    LOOP AT pt_msg INTO lw_return.
+      m_fill_msg lw_return-type
+                 lw_return-id
+                 lw_return-number
+                 lw_return-message_v1
+                 lw_return-message_v2
+                 lw_return-message_v3
+                 lw_return-message_v4
+                 p_level.
+      CALL FUNCTION 'BAL_LOG_MSG_ADD'
+        EXPORTING
+          i_log_handle     = p_handle
+          i_s_msg          = lw_msg
+        EXCEPTIONS
+          log_not_found    = 1
+          msg_inconsistent = 2
+          log_is_full      = 3
+          OTHERS           = 4.
+      IF sy-subrc <> 0.
+        m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                             sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+  METHOD save_log.
+    DATA: lt_log_handles TYPE bal_t_logh,
+          lvc_dummy(1)  TYPE c,
+          lw_return     TYPE bapiret2,
+          lt_return     TYPE bapiret2_t.
+
+    APPEND p_handle TO lt_log_handles.
+    CALL FUNCTION 'BAL_DB_SAVE'
+      EXPORTING
+        i_t_log_handle   = lt_log_handles[]
+      EXCEPTIONS
+        log_not_found    = 1
+        save_not_allowed = 2
+        numbering_error  = 3
+        OTHERS           = 4.
+    IF sy-subrc <> 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.

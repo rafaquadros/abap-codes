@@ -1,0 +1,196 @@
+*"* use this source file for any type declarations (class
+*"* definitions, interfaces or data types) you need for method
+*"* implementation or private method's signature
+* Naming notation:
+*  [V][C][T]_[name]
+*  where: .[V] stands for visibility, e.g.: g for global, l for local;
+*         .[C] stands for category, e.g.: a for class attributes,
+*                                         v for variable, c for constants, y for types,
+*                                         w for structured work area, t for tables,
+*                                         f for field-symbols etc;
+*         .[T] stands for type, e.g.: i for integer, d for data, etc.
+* Obs: Structured types and types defined in Abap dictionary do not have a [T] identification.
+*
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It’s a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+**********************************************************************
+*------------------------------------
+* C.L.A.S.S.E.S D.E.F.I.N.I.T.I.O.N.S
+*------------------------------------
+CLASS zlacmsd_cl_intercomp_process DEFINITION LOAD.
+CLASS zlacmsd_cl_003               DEFINITION LOAD.
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_db DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: Encapsulates database operations.
+*----------------------------------------------------------------------*
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    METHODS: get_dlv_crt_data_persist IMPORTING p_instid TYPE sibfinstid
+                                      EXPORTING rt_dlv_crt_data TYPE
+                                       zlacmsd_cl_001=>cyt_dlv_crt_items
+                                      RAISING cx_sy_sql_error,
+*---------------------------------------------------------------------*
+* GET_DLV_CRT_DATA_PERSIST S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Persistence key must be informed.
+*       EFFECTS.: If retrieving from database fails, raises
+*                 CX_SY_SQL_ERROR exception. Otherwise returns a table
+*                 with data retrieved from table ZLACMSD_T_0001.
+*---------------------------------------------------------------------*
+*  -->  P_INSTID        Persistence key.
+*  <--  RT_DLV_CRT_DATA Table with data that supports delivery creation.
+*---------------------------------------------------------------------*
+             set_dlv_crt_data_persist IMPORTING p_instid TYPE sibfinstid
+                                                pt_dlv_crt_data TYPE
+                                       zlacmsd_cl_001=>cyt_dlv_crt_items
+                                      RAISING cx_sy_sql_error,
+*---------------------------------------------------------------------*
+* SET_DLV_CRT_DATA_PERSIST S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Persistence key and supporting delivery creation data
+*                 must be informed.
+*       EFFECTS.: If storing data into database fails, raises
+*                 CX_SY_SQL_ERROR exception. Otherwise creates new
+*                 entries in table ZLACMSD_T_0001.
+*---------------------------------------------------------------------*
+*  -->  P_INSTID        Persistence key.
+*  -->  PT_DLV_CRT_DATA Table with data that supports delivery creation.
+*---------------------------------------------------------------------*
+             get_relationship_persist IMPORTING p_instid TYPE sibfinstid
+                                      EXPORTING rt_relationship TYPE
+                      zlacmsd_cl_intercomp_process=>cyt_id_relationship
+                                      RAISING cx_sy_sql_error,
+*---------------------------------------------------------------------*
+* GET_RELATIONSHIP_PERSIST S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Persistence key must be informed.
+*       EFFECTS.: If retrieving from database fails, raises
+*                 CX_SY_SQL_ERROR exception. Otherwise returns a table
+*                 with data retrieved from table ZLACMSD_T_0004.
+*---------------------------------------------------------------------*
+*  -->  P_INSTID        Persistence key.
+*  <--  RT_RELATIONSHIP Table with data that supports deliveries link
+*                       definition.
+*---------------------------------------------------------------------*
+             set_relationship_persist IMPORTING p_instid TYPE sibfinstid
+                                                pt_relationship TYPE
+                      zlacmsd_cl_intercomp_process=>cyt_id_relationship
+                                      RAISING cx_sy_sql_error,
+*---------------------------------------------------------------------*
+* SET_RELATIONSHIP_PERSIST S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Persistence key and supporting delivery link
+*                 definition must be informed.
+*       EFFECTS.: If updating database fails, raises CX_SY_SQL_ERROR
+*                 exception. Otherwise updates table ZLACMSD_T_0004.
+*       MODIFIES: Table ZLACMSD_T_0004.
+*---------------------------------------------------------------------*
+*  -->  P_INSTID        Persistence key.
+*  -->  RT_RELATIONSHIP Table with data that supports deliveries link
+*                       definition.
+*---------------------------------------------------------------------*
+             get_batch IMPORTING p_vbeln TYPE vbeln
+                                 p_posnr TYPE posnr
+                       EXPORTING VALUE(rt_batches) TYPE
+                                        zlacmsd_cl_003=>cyt_batch_split
+                       RAISING cx_sy_sql_error,
+*---------------------------------------------------------------------*
+* GET_BATCH S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Delivery item identifiers must be informed.
+*       EFFECTS.: If retrieving from database fails, raises
+*                 CX_SY_SQL_ERROR exception. Otherwise returns a table
+*                 with batches and respective quantities used in the
+*                 receiving process (MIGO).
+*---------------------------------------------------------------------*
+*  -->  P_VBELN        Delivery number.
+*  -->  P_POSNR        Delivery item number
+*  <--  RT_BATCHES     Table with batches and related quantities
+*---------------------------------------------------------------------*
+             clean_up_temp_data IMPORTING p_instid TYPE sibfinstid
+                                RAISING cx_sy_sql_error.
+*---------------------------------------------------------------------*
+* CLEAN_UP_TEMP_DATA S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: Persistence key must be informed.
+*       EFFECTS.: If deleting entries from database fails, raises
+*                 CX_SY_SQL_ERROR exception.
+*       MODIFIES: Deletes entries from table ZLACMSD_T_0004.
+*---------------------------------------------------------------------*
+*  -->  P_INSTID        Persistence key.
+*---------------------------------------------------------------------*
+ENDCLASS.                    "lcl_db DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_api DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: Encapsulates function calls.
+*----------------------------------------------------------------------*
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    TYPES: cyt_doc_items  TYPE STANDARD TABLE OF bapidlvreftosto,
+           cyt_return        TYPE STANDARD TABLE OF bapiret2.
+    METHODS: create_deliveries_sls IMPORTING pt_doc_items TYPE
+                                                         cyt_doc_items
+                               EXPORTING rt_deliveries_items
+                                    TYPE zlacmsd_cl_003=>cyt_dlv_items
+                               RAISING zcx_bapi_error,
+*---------------------------------------------------------------------*
+* CREATE_DELIVERIES S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: The delivery identifier must be informed.
+*       EFFECTS.: Calls function module BAPI_OUTB_DELIVERY_CREATE_SLS
+*                 in order to create deliveries. If it returns an error
+*                 raises exception ZCX_BAPI_ERROR
+*----------------------------------------------------------------------*
+*  -->  PT_DOC_ITEMS       Table with reference items.
+*  <--  RT_DELIVERIES      Table with identifiers of created deliveries.
+*----------------------------------------------------------------------*
+             show_messages IMPORTING pt_return TYPE
+                               zlacmsd_cl_intercomp_process=>cyt_return,
+*---------------------------------------------------------------------*
+* SHOW_MESSAGES S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: A table with the messages to be shown must be given.
+*       EFFECTS.: Calls a sequence of function modules in order to
+*                 show the messages given.
+*----------------------------------------------------------------------*
+*  -->  PT_RETURN       Table with messages
+*----------------------------------------------------------------------*
+             commit,
+*---------------------------------------------------------------------*
+* COMMIT S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       EFFECTS.: Calls BAPI_TRANSACTION_COMMIT.
+*----------------------------------------------------------------------*
+*  -->  PT_RETURN       Table with messages
+*----------------------------------------------------------------------*
+             fill_in_return IMPORTING p_type    TYPE symsgty
+                                      p_id      TYPE symsgid
+                                      p_number  TYPE symsgno
+                                      p_par1    TYPE symsgv
+                                      p_par2    TYPE symsgv
+                                      p_par3    TYPE symsgv
+                                      p_par4    TYPE symsgv
+                            EXPORTING rw_return TYPE bapiret2.
+ENDCLASS.                    "lcl_api DEFINITION

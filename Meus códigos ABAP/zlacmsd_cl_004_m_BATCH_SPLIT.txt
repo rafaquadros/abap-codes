@@ -1,0 +1,50 @@
+METHOD batch_split.
+  DATA: lx_error          TYPE REF TO zcx_bapi_error,
+        ao_frntd_modifier TYPE REF TO zlacmsd_cl_008,
+        lw_item_data      TYPE bapiobdlvitemchg,
+        lt_vbpok             TYPE STANDARD TABLE OF vbpok,
+        lw_vbpok             TYPE vbpok.
+
+*  DATA lvc_flag(1) TYPE c.
+*  WHILE lvc_flag IS INITIAL.
+*
+*  ENDWHILE.
+  TRY .
+      ao_api->batch_split( pt_item_data = at_item_data[]
+                           p_instid     = aw_persist_ref-instid
+                           po_db        = ao_db ).
+    CATCH zcx_bapi_error INTO lx_error.
+      zlacmsd_cl_001=>set_messages_persist(
+              EXPORTING p_instid  = aw_persist_ref-instid
+                        p_seoclsname = 'ZLACMSD_CL_004'
+                        pt_return = lx_error->at_return[] ).
+      FREE ro_picker.
+      zlacmsd_cl_intercomp_process=>release_shm_memory( ).
+      RETURN.
+  ENDTRY.
+* Status updating
+  TRY .
+      ao_db->set_batch_ok( EXPORTING p_mblnr = me->av_mblnr
+                                     p_mjahr = me->av_mjahr )  .
+    CATCH cx_sy_sql_error.
+      FREE ro_picker.
+      zlacmsd_cl_intercomp_process=>release_shm_memory( ).
+      RETURN.
+  ENDTRY.
+
+* Returning the picker
+  LOOP AT at_item_data INTO lw_item_data.
+* Filling in picker data
+    lw_vbpok-vbeln_vl = lw_vbpok-vbeln = lw_item_data-deliv_numb.
+    lw_vbpok-posnr_vl = lw_vbpok-posnn = lw_item_data-deliv_item.
+    lw_vbpok-matnr    =                  lw_item_data-material.
+    lw_vbpok-pikmg    =                  lw_item_data-dlv_qty.
+    lw_vbpok-vrkme    =                  lw_item_data-sales_unit.
+    APPEND lw_vbpok TO lt_vbpok.
+    CLEAR lw_vbpok.
+  ENDLOOP.
+  ao_picker = get_picker( lt_vbpok[] ).
+  ro_picker = ao_picker.
+* House keeping
+  zlacmsd_cl_intercomp_process=>release_shm_memory( ).
+ENDMETHOD.

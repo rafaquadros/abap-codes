@@ -1,0 +1,480 @@
+CLASS zcl_pp_rules_controller DEFINITION
+  PUBLIC
+  INHERITING FROM zcl_pp_batch_controller
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    METHODS main_popup
+      RETURNING
+        VALUE(rt_rules) TYPE zpptt002 .
+
+    METHODS if_salv_csqt_content_manager~fill_container_content
+        REDEFINITION .
+  PROTECTED SECTION.
+    DATA:
+      r_view_popup TYPE REF TO cl_salv_table,
+      t_rules_data TYPE zpptt008,
+      t_formatters TYPE zpptt009.
+
+    METHODS:
+      display_popup IMPORTING ir_container TYPE REF TO cl_gui_custom_container
+                    RAISING   cx_salv_msg,
+      add_empty_line         REDEFINITION,
+      check_data             REDEFINITION,
+      delete_selected_lines  REDEFINITION,
+      fill_in_style_data     REDEFINITION,
+      get_rules_data,
+      on_user_command        REDEFINITION,
+      save                   REDEFINITION,
+      set_view               REDEFINITION,
+      set_columns_properties REDEFINITION,
+      set_columns_sizes      REDEFINITION,
+      set_columns_styles     REDEFINITION,
+      set_custom_functions   REDEFINITION,
+      set_editable_columns   REDEFINITION,
+      set_events             REDEFINITION,
+      set_functions          REDEFINITION,
+      toggle_edition         REDEFINITION.
+ENDCLASS.
+
+
+
+CLASS zcl_pp_rules_controller IMPLEMENTATION.
+
+
+  METHOD check_data.
+
+
+    DELETE me->t_rules_data WHERE table_line IS INITIAL.
+    LOOP AT me->t_rules_data ASSIGNING FIELD-SYMBOL(<ls_rule_data>).
+      IF <ls_rule_data> IS INITIAL.
+        MESSAGE 'The rule definition must be provided'(m01) TYPE 'E' DISPLAY LIKE 'I'.
+      ENDIF.
+    ENDLOOP.
+
+
+  ENDMETHOD.
+
+
+  METHOD display_popup.
+
+    IF me->t_rules_data IS INITIAL.
+      APPEND INITIAL LINE TO me->t_rules_data.
+    ENDIF.
+
+    TRY.
+        cl_salv_table=>factory(
+        EXPORTING
+*          list_display   = if_salv_c_bool_sap=>false " ALV Displayed in List Mode
+          r_container    =  ir_container                         " Abstract Container for GUI Controls
+*          container_name =
+          IMPORTING
+            r_salv_table   =  r_view_popup                         " Basis Class Simple ALV Tables
+          CHANGING
+            t_table        = me->t_rules_data
+        ).
+*      CATCH cx_salv_msg. " ALV: General Error Class with Message
+      CATCH cx_salv_msg INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+
+*    r_view_popup->set_screen_popup(
+*      EXPORTING
+*        start_column = 20
+**        end_column   =
+*        start_line   = 10
+**        end_line     =
+*    ).
+
+    set_view( ).
+
+    r_view_popup->display( ).
+
+  ENDMETHOD.
+
+
+  METHOD fill_in_style_data.
+
+
+    FIELD-SYMBOLS <ls_cell_type> TYPE salv_s_int4_column.
+
+    LOOP AT me->t_rules_data ASSIGNING FIELD-SYMBOL(<ls_rule_data>).
+      IF <ls_rule_data>-formatter_drop IS INITIAL.
+        APPEND INITIAL LINE TO <ls_rule_data>-formatter_drop ASSIGNING FIELD-SYMBOL(<ls_formatter_drop>).
+        <ls_formatter_drop>-columnname = 'FORMATTER'.
+        <ls_formatter_drop>-value = 1.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD get_rules_data.
+
+
+    DATA(lt_rules) = r_model->get_rules( ).
+    DATA(lt_texts) = r_model->get_texts( ).
+
+    LOOP AT lt_rules ASSIGNING FIELD-SYMBOL(<ls_rule>).
+      APPEND INITIAL LINE TO me->t_rules_data ASSIGNING FIELD-SYMBOL(<ls_rule_data>).
+      MOVE-CORRESPONDING <ls_rule> TO <ls_rule_data>.
+      READ TABLE lt_texts ASSIGNING FIELD-SYMBOL(<ls_text>) WITH KEY rule_type = <ls_rule>-rule_type.
+      IF sy-subrc = 0.
+        <ls_rule_data>-naming_explanation = <ls_text>-naming_explanation.
+      ENDIF.
+    ENDLOOP.
+
+    me->t_formatters = r_model->get_formatters( ).
+
+
+  ENDMETHOD.
+
+
+  METHOD if_salv_csqt_content_manager~fill_container_content.
+
+
+    TRY.
+        me->display_popup( ir_container = r_container ).
+*        CATCH cx_salv_msg. " ALV: General Error Class with Message
+      CATCH cx_salv_msg INTO DATA(lx_error).
+        MESSAGE lx_error->get_text( ) TYPE 'E'.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD main_popup.
+
+    DATA  lt_rules TYPE zpptt002.
+
+    CLEAR rt_rules.
+
+    IF me->r_model IS NOT BOUND.
+      me->r_model = NEW zcl_pp_batch_model( ).
+    ENDIF.
+
+    me->get_rules_data( ).
+
+    CALL FUNCTION 'SALV_CSQT_CREATE_CONTAINER'
+      EXPORTING
+        r_content_manager = me                " Parameter display
+        title             = 'Rules settings'(t02).
+
+    LOOP AT me->t_rules_data ASSIGNING FIELD-SYMBOL(<ls_rule_data>).
+      APPEND INITIAL LINE TO lt_rules ASSIGNING FIELD-SYMBOL(<ls_rule>).
+      MOVE-CORRESPONDING <ls_rule_data> TO <ls_rule>.
+    ENDLOOP.
+    SORT lt_rules BY rule_type.
+
+    rt_rules = lt_rules.
+
+
+  ENDMETHOD.
+
+
+  METHOD on_user_command.
+
+    CASE e_salv_function.
+      WHEN 'ZEDITPOP'.
+        me->toggle_edition( ).
+
+      WHEN 'ZINSRPOP'.
+        me->add_empty_line( ).
+
+      WHEN 'ZDELRPOP'.
+        me->delete_selected_lines( ).
+
+      WHEN 'ZSAVEPOP'.
+        me->save( ).
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD save.
+
+    DATA  lt_texts TYPE zpptt003.
+
+    me->check_data( ).
+
+    DATA(lt_data) = me->t_rules_data.
+    SORT lt_data BY rule_type DESCENDING.
+    READ TABLE lt_data ASSIGNING FIELD-SYMBOL(<ls_data>) INDEX 1.
+    IF sy-subrc = 0.
+      DATA(l_next) = <ls_data>-rule_type + 1.
+
+      CLEAR  me->t_rules.
+      LOOP AT me->t_rules_data ASSIGNING FIELD-SYMBOL(<ls_rule_data>).
+        IF <ls_rule_data>-rule_type IS INITIAL.
+          <ls_rule_data>-rule_type = l_next.
+          SHIFT <ls_rule_data>-rule_type RIGHT DELETING TRAILING space.
+          OVERLAY <ls_rule_data>-rule_type WITH '00'.
+          ADD 1 TO l_next.
+        ENDIF.
+
+        APPEND INITIAL LINE TO: me->t_rules ASSIGNING FIELD-SYMBOL(<ls_rule>),
+                                lt_texts    ASSIGNING FIELD-SYMBOL(<ls_text>).
+
+        MOVE-CORRESPONDING: <ls_rule_data> TO <ls_rule>,
+                            <ls_rule_data> TO <ls_text>.
+        <ls_text>-spras = sy-langu.
+
+      ENDLOOP.
+    ENDIF.
+
+    TRY.
+        r_model->set_rules( me->t_rules ).
+        r_model->set_texts( lt_texts ).
+
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        READ TABLE lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>) INDEX 1.
+        IF sy-subrc = 0.
+          MESSAGE
+               ID <ls_return>-id
+             TYPE <ls_return>-type
+           NUMBER <ls_return>-number
+             WITH <ls_return>-message_v1 <ls_return>-message_v2 <ls_return>-message_v3 <ls_return>-message_v4.
+        ENDIF.
+    ENDTRY.
+
+    me->s_status-editing = abap_false.
+
+    me->set_view( ).
+
+    r_view_popup->refresh(
+*          EXPORTING
+*            s_stable     =                         " ALV Control: Refresh Stability
+*            refresh_mode = if_salv_c_refresh=>soft " ALV: Data Element for Constants
+    ).
+
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_properties.
+
+    DATA  lr_column TYPE REF TO cl_salv_column.
+
+    DATA(lr_columns) = r_view_popup->get_columns( ).
+    m_set_technical  'RULE_TYPE'.
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_sizes.
+
+    TRY.
+        r_view_popup->get_columns( )->get_column( columnname = 'FORMATTER' )->set_output_length( value = '30' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+        r_view_popup->get_columns( )->get_column( columnname = 'NAMING_EXPLANATION' )->set_output_length( value = '40' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD set_columns_styles.
+
+    DATA  lr_column TYPE REF TO cl_salv_column_list.
+
+    TRY.
+        fill_in_style_data( ).
+        r_view_popup->get_columns( )->set_cell_type_column( value = 'CELL_TYPE' ).
+*        CATCH cx_salv_data_error. " ALV: General Error Class (Checked During Syntax Check).
+        lr_column ?= r_view_popup->get_columns( )->get_column( columnname = 'FORMATTER' ).
+*        CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+        lr_column->set_cell_type(
+            value = if_salv_c_cell_type=>dropdown
+        ).
+        lr_column->set_dropdown_entry( value = 1 ).
+
+      CATCH cx_salv_data_error ##NO_HANDLER
+            cx_salv_not_found.
+    ENDTRY.
+
+    TRY.
+        r_view_popup->get_columns( )->set_dropdown_entry_column( value = 'FORMATTER_DROP' ).
+*        CATCH cx_salv_data_error. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_data_error ##NO_HANDLER.
+    ENDTRY.
+
+    DATA  lt_values TYPE salv_t_value.
+
+    LOOP AT me->t_formatters ASSIGNING FIELD-SYMBOL(<ls_formatter>).
+      APPEND INITIAL LINE TO lt_values ASSIGNING FIELD-SYMBOL(<l_value>).
+      <l_value> = <ls_formatter>-formatter.
+    ENDLOOP.
+    TRY.
+        r_view_popup->get_functional_settings( )->get_dropdowns( )->add_dropdown(
+          EXPORTING
+            handle   =  1                " ALV Variant Management
+            t_values =  lt_values                " Contents
+*          RECEIVING
+*            value    =                  " ALV: Dropdown
+        ).
+*        CATCH cx_salv_existing. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing ##NO_HANDLER.
+    ENDTRY.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_custom_functions.
+
+    DATA: l_tooltip TYPE string,
+          l_icon    TYPE string.
+
+    m_remove_function:  'ZEDITPOP',
+                        'ZINSRPOP',
+                        'ZDELRPOP',
+                        'ZSAVEPOP'.
+
+    TRY.
+        IF me->s_status-editing = abap_false.
+          l_tooltip = 'Change'(p01).
+          l_icon = '@0Z@'. "'ICON_CHANGE'.
+        ELSE.
+          l_tooltip = 'Display'(p02).
+          l_icon = '@10@'. "'ICON_DISPLAY'.
+        ENDIF.
+        ir_functions->add_function(
+          EXPORTING
+            name     =   'ZEDITPOP'               " ALV Function
+            icon     = l_icon
+*            text     =
+            tooltip  = l_tooltip
+            position = if_salv_c_function_position=>left_of_salv_functions                 " Positioning Function
+        ).
+*        CATCH cx_salv_existing.   " ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. " ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing  ##NO_HANDLER
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+
+    IF me->s_status-editing = abap_true.
+      m_add_function: 'Insert row'(p03) '@17@' 'ZINSRPOP',
+                      'Delete row'(p04) '@18@' 'ZDELRPOP',
+                      'Save'(p05)       '@2L@' 'ZSAVEPOP'.
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+  METHOD set_editable_columns.
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'BATCH_NAMING'
+        ir_salv_table = me->r_view_popup
+        i_editable    = s_status-editing
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'FORMATTER'
+        ir_salv_table = me->r_view_popup
+        i_editable    = s_status-editing
+        i_refresh     = abap_false
+    ).
+
+    zcl_alv_services=>set_editable(
+      EXPORTING
+        i_fieldname   = 'NAMING_EXPLANATION'
+        ir_salv_table = me->r_view_popup
+        i_editable    = s_status-editing
+        i_refresh     = abap_true
+    ).
+
+
+
+  ENDMETHOD.
+
+
+  METHOD set_functions.
+
+
+    DATA(r_functions) = r_view_popup->get_functions( ).
+    r_functions->set_all(
+*      value = if_salv_c_bool_sap=>true
+    ).
+    r_functions->set_export_localfile(
+*      value = if_salv_c_bool_sap=>true
+    ).
+
+    me->set_custom_functions( r_functions ).
+
+  ENDMETHOD.
+
+
+  METHOD set_view.
+
+    me->set_columns_properties( ).
+
+    me->set_columns_sizes( ).
+
+    me->set_columns_styles( ).
+
+    me->set_functions( ).
+
+    me->set_events( ).
+
+  ENDMETHOD.
+
+
+  METHOD toggle_edition.
+
+
+    IF me->s_status-editing = abap_false.
+      me->s_status-editing = abap_true.
+    ELSE.
+      me->s_status-editing = abap_false.
+    ENDIF.
+
+    me->set_custom_functions( ir_functions = r_view_popup->get_functions( ) ).
+
+    me->set_editable_columns( ).
+
+
+  ENDMETHOD.
+
+
+  METHOD set_events.
+
+    DATA(lr_events) = r_view_popup->get_event( ).
+    SET HANDLER me->on_user_command FOR lr_events.
+  ENDMETHOD.
+
+  METHOD add_empty_line.
+
+    APPEND INITIAL LINE TO me->t_rules_data.
+    me->fill_in_style_data( ).
+    me->set_editable_columns( ).
+  ENDMETHOD.
+
+  METHOD delete_selected_lines.
+
+    DATA: l_index       TYPE sy-tabix,
+          l_deleted_cnt TYPE int4.
+
+    DATA(lt_selected) =  r_view_popup->get_selections( )->get_selected_rows( ).
+    LOOP AT lt_selected ASSIGNING FIELD-SYMBOL(<l_index>).
+      l_index = <l_index> - l_deleted_cnt.
+      IF l_index > 0.
+        DELETE me->t_rules_data INDEX l_index.
+        ADD 1 TO l_deleted_cnt.
+      ENDIF.
+    ENDLOOP.
+
+    me->set_editable_columns( ).
+
+  ENDMETHOD.
+
+ENDCLASS.

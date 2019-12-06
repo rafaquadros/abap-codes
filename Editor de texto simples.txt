@@ -1,0 +1,27 @@
+
+  METHOD get_user_text.
+    CALL FUNCTION 'CATSXT_SIMPLE_TEXT_EDITOR'
+      EXPORTING
+        im_title              = p_title
+      changing
+        ch_text               = rt_text.
+  ENDMETHOD.
+
+  
+  ICON_WD_TEXT_EDIT
+  ICON_WD_TEXT_VIEW
+  
+ICON_CHANGE_TEXT
+ICON_CREATE_TEXT
+ICON_DISPLAY_TEXT
+
+TOTAL_L 			/* Header line tem a linha marcada
+EXTRACT_L
+EXTRACT
+TOTAL				/* Header line tem a linha marcada
+
+<VIM_CK_SELLIST>
+
+EULGM /* editando
+
+  

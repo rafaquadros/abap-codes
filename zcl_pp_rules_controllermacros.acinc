@@ -1,0 +1,54 @@
+*"* use this source file for any macro definitions you need
+*"* in the implementation part of the class
+DEFINE m_set_technical.
+  TRY.
+       lr_column = lr_columns->get_column( columnname = &1 ).
+*                       CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+       lr_column->set_technical(
+*          value = if_salv_c_bool_sap=>true
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+END-OF-DEFINITION.
+
+DEFINE m_add_function.
+  TRY.
+        l_tooltip = &1.
+        l_icon = &2.
+
+      ir_functions->add_function(
+        EXPORTING
+          name     =   &3               " ALV Function
+          icon     = l_icon
+*            text     =
+          tooltip  = l_tooltip
+          position = if_salv_c_function_position=>left_of_salv_functions                 " Positioning Function
+      ).
+*        CATCH cx_salv_existing.   " ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. " ALV: General Error Class (Checked During Syntax Check)
+    CATCH cx_salv_existing  ##NO_HANDLER
+          cx_salv_not_found
+          cx_salv_wrong_call.
+  ENDTRY.
+END-OF-DEFINITION.
+
+DEFINE m_remove_function.
+  TRY.
+      ir_functions->remove_function( name = &1 ).
+*        CATCH cx_salv_not_found.  " ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. " ALV: General Error Class (Checked During Syntax Check)
+    CATCH cx_salv_not_found ##NO_HANDLER
+          cx_salv_wrong_call.
+  ENDTRY.
+END-OF-DEFINITION.
+
+DEFINE m_set_visible.
+  TRY.
+       lr_column = lr_columns->get_column( columnname = &1 ).
+*                       CATCH cx_salv_not_found. " ALV: General Error Class (Checked During Syntax Check)
+       lr_column->set_visible(
+           value = &2
+       ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+END-OF-DEFINITION.

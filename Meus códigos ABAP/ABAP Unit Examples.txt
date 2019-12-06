@@ -1,0 +1,143 @@
+*"* use this source file for your ABAP unit test classes
+CLASS lcl_api_ok             DEFINITION FOR TESTING
+                             RISK LEVEL HARMLESS
+                             DURATION SHORT
+                             INHERITING FROM lcl_api
+                             FINAL.
+  PUBLIC SECTION.
+    METHODS convert_amount REDEFINITION.
+ENDCLASS.
+CLASS lcl_api_nok            DEFINITION FOR TESTING
+                             RISK LEVEL HARMLESS
+                             DURATION SHORT
+                             INHERITING FROM lcl_api
+                             FINAL.
+  PUBLIC SECTION.
+    METHODS convert_amount REDEFINITION.
+ENDCLASS.
+CLASS lcl_invoice_ok         DEFINITION FOR TESTING
+                             RISK LEVEL HARMLESS
+                             DURATION SHORT
+                             INHERITING FROM ZCL_BRPP_BRAZILIAN_INVOICE
+                             FINAL.
+  PROTECTED SECTION.
+    METHODS  get_api REDEFINITION.
+ENDCLASS.
+CLASS lcl_invoice_nok        DEFINITION FOR TESTING
+                             RISK LEVEL HARMLESS
+                             DURATION SHORT
+                             INHERITING FROM ZCL_BRPP_BRAZILIAN_INVOICE
+                             FINAL.
+  PROTECTED SECTION.
+    METHODS  get_api REDEFINITION.
+ENDCLASS.
+CLASS lcl_api_ok IMPLEMENTATION.
+  METHOD convert_amount.
+    r_wrbtr = p_wrbtr * 2.
+  ENDMETHOD.
+ENDCLASS.
+CLASS lcl_api_nok IMPLEMENTATION.
+  METHOD convert_amount.
+    RAISE EXCEPTION TYPE cx_bapi_error.
+  ENDMETHOD.
+ENDCLASS.
+CLASS lcl_invoice_ok IMPLEMENTATION.
+  METHOD get_api.
+    DATA lo_api TYPE REF TO lcl_api_ok.
+
+    create OBJECT lo_api.
+    RO_API = lo_api.
+
+    free lo_api.
+  ENDMETHOD.
+ENDCLASS.
+CLASS lcl_invoice_nok IMPLEMENTATION.
+  METHOD get_api.
+    DATA lo_api TYPE REF TO lcl_api_nok.
+
+    CREATE OBJECT lo_api.
+    RO_API = lo_api.
+
+    FREE lo_api.
+  ENDMETHOD.
+ENDCLASS.
+CLASS lcl_GTDEVRR2R91420_tests DEFINITION FOR TESTING
+                               RISK LEVEL HARMLESS
+                               DURATION SHORT
+                               INHERITING FROM cl_aunit_assert
+                               FINAL.
+  PRIVATE SECTION.
+  METHODS: tst_has_nf_negative FOR TESTING, "The invoice does not have an associated NF
+           tst_amount_conversion_ok FOR TESTING, "Test amount conversion ok.
+           tst_amount_conversion_nok FOR TESTING. "Test amount conversion not ok.
+ENDCLASS.
+CLASS lcl_GTDEVRR2R91420_tests IMPLEMENTATION.
+  METHOD tst_has_nf_negative.
+    CONSTANTS: lc_belnr TYPE RE_BELNR VALUE space,
+               lc_gjahr TYPE gjahr    VALUE space.
+    DATA: lo_invoice   TYPE REF TO ZCL_BRPP_BRAZILIAN_INVOICE,
+          lv_has_nf    TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_invoice
+      EXPORTING
+        p_belnr = lc_belnr
+        p_gjahr = lc_gjahr.
+* Perform the call
+    lv_has_nf = lo_invoice->has_an_associate_nf( ).
+* Check returned values
+    assert_Equals( EXP = abap_false act = lv_has_nf
+                   msg = 'Test failed!' ).
+  ENDMETHOD.
+  METHOD tst_amount_conversion_ok.
+    CONSTANTS: lc_belnr TYPE RE_BELNR VALUE space,
+               lc_gjahr TYPE gjahr    VALUE space,
+               lc_wrbtr TYPE wrbtr    VALUE 1,
+               lc_fcurr TYPE waers    VALUE 'USD',
+               lc_lcurr TYPE waers    VALUE 'BRL'.
+    DATA: lo_invoice   TYPE REF TO lcl_invoice_ok,
+          lv_wrbtr     TYPE wrbtr.
+* Setup parameters for the call
+    CREATE OBJECT lo_invoice
+    EXPORTING
+      p_belnr = lc_belnr
+      p_gjahr = lc_gjahr.
+* Perform the call
+  lv_wrbtr = lo_invoice->convert_amount( p_fcurr = lc_fcurr
+                                         p_lcurr = lc_lcurr
+                                         p_wrbtr = lc_wrbtr ).
+* House keeping
+  free lo_invoice.
+* Check returned values
+  assert_Equals( EXP = 2 act = lv_wrbtr
+                 msg = 'Amount conversion failed!' ).
+  ENDMETHOD.
+  METHOD tst_amount_conversion_nok.
+    CONSTANTS: lc_belnr TYPE RE_BELNR VALUE space,
+               lc_gjahr TYPE gjahr    VALUE space,
+               lc_wrbtr TYPE wrbtr    VALUE 1,
+               lc_fcurr TYPE waers    VALUE 'USD',
+               lc_lcurr TYPE waers    VALUE 'BRL'.
+    DATA: lo_invoice   TYPE REF TO lcl_invoice_nok,
+          lv_wrbtr     TYPE wrbtr.
+*   Setup parameters for the call
+    CREATE OBJECT lo_invoice
+    EXPORTING
+      p_belnr = lc_belnr
+      p_gjahr = lc_gjahr.
+*   Perform the call
+    lv_wrbtr = lo_invoice->convert_amount( p_fcurr = lc_fcurr
+                                           p_lcurr = lc_lcurr
+                                           p_wrbtr = lc_wrbtr ).
+*   House keeping
+    FREE lo_invoice.
+*   Check returned values
+    assert_Equals( EXP = lc_wrbtr act = lv_wrbtr
+                   msg = 'Amount conversion do not failed!' ).
+  ENDMETHOD.
+*METHOD xpto.
+** Setup parameters for the call
+** Perform the call
+** House keeping
+** Check returned values
+*ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,102 @@
+class ZCL_CRM_BAL_LOG_HANDLE definition
+  public
+  create public .
+
+public section.
+
+  methods CONSTRUCTOR
+    importing
+      !P_HANDLE type BALLOGHNDL .
+  methods PUT_MESSAGES
+    importing
+      !PT_MSG type BAPIRET2_T
+      !P_LEVEL type BALLEVEL default '1'
+    raising
+      CX_BAPI_ERROR .
+  methods SAVE_LOG
+    raising
+      CX_BAPI_ERROR .
+protected section.
+
+  data AV_LOG_HANDLE type BALLOGHNDL .
+private section.
+
+  methods GET_API
+    returning
+      value(RO_API) type ref to OBJECT .
+ENDCLASS.
+
+
+
+CLASS ZCL_CRM_BAL_LOG_HANDLE IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG_HANDLE->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] P_HANDLE                       TYPE        BALLOGHNDL
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method CONSTRUCTOR.
+
+    me->av_log_handle = p_handle.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_CRM_BAL_LOG_HANDLE->GET_API
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RO_API                         TYPE REF TO OBJECT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method GET_API.
+    DATA lo_api TYPE REF TO lcl_api.
+
+    lo_api = NEW lcl_api( ).
+    IF lo_api IS BOUND.
+      ro_api = lo_api.
+    ENDIF.
+    FREE lo_api.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG_HANDLE->PUT_MESSAGES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] PT_MSG                         TYPE        BAPIRET2_T
+* | [--->] P_LEVEL                        TYPE        BALLEVEL (default ='1')
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD put_messages.
+    DATA: lo_api   TYPE REF TO lcl_api,
+          lx_error TYPE REF TO cx_bapi_error.
+
+    lo_api ?=  me->get_api( ).
+
+    TRY .
+        lo_api->put_messages( p_handle = me->av_log_handle
+                              pt_msg   = pt_msg
+                              p_level  = p_level           ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CRM_BAL_LOG_HANDLE->SAVE_LOG
+* +-------------------------------------------------------------------------------------------------+
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD save_log.
+    DATA: lo_api   TYPE REF TO lcl_api,
+          lx_error TYPE REF TO cx_bapi_error.
+
+    lo_api ?= me->get_api( ).
+
+    TRY .
+        lo_api->save_log( me->av_log_handle ).
+      CATCH cx_bapi_error INTO lx_error.
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.

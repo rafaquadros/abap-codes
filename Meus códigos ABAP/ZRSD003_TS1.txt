@@ -1,0 +1,638 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZRSD003_TS1: ABAP Unit tests
+*&---------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+*       CLASS lcl_api_tst DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_api_tst DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_api
+                                FINAL.
+  PUBLIC SECTION.
+    METHODS: calculate_due_date REDEFINITION,
+             convert_amount     REDEFINITION.
+ENDCLASS.                    "lcl_api_tst DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_found DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_found DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_db.
+  PUBLIC SECTION.
+    METHODS:  get_blocking_data    REDEFINITION,
+              get_company_currency REDEFINITION.
+ENDCLASS.                    "lcl_db_tst_found DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_notfound DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_notfound DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_db_tst_found
+                                FINAL.
+  PUBLIC SECTION.
+    METHODS  get_blocking_data REDEFINITION.
+ENDCLASS.                    "lcl_db_tst_notfound DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_fcurrency DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_fcurrency DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_db
+                                FINAL.
+  PUBLIC SECTION.
+    METHODS  get_blocking_data REDEFINITION.
+ENDCLASS.                    "lcl_db_tst_fcurrency DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_open_item_tst DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_open_item_tst DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_open_item
+                                FINAL.
+  PROTECTED SECTION.
+    METHODS: get_api REDEFINITION,
+             get_db  REDEFINITION.
+ENDCLASS.                    "lcl_open_item_tst DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_ok_tst DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_ok_tst DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_customer.
+  PROTECTED SECTION.
+    METHODS: get_db  REDEFINITION,
+             get_api REDEFINITION.
+ENDCLASS.                    "lcl_customer_ok_tst DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_nok_tst DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_nok_tst DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_customer_ok_tst
+                                FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_customer_nok_tst DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_fcurr DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_fcurr DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM lcl_customer_ok_tst
+                                FINAL.
+  PROTECTED SECTION.
+    METHODS  get_db REDEFINITION.
+ENDCLASS.                    "lcl_customer_fcurr DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_list_tests DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_list_tests DEFINITION FOR TESTING "#AU Risk_Level Harmless
+                                            "#AU Duration   Short
+                                INHERITING FROM cl_aunit_assert
+                                FINAL.
+  PRIVATE SECTION.
+    METHODS: tst_free_list   FOR TESTING,   " Iterator releasing
+             tst_hasnext_ok  FOR TESTING,   " There is more elements.
+             tst_hasnext_nok FOR TESTING,   " There is no more elements.
+             tst_next        FOR TESTING.   " Correct next.
+ENDCLASS.                    "lcl_list_tests DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_open_item_tests DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_open_item_tests DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM cl_aunit_assert
+                                FINAL.
+  PRIVATE SECTION.
+    METHODS: tst_due_date       FOR TESTING, " Due dated calculation
+             tst_local_currency FOR TESTING. " Local currency setting up
+ENDCLASS.                    "lcl_open_item_tests DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_tests DEFINITION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_tests DEFINITION FOR TESTING
+                                                "#AU Risk_Level Harmless
+                                                "#AU Duration   Short
+                                INHERITING FROM cl_aunit_assert
+                                FINAL.
+  PRIVATE SECTION.
+    METHODS: tst_exception_ok   FOR TESTING, " There is an exception
+             tst_exception_nok  FOR TESTING, " There is not an exeption
+             tst_amount_oldest  FOR TESTING, " Amount of oldest items
+             tst_amount_convert FOR TESTING. " Amount conversion
+ENDCLASS.                    "lcl_customer_tests DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_list_tests IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_list_tests IMPLEMENTATION.
+  METHOD tst_free_list.
+    DATA: lo_item     TYPE REF TO lcl_open_item,
+          lo_list     TYPE REF TO lcl_items_list,
+          lo_iterator TYPE REF TO lif_iterator,
+          lv_buzei    TYPE buzei,
+          lv_bool     TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 0
+          p_zfbdt = sy-datum
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+* Perform the call
+    lo_list->free( ).
+    lo_iterator ?= lo_list->get_iterator( ).
+    lv_bool = lo_iterator->hasnext( ).
+* House keeping
+    FREE: lo_iterator, lo_list.
+* Check returned values
+    assert_equals( exp = abap_false act = lv_bool
+                   msg = 'lcl_items_list->free() failed!' ).
+  ENDMETHOD.                    "tst_free_list
+  METHOD tst_hasnext_ok.
+    DATA: lo_item     TYPE REF TO lcl_open_item,
+          lo_list     TYPE REF TO lcl_items_list,
+          lo_iterator TYPE REF TO lif_iterator,
+          lv_buzei    TYPE buzei,
+          lv_bool     TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 0
+          p_zfbdt = sy-datum
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+    lo_iterator ?= lo_list->get_iterator( ).
+* Perform the call
+    lv_bool = lo_iterator->hasnext( ).
+* House keeping
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      FREE lo_item.
+    ENDWHILE.
+    lo_list->free( ).
+    FREE: lo_iterator, lo_list.
+* Check returned values
+    assert_equals( exp = abap_true act = lv_bool
+                   msg = 'HasNext() failed!' ).
+  ENDMETHOD.                    "tst_hasnext_ok
+  METHOD tst_hasnext_nok.
+    DATA: lo_item     TYPE REF TO lcl_open_item,
+          lo_list     TYPE REF TO lcl_items_list,
+          lo_iterator TYPE REF TO lif_iterator,
+          lv_buzei    TYPE buzei,
+          lv_bool     TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 0
+          p_zfbdt = sy-datum
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+    lo_iterator ?= lo_list->get_iterator( ).
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      FREE lo_item.
+    ENDWHILE.
+* Perform the call
+    lv_bool = lo_iterator->hasnext( ).
+* House keeping
+    lo_list->free( ).
+    FREE: lo_iterator, lo_list.
+* Check returned values
+    assert_equals( exp = abap_false act = lv_bool
+                   msg = 'HasNext() failed!' ).
+  ENDMETHOD.                    "tst_hasnext_nok
+  METHOD tst_next.
+    DATA: lo_item     TYPE REF TO lcl_open_item,
+          lo_list     TYPE REF TO lcl_items_list,
+          lo_iterator TYPE REF TO lif_iterator,
+          lv_buzei    TYPE buzei.
+* Setup parameters for the call
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 0
+          p_zfbdt = sy-datum
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+    lo_iterator ?= lo_list->get_iterator( ).
+* Perform the call
+    DO 5 TIMES.
+      lo_item ?= lo_iterator->next( ).
+    ENDDO.
+    lv_buzei = lo_item->av_buzei.
+* House keeping
+    WHILE lo_iterator->hasnext( ) = abap_true.
+      lo_item ?= lo_iterator->next( ).
+      FREE lo_item.
+    ENDWHILE.
+    lo_list->free( ).
+    FREE: lo_iterator, lo_list.
+* Check returned values
+    assert_equals( exp = 5 act = lv_buzei
+                   msg = 'Next() failed!' ).
+  ENDMETHOD.                    "tst_next
+ENDCLASS.                    "lcl_list_tests IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_api_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_api_tst IMPLEMENTATION.
+  METHOD calculate_due_date.
+    r_duedt = p_zbd3t + p_zbd2t + p_zbd1t + p_zfbdt.
+  ENDMETHOD.                    "calculate_due_date
+  METHOD convert_amount.
+    r_amount = p_amount * 2.
+  ENDMETHOD.                    "convert_amount
+ENDCLASS.                    "lcl_api_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_found IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_found  IMPLEMENTATION.
+  METHOD get_blocking_data.
+    r_waers = 'BRL'.
+    r_zzbla = 500.
+    r_zzndd = 7.
+  ENDMETHOD.                    "get_blocking_data
+  METHOD get_company_currency.
+    r_waers = 'BRL'.
+  ENDMETHOD.                    "get_company_currency
+ENDCLASS.                    "lcl_db_tst_found IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_notfound IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_notfound IMPLEMENTATION.
+  METHOD get_blocking_data.
+    RAISE EXCEPTION TYPE cx_sy_sql_error.
+  ENDMETHOD.                    "get_blocking_data
+ENDCLASS.                    "lcl_db_tst_notfound IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_db_tst_fcurrency IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db_tst_fcurrency IMPLEMENTATION.
+  METHOD get_blocking_data.
+    r_waers = 'USD'.
+    r_zzbla = 500.
+    r_zzndd = 7.
+  ENDMETHOD.                    "get_blocking_data
+ENDCLASS.                    "lcl_db_tst_fcurrency IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_open_item_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_open_item_tst IMPLEMENTATION.
+  METHOD get_api.
+    DATA  lo_api TYPE REF TO lcl_api_tst.
+
+    CREATE OBJECT lo_api.
+    ro_api = lo_api.
+    FREE lo_api.
+  ENDMETHOD.                    "get_api
+  METHOD get_db.
+    DATA  lo_db TYPE REF TO lcl_db_tst_found.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_open_item_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_ok_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_ok_tst IMPLEMENTATION.
+  METHOD get_db.
+    DATA  lo_db TYPE REF TO lcl_db_tst_found.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+  METHOD get_api.
+    DATA  lo_api TYPE REF TO lcl_api_tst.
+
+    CREATE OBJECT lo_api.
+    ro_api = lo_api.
+    FREE lo_api.
+  ENDMETHOD.                    "get_api
+ENDCLASS.                    "lcl_customer_ok_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_nok_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_nok_tst IMPLEMENTATION.
+  METHOD get_db.
+    DATA  lo_db TYPE REF TO lcl_db_tst_notfound.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_customer_nok_tst IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_fcurr IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_fcurr IMPLEMENTATION.
+  METHOD get_db.
+    DATA  lo_db TYPE REF TO lcl_db_tst_fcurrency.
+
+    CREATE OBJECT lo_db.
+    ro_db = lo_db.
+    FREE lo_db.
+  ENDMETHOD.                    "get_db
+ENDCLASS.                    "lcl_customer_fcurr IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_open_item_tests IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_open_item_tests IMPLEMENTATION.
+  METHOD tst_due_date.
+    DATA: lo_item     TYPE REF TO lcl_open_item_tst,
+          ld_duedt    TYPE d.
+* Setup parameters for the call
+    CREATE OBJECT lo_item
+      EXPORTING
+        p_bukrs = space
+        p_gjahr = sy-datum(4)
+        p_belnr = space
+        p_buzei = 001
+        p_shkzg = space
+        p_dmbtr = 0
+        p_zfbdt = '19640112'
+        p_zbd1t = 1
+        p_zbd2t = 2
+        p_zbd3t = 3
+        p_rebzg = space.
+* Perform the call
+    ld_duedt = lo_item->get_due_date( ).
+* House keeping
+    FREE lo_item.
+* Check returned values
+    assert_equals( exp = '19640118' act = ld_duedt
+                   msg = 'Due date calculation failed!' ).
+  ENDMETHOD.                    "tst_due_date
+  METHOD tst_local_currency.
+    DATA: lo_item     TYPE REF TO lcl_open_item_tst,
+          lv_waerh    TYPE waerh.
+* Setup parameters for the call
+    CREATE OBJECT lo_item
+      EXPORTING
+        p_bukrs = '1000'
+        p_gjahr = sy-datum(4)
+        p_belnr = space
+        p_buzei = 001
+        p_shkzg = space
+        p_dmbtr = 0
+        p_zfbdt = sy-datum
+        p_zbd1t = 1
+        p_zbd2t = 2
+        p_zbd3t = 3
+        p_rebzg = space.
+* Perform the call
+    lo_item->set_local_currency( ).
+    lv_waerh =  lo_item->av_waerh.
+* House keeping
+    FREE lo_item.
+* Check returned values
+    assert_equals( exp = 'BRL' act = lv_waerh
+                   msg = 'Local currency setting up failed!' ).
+  ENDMETHOD.                    "tst_local_currency
+ENDCLASS.                    "lcl_open_item_tests IMPLEMENTATION
+*----------------------------------------------------------------------*
+*       CLASS lcl_customer_tests IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_customer_tests IMPLEMENTATION.
+  METHOD tst_exception_ok.
+    DATA: lo_customer TYPE REF TO lcl_customer_ok_tst,
+          lv_bool     TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_customer
+      EXPORTING
+        p_kunnr  = '0000000001'
+        p_locked = abap_false.
+* Perform the call
+    lo_customer->set_exception_data( ).
+    lv_bool = lo_customer->av_excep.
+* House keeping
+    FREE lo_customer.
+* Check returned values
+    assert_equals( exp = abap_true act = lv_bool
+                   msg = 'Exception data recovering failed!' ).
+  ENDMETHOD.                    "tst_exception_ok
+  METHOD tst_exception_nok.
+    DATA: lo_customer TYPE REF TO lcl_customer_nok_tst,
+          lv_bool     TYPE abap_bool.
+* Setup parameters for the call
+    CREATE OBJECT lo_customer
+      EXPORTING
+        p_kunnr  = '0000000002'
+        p_locked = abap_false.
+* Perform the call
+    lo_customer->set_exception_data( ).
+    lv_bool = lo_customer->av_excep.
+* House keeping
+    FREE lo_customer.
+* Check returned values
+    assert_equals( exp = abap_false act = lv_bool
+                   msg = 'Exception data recovering did not fail!' ).
+  ENDMETHOD.                    "tst_exception_nok
+  METHOD tst_amount_oldest.
+    DATA: lo_customer TYPE REF TO lcl_customer_ok_tst,
+          lo_item     TYPE REF TO lcl_open_item_tst,
+          lo_list     TYPE REF TO lcl_items_list,
+          ld_duedt    TYPE d,
+          lv_buzei    TYPE buzei,
+          lv_zzndd    TYPE zzndd,
+          lv_curlk    TYPE waers,
+          lv_amount   TYPE wrb_curr.
+* Setup parameters for the call
+    CREATE OBJECT lo_customer
+      EXPORTING
+        p_kunnr  = '0000000003'
+        p_locked = abap_false.
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      ld_duedt = sy-datum - lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 500
+          p_zfbdt = ld_duedt
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_item->set_local_currency( ).
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+    lo_customer->set_exception_data( ).
+    lo_customer->set_open_items( lo_list ).
+    lv_zzndd = lo_customer->av_zzndd.
+    lv_curlk = lo_customer->av_curlk.
+* Perform the call
+    lv_amount = lo_customer->get_amount_older_than( p_zzndd = lv_zzndd
+                                                   p_waers = lv_curlk ).
+* House keeping
+    lo_list->free( ).
+    lo_customer->free( ).
+    FREE: lo_customer, lo_list.
+* Check returned values
+    assert_equals( exp = 2000 act = lv_amount
+                   msg = 'Total amount recovering failed!' ).
+  ENDMETHOD.                    "tst_amount_oldest
+  METHOD tst_amount_convert.
+    DATA: lo_customer TYPE REF TO lcl_customer_fcurr,
+          lo_item     TYPE REF TO lcl_open_item_tst,
+          lo_list     TYPE REF TO lcl_items_list,
+          ld_duedt    TYPE d,
+          lv_buzei    TYPE buzei,
+          lv_zzndd    TYPE zzndd,
+          lv_curlk    TYPE waers,
+          lv_amount   TYPE wrb_curr.
+* Setup parameters for the call
+    CREATE OBJECT lo_customer
+      EXPORTING
+        p_kunnr  = '0000000004'
+        p_locked = abap_false.
+    CREATE OBJECT lo_list.
+    DO 10 TIMES.
+      ADD 1 TO lv_buzei.
+      ld_duedt = sy-datum - lv_buzei.
+      CREATE OBJECT lo_item
+        EXPORTING
+          p_bukrs = space
+          p_gjahr = sy-datum(4)
+          p_belnr = space
+          p_buzei = lv_buzei
+          p_shkzg = space
+          p_dmbtr = 500
+          p_zfbdt = ld_duedt
+          p_zbd1t = 0
+          p_zbd2t = 0
+          p_zbd3t = 0
+          p_rebzg = space.
+      lo_item->set_local_currency( ).
+      lo_list->add( lo_item ).
+      FREE lo_item.
+    ENDDO.
+    lo_customer->set_exception_data( ).
+    lo_customer->set_open_items( lo_list ).
+    lv_zzndd = lo_customer->av_zzndd.
+    lv_curlk = lo_customer->av_curlk.
+* Perform the call
+    lv_amount = lo_customer->get_amount_older_than( p_zzndd = lv_zzndd
+                                                   p_waers = lv_curlk ).
+* House keeping
+    lo_list->free( ).
+    lo_customer->free( ).
+    FREE: lo_customer, lo_list.
+* Check returned values
+    assert_equals( exp = 4000 act = lv_amount
+                   msg = 'Amount convertion failed!' ).
+  ENDMETHOD.                    "tst_amount_convert
+ENDCLASS.                    "lcl_customer_tests IMPLEMENTATION
