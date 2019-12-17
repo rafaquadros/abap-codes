@@ -1,0 +1,501 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CLAS CLSNAME="ZCL_TIMER" VERSION="1" LANGU="E" DESCRIPT="Timer" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" WITH_UNIT_TESTS="X" DURATION_TYPE="0 " RISK_LEVEL="0 " ZSAPLINK_PLUGIN_MAJOR_VERSION="0 " ZSAPLINK_PLUGIN_MINOR_VERSION="1 " ZSAPLINK_PLUGIN_BUILD_VERSION="0 " ZSAPLINK_PLUGIN_INFO1="ZSAPLINK_CLASS is part of the main ZSAPLINK project --&gt; This plugin found there instead of ZSAPLINK_PLUGINS projects" ZSAPLINK_PLUGIN_INFO2="SAPLINK homepage: https://www.assembla.com/spaces/saplink/wiki" ZSAPLINK_PLUGIN_INFO3="Download from https://www.assembla.com/code/saplink/subversion/nodes" ZSAPLINK_PLUGIN_INFO4="and navigate to:  trunk -&gt; core -&gt; ZSAPLINK -&gt; CLAS -&gt; ZSAPLINK_CLASS.slnk">
+ <localImplementation>*&quot;* local class implementation for public class
+*&quot;* use this source file for the implementation part of
+*&quot;* local helper classes</localImplementation>
+ <localTypes>*&quot;* use this source file for any type declarations (class
+*&quot;* definitions, interfaces or data types) you need for method
+*&quot;* implementation or private method&apos;s signature</localTypes>
+ <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+ <localTestClasses>CLASS abap_unit_testclass DEFINITION DEFERRED.
+CLASS zcl_timer DEFINITION LOCAL FRIENDS abap_unit_testclass.
+
+* ----------------------------------------------------------------------
+CLASS abap_unit_testclass DEFINITION FOR TESTING  &quot;#AU Duration Medium
+                                                  &quot;#AU Risk_Level Harmless
+.
+* ----------------------------------------------------------------------
+* ===============
+  PUBLIC SECTION.
+* ===============
+
+* ==================
+  PROTECTED SECTION.
+* ==================
+
+* ================
+  PRIVATE SECTION.
+* ================
+    DATA:
+      mr_cut TYPE REF TO zcl_timer.                         &quot;#EC NOTEXT
+
+    METHODS: setup,
+             teardown,
+             tst_start_ok FOR TESTING,
+             tst_start_nok FOR TESTING,
+             tst_stop_ok  FOR TESTING,
+             tst_stop_nok FOR TESTING,
+             tst_restart_ok FOR TESTING,
+             tst_restart_nok FOR TESTING,
+             tst_reset FOR TESTING,
+             &quot;tst_duration_mc FOR TESTING, &quot;Duration in microseconds
+             tst_duration_ms FOR TESTING, &quot;Duration in milliseconds
+             tst_duration_sc FOR TESTING, &quot;Duration in seconds
+             tst_duration_mn FOR TESTING, &quot;Duration in minutes
+             tst_duration_hr FOR TESTING, &quot;Duration in hours.
+             tst_duration_progress FOR TESTING,
+             tst_duration_stoped FOR TESTING.
+ENDCLASS.       &quot;Abap_Unit_Testclass
+* ----------------------------------------------------------------------
+CLASS abap_unit_testclass IMPLEMENTATION.
+* ----------------------------------------------------------------------
+
+* ----------------------------------------------------------------------
+  METHOD setup.
+* ----------------------------------------------------------------------
+
+    CREATE OBJECT mr_cut.
+  ENDMETHOD.       &quot;Setup
+
+* ----------------------------------------------------------------------
+  METHOD teardown.
+* ----------------------------------------------------------------------
+
+
+  ENDMETHOD.       &quot;Teardown
+
+* ----------------------------------------------------------------------
+  METHOD tst_start_ok.
+* ----------------------------------------------------------------------
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    &quot;When
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    &quot;Then
+    cl_aunit_assert=&gt;assert_not_initial( act = mr_cut-&gt;m_started_at ).
+  ENDMETHOD.                    &quot;tst_start_ok
+
+* ----------------------------------------------------------------------
+  METHOD tst_start_nok.
+* ----------------------------------------------------------------------
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    &quot;When
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        &quot;Then
+        cl_aunit_assert=&gt;assert_differs( exp = mr_cut-&gt;m_started_at
+                                         act = mr_cut-&gt;m_stoped_at  ).
+        RETURN.
+    ENDTRY.
+
+    cl_aunit_assert=&gt;fail( ).
+  ENDMETHOD.                    &quot;tst_start_nok
+
+* ----------------------------------------------------------------------
+  METHOD tst_stop_ok.
+* ----------------------------------------------------------------------
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    &quot;When
+    TRY .
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    &quot;Then
+    cl_aunit_assert=&gt;assert_not_initial( act = mr_cut-&gt;m_stoped_at ).
+  ENDMETHOD.                    &quot;tst_stop_ok
+
+* ----------------------------------------------------------------------
+  METHOD tst_stop_nok.
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE int4.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    l_witness = mr_cut-&gt;m_duration.
+
+    &quot;When
+    TRY .
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_not_running.
+        &quot;Then
+        cl_aunit_assert=&gt;assert_equals( exp = l_witness
+                                        act = mr_cut-&gt;m_duration  ).
+        RETURN.
+
+    ENDTRY.
+
+    cl_aunit_assert=&gt;fail( ).
+  ENDMETHOD.                    &quot;tst_stop_nok
+
+* ----------------------------------------------------------------------
+  METHOD tst_restart_ok.
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE timestampl.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    l_witness = mr_cut-&gt;m_stoped_at.
+
+    &quot;When
+    TRY .
+        mr_cut-&gt;restarts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_differs( exp = mr_cut-&gt;m_stoped_at
+                                     act = l_witness      ).
+  ENDMETHOD.                    &quot;tst_restart_ok
+
+* ----------------------------------------------------------------------
+  METHOD tst_restart_nok.
+* ----------------------------------------------------------------------
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    &quot;When
+    TRY .
+        mr_cut-&gt;restarts( ).
+      CATCH zcx_timer_already_running.
+        &quot;Then
+        cl_aunit_assert=&gt;assert_differs( exp = mr_cut-&gt;m_started_at
+                                         act = mr_cut-&gt;m_stoped_at  ).
+        RETURN.
+    ENDTRY.
+
+    cl_aunit_assert=&gt;fail( ).
+  ENDMETHOD.                    &quot;tst_restart_nok
+
+* ----------------------------------------------------------------------
+  METHOD tst_reset.
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE timestampl.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    l_witness = mr_cut-&gt;m_started_at.
+
+    &quot;When
+    mr_cut-&gt;reset( ).
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_differs( exp = l_witness
+                                     act = mr_cut-&gt;m_started_at  ).
+
+  ENDMETHOD.                    &quot;tst_reset
+
+** ----------------------------------------------------------------------
+*  METHOD tst_duration_mc. &quot;Duration in microseconds
+** ----------------------------------------------------------------------
+*    DATA l_witness TYPE int4.
+*
+*    &quot;Given
+*    mr_cut-&gt;reset( ).
+*    TRY .
+*        mr_cut-&gt;starts( ).
+*        mr_cut-&gt;stops( ).
+*      CATCH zcx_timer_already_running
+*            zcx_timer_not_running.
+*        cl_aunit_assert=&gt;fail( ).
+*    ENDTRY.
+*
+*    GET RUN TIME FIELD mr_cut-&gt;m_last_measure.
+*    mr_cut-&gt;m_duration = 1000000.
+*
+*    l_witness = mr_cut-&gt;get_duration( i_timeunit = &apos;B98&apos; ).
+*
+*    &quot;Then
+*    cl_aunit_assert=&gt;assert_equals( exp = 1000000
+*                                    act = l_witness ).
+*  ENDMETHOD.                    &quot;tst_duration_mc
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_ms. &quot;Duration in milliseconds
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE int4.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    GET RUN TIME FIELD mr_cut-&gt;m_last_measure.
+    mr_cut-&gt;m_duration = 1000000.
+
+    l_witness = mr_cut-&gt;get_duration( i_timeunit = &apos;C26&apos; ).
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_equals( exp = 1000
+                                    act = l_witness ).
+  ENDMETHOD.                    &quot;tst_duration_ms
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_sc. &quot;Duration in seconds
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE ztimedura.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    mr_cut-&gt;m_duration = 1000000.
+
+    l_witness = mr_cut-&gt;get_duration( i_timeunit = &apos;SEC&apos; ).
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_equals( exp = 1
+                                    act = l_witness ).
+  ENDMETHOD.                    &quot;tst_duration_sc
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_mn. &quot;Duration in minutes
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE timedura.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    mr_cut-&gt;m_duration = 1000000.
+
+    l_witness = mr_cut-&gt;get_duration( i_timeunit = &apos;MIN&apos; ).
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_equals( exp = &apos;0.0167&apos;
+                                    act = l_witness ).
+  ENDMETHOD.                    &quot;tst_duration_mn
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_hr. &quot;Duration in hours
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE ztimedura.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_already_running
+            zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    mr_cut-&gt;m_duration = 1000000.
+
+    l_witness = mr_cut-&gt;get_duration( i_timeunit = &apos;HUR&apos; ).
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_equals( exp = &apos;0.0003&apos;
+                                    act = l_witness ).
+  ENDMETHOD.                    &quot;tst_duration_hr
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_progress.
+* ----------------------------------------------------------------------
+    DATA: l_witness_before TYPE int4,
+          l_witness_after  TYPE int4.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    &quot;When
+    l_witness_before = mr_cut-&gt;get_duration( ).
+    DO 10 TIMES.
+      l_witness_after = mr_cut-&gt;get_duration( ).
+    ENDDO.
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_differs( exp = l_witness_before
+                                     act = l_witness_after  ).
+  ENDMETHOD.                    &quot;tst_duration_progress
+
+* ----------------------------------------------------------------------
+  METHOD tst_duration_stoped.
+* ----------------------------------------------------------------------
+    DATA: l_witness_before TYPE int4,
+          l_witness_after  TYPE int4.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+    TRY .
+        mr_cut-&gt;starts( ).
+      CATCH zcx_timer_already_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+
+    &quot;When
+    DO 10 TIMES.
+      l_witness_before = mr_cut-&gt;get_duration( ).
+    ENDDO.
+    TRY .
+        mr_cut-&gt;stops( ).
+      CATCH zcx_timer_not_running.
+        cl_aunit_assert=&gt;fail( ).
+    ENDTRY.
+    l_witness_before = mr_cut-&gt;get_duration( ).
+    DO 10 TIMES.
+      l_witness_after = mr_cut-&gt;get_duration( ).
+    ENDDO.
+
+    &quot;Then
+    cl_aunit_assert=&gt;assert_equals( exp = l_witness_before
+                                    act = l_witness_after  ).
+  ENDMETHOD.                    &quot;tst_duration_stoped
+
+ENDCLASS.       &quot;Abap_Unit_Testclass</localTestClasses>
+ <attribute CLSNAME="ZCL_TIMER" CMPNAME="M_DURATION" VERSION="1" LANGU="E" DESCRIPT="Numerical Value of Duration" EXPOSURE="0" STATE="1" EDITORDER="3 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TIMEDURA" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_TIMER" CMPNAME="M_LAST_MEASURE" VERSION="1" LANGU="E" DESCRIPT="Natural Number" EXPOSURE="0" STATE="1" EDITORDER="4 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="INT4" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_TIMER" CMPNAME="M_STARTED_AT" VERSION="1" LANGU="E" DESCRIPT="UTC Time Stamp in Long Form (YYYYMMDDhhmmssmmmuuun)" EXPOSURE="0" STATE="1" EDITORDER="1 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TIMESTAMPL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <attribute CLSNAME="ZCL_TIMER" CMPNAME="M_STOPED_AT" VERSION="1" LANGU="E" DESCRIPT="UTC Time Stamp in Long Form (YYYYMMDDhhmmssmmmuuun)" EXPOSURE="0" STATE="1" EDITORDER="2 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="TIMESTAMPL" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+ <method CLSNAME="ZCL_TIMER" CMPNAME="GET_DURATION" VERSION="1" LANGU="E" DESCRIPT="Returns the current duration in the specified unit" EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+  <parameter CLSNAME="ZCL_TIMER" CMPNAME="GET_DURATION" SCONAME="I_TIMEUNIT" VERSION="1" LANGU="E" DESCRIPT="Time unit" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="ZTIME_UNIT" PAROPTIONL="X"/>
+  <parameter CLSNAME="ZCL_TIMER" CMPNAME="GET_DURATION" SCONAME="R_DURATION" VERSION="1" LANGU="E" DESCRIPT="Numerical Value of Duration" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZTIMEDURA"/>
+  <source>METHOD get_duration.
+  DATA l_current_measure TYPE int4.
+
+  IF me-&gt;m_stoped_at IS INITIAL.
+    GET RUN TIME FIELD l_current_measure.
+    me-&gt;m_duration = me-&gt;m_duration + l_current_measure - m_last_measure.
+    m_last_measure = l_current_measure.
+  ENDIF.
+
+  CASE i_timeunit.
+    WHEN &apos;C26&apos;. &quot;milliseconds
+      r_duration = me-&gt;m_duration / 1000.
+    WHEN &apos;SEC&apos;. &quot;seconds
+      r_duration = me-&gt;m_duration / 1000000.
+    WHEN &apos;MIN&apos;. &quot;Minutes
+      r_duration = me-&gt;m_duration / 60000000.
+    WHEN &apos;HUR&apos;. &quot;Hours
+      r_duration = me-&gt;m_duration / 3600000000.
+    WHEN OTHERS. &quot;microseconds = &apos;B98&apos;
+      r_duration = me-&gt;m_duration.
+  ENDCASE.
+ENDMETHOD.</source>
+ </method>
+ <method CLSNAME="ZCL_TIMER" CMPNAME="RESET" VERSION="1" LANGU="E" DESCRIPT="Resets the timer" EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+  <source>method RESET.
+
+  CLEAR: me-&gt;m_started_at, me-&gt;m_stoped_at, me-&gt;m_last_measure, me-&gt;m_duration.
+endmethod.</source>
+ </method>
+ <method CLSNAME="ZCL_TIMER" CMPNAME="RESTARTS" VERSION="1" LANGU="E" DESCRIPT="ReStarts time counting" EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+  <exception CLSNAME="ZCL_TIMER" CMPNAME="RESTARTS" SCONAME="ZCX_TIMER_ALREADY_RUNNING" VERSION="1" LANGU="E" DESCRIPT="Timer already running" MTDTYPE="0" EDITORDER="1 "/>
+  <source>METHOD restarts.
+  DATA l_current_measure TYPE int4.
+
+  IF me-&gt;m_stoped_at IS INITIAL.
+    RAISE EXCEPTION TYPE zcx_timer_already_running.
+  ENDIF.
+
+  CLEAR me-&gt;m_stoped_at.
+
+  GET RUN TIME FIELD l_current_measure.
+  me-&gt;m_duration = me-&gt;m_duration + l_current_measure - m_last_measure.
+  m_last_measure = l_current_measure.
+ENDMETHOD.</source>
+ </method>
+ <method CLSNAME="ZCL_TIMER" CMPNAME="STARTS" VERSION="1" LANGU="E" DESCRIPT="Starts time counting" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+  <exception CLSNAME="ZCL_TIMER" CMPNAME="STARTS" SCONAME="ZCX_TIMER_ALREADY_RUNNING" VERSION="1" LANGU="E" DESCRIPT="Timer already running" MTDTYPE="0" EDITORDER="1 "/>
+  <source>METHOD starts.
+
+  IF me-&gt;m_started_at IS NOT INITIAL AND me-&gt;m_stoped_at IS INITIAL.
+    RAISE EXCEPTION TYPE zcx_timer_already_running.
+  ELSEIF me-&gt;m_started_at IS NOT INITIAL AND me-&gt;m_stoped_at IS NOT INITIAL.
+    TRY .
+        me-&gt;restarts( ).
+        RETURN.
+      CATCH zcx_timer_already_running.
+        RAISE EXCEPTION TYPE zcx_timer_already_running.
+    ENDTRY.
+  ENDIF.
+
+  CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP me-&gt;m_started_at TIME ZONE sy-zonlo.
+  GET RUN TIME FIELD me-&gt;m_last_measure.
+
+ENDMETHOD.</source>
+ </method>
+ <method CLSNAME="ZCL_TIMER" CMPNAME="STOPS" VERSION="1" LANGU="E" DESCRIPT="Stops time counting" EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+  <exception CLSNAME="ZCL_TIMER" CMPNAME="STOPS" SCONAME="ZCX_TIMER_NOT_RUNNING" VERSION="1" LANGU="E" DESCRIPT="Timer is not running" MTDTYPE="0" EDITORDER="1 "/>
+  <source>METHOD stops.
+  DATA l_current_measure TYPE int4.
+
+  IF me-&gt;m_stoped_at IS NOT INITIAL.
+    RAISE EXCEPTION TYPE zcx_timer_not_running.
+  ENDIF.
+
+  GET RUN TIME FIELD l_current_measure.
+
+  me-&gt;m_duration = me-&gt;m_duration + l_current_measure - m_last_measure.
+  m_last_measure = l_current_measure.
+  CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP me-&gt;m_stoped_at TIME ZONE sy-zonlo.
+ENDMETHOD.</source>
+ </method>
+</CLAS>
