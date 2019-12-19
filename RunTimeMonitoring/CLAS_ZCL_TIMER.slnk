@@ -36,6 +36,7 @@ CLASS abap_unit_testclass DEFINITION FOR TESTING  &quot;#AU Duration Medium
              tst_start_nok FOR TESTING,
              tst_stop_ok  FOR TESTING,
              tst_stop_nok FOR TESTING,
+             tst_stop_not_started FOR TESTING,
              tst_restart_ok FOR TESTING,
              tst_restart_nok FOR TESTING,
              tst_reset FOR TESTING,
@@ -153,6 +154,20 @@ CLASS abap_unit_testclass IMPLEMENTATION.
 
     cl_aunit_assert=&gt;fail( ).
   ENDMETHOD.                    &quot;tst_stop_nok
+
+* ----------------------------------------------------------------------
+  METHOD tst_stop_not_started.
+* ----------------------------------------------------------------------
+    DATA l_witness TYPE int4.
+
+    &quot;Given
+    mr_cut-&gt;reset( ).
+
+    &quot;When
+    l_witness = mr_cut-&gt;get_duration( ).
+    &quot;Then
+    cl_aunit_assert=&gt;assert_initial( act = l_witness ).
+  ENDMETHOD.                    &quot;tst_stop_not_started
 
 * ----------------------------------------------------------------------
   METHOD tst_restart_ok.
@@ -420,6 +435,12 @@ ENDCLASS.       &quot;Abap_Unit_Testclass</localTestClasses>
   <source>METHOD get_duration.
   DATA l_current_measure TYPE int4.
 
+  CLEAR r_duration.
+
+  IF me-&gt;m_started_at IS INITIAL.
+    RETURN.
+  ENDIF.
+
   IF me-&gt;m_stoped_at IS INITIAL.
     GET RUN TIME FIELD l_current_measure.
     me-&gt;m_duration = me-&gt;m_duration + l_current_measure - m_last_measure.
@@ -487,7 +508,7 @@ ENDMETHOD.</source>
   <source>METHOD stops.
   DATA l_current_measure TYPE int4.
 
-  IF me-&gt;m_stoped_at IS NOT INITIAL.
+  IF me-&gt;m_stoped_at IS NOT INITIAL OR me-&gt;m_started_at IS INITIAL.
     RAISE EXCEPTION TYPE zcx_timer_not_running.
   ENDIF.
 
