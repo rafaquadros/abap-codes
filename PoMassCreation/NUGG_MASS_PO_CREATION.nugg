@@ -1,0 +1,1758 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="MASS_PO_CREATION">
+ <PROG NAME="ZMMR061" VARCL="X" SUBC="1" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" FIXPT="X" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="I" KEY="001" ENTRY="File path and name" LENGTH="30 "/>
+    <textElement ID="I" KEY="002" ENTRY="Tab separated values with no header line" LENGTH="60 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Please provide the file path and name." LENGTH="50 "/>
+    <textElement ID="I" KEY="P01" ENTRY="Create PO" LENGTH="20 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Mass creation of Service POs" LENGTH="40 "/>
+    <textElement ID="R" ENTRY="Mass creation of Service POs" LENGTH="28 "/>
+    <textElement ID="S" KEY="P_FILE" ENTRY="        Path+File name" LENGTH="22 "/>
+   </language>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="001" ENTRY="Caminho e nome do arquivo" LENGTH="30 "/>
+    <textElement ID="I" KEY="002" ENTRY="Valores separados por tabulação, sem linhas de cabeçalho." LENGTH="60 "/>
+    <textElement ID="I" KEY="M01" ENTRY="Por favor, forneça o caminho e o nome do arquivo." LENGTH="50 "/>
+    <textElement ID="I" KEY="P01" ENTRY="Criar Pedido" LENGTH="20 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Criação em massa de POs de serviço" LENGTH="40 "/>
+    <textElement ID="R" ENTRY="Criação em massa de POs de serviço" LENGTH="70 "/>
+    <textElement ID="S" KEY="P_FILE" ENTRY="        Caminho e nome do arquivo" LENGTH="33 "/>
+   </language>
+  </textPool>
+  <source>************************************************************************
+* Autor      : META - Rafael Guares Quadros                            *
+* Data       : 06.08.2019                                              *
+* Descrição  : Criação de pedidos de frete em massa                    *
+************************************************************************
+*                    Histórico das Modificações                        *
+*----------------------------------------------------------------------*
+* Versão  | Autor        | Data       | Request nº                     *
+*----------------------------------------------------------------------*
+* VER-nnn | &lt;User ID&gt;    | dd.mm.aaaa | &lt;Request&gt;                      *
+* Objetivo   :                                                         *
+************************************************************************
+
+INCLUDE: zmmr061_top                             ,   &quot; global Data
+         zmmr061_p01.                                &quot; classes implementations
+* INCLUDE ZMMR061_O01                             .  &quot; PBO-Modules
+* INCLUDE ZMMR061_I01                             .  &quot; PAI-Modules
+* INCLUDE ZMMR061_F01                             .  &quot; FORM-Routines
+
+INITIALIZATION.
+  CREATE OBJECT r_report.
+  CLEAR p_file.
+
+AT SELECTION-SCREEN ON p_file.
+  IF r_report-&gt;mr_media IS INITIAL.
+    FREE: r_desktop, r_server.
+    p_file = r_report-&gt;get_field_value( &apos;P_FILE&apos; ).
+
+
+    IF p_file IS NOT INITIAL OR p_file CO space.
+      TRY .
+          CREATE OBJECT r_server
+            EXPORTING
+              i_filename = p_file.
+
+          r_server-&gt;open_file( ).
+          r_server-&gt;close_file( ).
+          r_report-&gt;mr_media ?= r_server.
+        CATCH cx_bapi_error.
+          CREATE OBJECT r_desktop
+            EXPORTING
+              i_filename = p_file.
+          r_report-&gt;mr_media ?= r_desktop.
+      ENDTRY.
+
+      p_file = r_report-&gt;mr_media-&gt;m_filename.
+    ELSE.
+      IF p_file IS INITIAL.
+        MESSAGE &apos;Please provide the file path and name.&apos;(m01) TYPE &apos;E&apos; DISPLAY LIKE &apos;I&apos;.
+        LEAVE TO CURRENT TRANSACTION.
+      ENDIF.
+    ENDIF.
+
+
+  ENDIF.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_file.
+  DATA: t_file_table TYPE filetable,
+        rc           TYPE i.
+  FIELD-SYMBOLS  &lt;s_file_table&gt; TYPE file_table.
+
+  CLEAR: t_file_table, rc.
+  cl_gui_frontend_services=&gt;file_open_dialog(
+    EXPORTING
+*      window_title            = window_title
+*      default_extension       = default_extension
+*      default_filename        = default_filename
+*      file_filter             = file_filter
+*      with_encoding           = with_encoding
+*      initial_directory       = initial_directory
+      multiselection          = abap_false
+    CHANGING
+      file_table              = t_file_table
+      rc                      = rc
+*      user_action             = user_action
+*      file_encoding           = file_encoding
+    EXCEPTIONS
+      file_open_dialog_failed = 1
+      cntl_error              = 2
+      error_no_gui            = 3
+      not_supported_by_gui    = 4
+         ).
+  IF sy-subrc &lt;&gt; 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+               WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+  READ TABLE t_file_table ASSIGNING &lt;s_file_table&gt; INDEX 1.
+  IF sy-subrc = 0.
+    p_file = &lt;s_file_table&gt;-filename.
+  ENDIF.
+
+START-OF-SELECTION.
+  r_report-&gt;get_data( ).
+
+END-OF-SELECTION.
+  IF sy-batch IS INITIAL.
+    r_report-&gt;show_data( ).
+  ELSE.
+    r_report-&gt;background_create_po( ).
+  ENDIF.</source>
+ </PROG>
+ <PROG NAME="ZMMR061_TOP" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZMMR061_TOP" LENGTH="19 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include ZMMR061_TOP                                       Report ZMMR061
+*&amp;
+*&amp;---------------------------------------------------------------------*
+
+REPORT   zmmr061 MESSAGE-ID zmm.
+
+*----------------------------------------------------------------------*
+* TYPES
+*----------------------------------------------------------------------*
+TYPE-POOLS abap.
+
+INCLUDE zmmr061_d01. &quot;Classes definitions
+
+*----------------------------------------------------------------------*
+* SCREEN SELECTION
+*----------------------------------------------------------------------*
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+PARAMETERS p_file  TYPE string &quot;MEMORY ID zmmr061_fpt
+           LOWER CASE.
+SELECTION-SCREEN COMMENT  /1(79) text-002.
+SELECTION-SCREEN END OF BLOCK b1.
+
+*--------------------------------------------------------------------*
+* GLOBAL ATOMIC VARIABLES
+*--------------------------------------------------------------------*
+DATA: r_desktop TYPE REF TO lcl_desktop,
+      r_server  TYPE REF TO lcl_server,
+      r_report  TYPE REF TO lcl_report.
+*--------------------------------------------------------------------*
+* MACROS
+*--------------------------------------------------------------------*
+DEFINE m_raise_fm_exception.
+  message id &amp;1
+          type &amp;2
+          number &amp;3
+          with &amp;4 &amp;5 &amp;6 &amp;7
+          into l_message.
+
+  append initial line to lt_return assigning &lt;ls_return&gt;.
+  &lt;ls_return&gt;-id         = sy-msgid.
+  &lt;ls_return&gt;-type       = sy-msgty.
+  &lt;ls_return&gt;-number     = sy-msgno.
+  &lt;ls_return&gt;-message    = l_message.
+  &lt;ls_return&gt;-message_v1 = sy-msgv1.
+  &lt;ls_return&gt;-message_v2 = sy-msgv2.
+  &lt;ls_return&gt;-message_v3 = sy-msgv3.
+  &lt;ls_return&gt;-message_v4 = sy-msgv4.
+
+  raise exception type cx_bapi_error
+   exporting
+     status = lt_return.
+END-OF-DEFINITION.
+DEFINE m_show_first_msg.
+  read table lx_error-&gt;status with key type = &apos;E&apos; assigning field-symbol(&lt;ls_return&gt;).
+  if sy-subrc = 0.
+    message id     &lt;ls_return&gt;-id
+            type   &lt;ls_return&gt;-type
+            number &lt;ls_return&gt;-number
+            with   &lt;ls_return&gt;-message_v1
+                   &lt;ls_return&gt;-message_v2
+                   &lt;ls_return&gt;-message_v3
+                   &lt;ls_return&gt;-message_v4.
+  else.
+    raise exception lx_error.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_fill_msg.
+  ls_msg-msgty     = &amp;1.
+  ls_msg-msgid     = &amp;2.
+  ls_msg-msgno     = &amp;3.
+  ls_msg-msgv1     = &amp;4.
+  ls_msg-msgv2     = &amp;5.
+  ls_msg-msgv3     = &amp;6.
+  ls_msg-msgv4     = &amp;7.
+  ls_msg-detlevel  = &amp;8.
+END-OF-DEFINITION.
+DEFINE m_raise_message.
+  read table lx_error-&gt;status with key type = &apos;E&apos;
+   assigning &lt;ls_return&gt;.
+  if sy-subrc = 0.
+    message
+         id &lt;ls_return&gt;-id
+       type &lt;ls_return&gt;-type
+     number &lt;ls_return&gt;-number
+       with &lt;ls_return&gt;-message_v1 &lt;lw_return&gt;-message_v2
+            &lt;ls_return&gt;-message_v3 &lt;lw_return&gt;-message_v4.
+  endif.
+END-OF-DEFINITION.
+DEFINE m_get_file_content.
+  lr_iterator ?= me-&gt;mr_file-&gt;get_iterator( ).
+  while lr_iterator-&gt;hasnext( ) = abap_true.
+    lr_fline ?= lo_iterator-&gt;next( ).
+    append lr_fline-&gt;ms_line-dummy to lt_filecontent.
+  endwhile.
+END-OF-DEFINITION.
+DEFINE m_assign2header.
+  ls_header-&amp;1  = &lt;ls_output&gt;-&amp;2.
+  ls_headerx-&amp;1 = abap_true.
+END-OF-DEFINITION.
+DEFINE m_assign2item.
+  &lt;ls_item&gt;-&amp;1 = &lt;ls_output&gt;-&amp;2.
+  &lt;ls_itemx&gt;-&amp;1 = abap_true.
+END-OF-DEFINITION.
+DEFINE m_assign2account.
+  &lt;ls_account&gt;-&amp;1  = &lt;ls_output&gt;-&amp;2.
+  &lt;ls_accountx&gt;-&amp;1 = abap_true.
+END-OF-DEFINITION.</source>
+ </PROG>
+ <PROG NAME="ZMMR061_D01" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZMMR061_D01" LENGTH="19 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp;  Include           ZMMR061_D01
+*&amp;---------------------------------------------------------------------*
+
+* Naming notation:
+*  [V][C][T]_[name]
+*  where: .[V] stands for visibility, e.g.: g for global, l for local;
+*         .[C] stands for category, e.g.: a for class attributes,
+*                                         v for variable, c for
+*                                         constants, y for types,
+*                                         w for structured work area,
+*                                         t for tables,
+*                                         f for field-symbols etc;
+*         .[T] stands for type, e.g.: i for integer, d for data, etc.
+* Obs: Structured types and types defined in Abap dictionary do not
+*      have a [T] identification.
+
+* Specification structure:
+*  .Classes:
+*    ..OVERVIEW clause: A conceptual description of the class.
+*  .Methods and Procedures (Sub-routines):
+*    ..REQUIRES clause: states a precondition, e.g., a an obligation on
+*                       the client (ie, the caller of the method).
+*                       It&apos;s a condition over the state in which the
+*                       method is invoked. If the precondition does not
+*                       hold, the implementation of the method is free
+*                       to do anything (including not terminating,
+*                       throwing an exception, returning arbitrary
+*                       results, making arbitrary modifications, etc).
+*    ..EFFECTS clause:  states a postcondition, e.g., an obligation on
+*                       the implementor of the method. If the
+*                       precondition holds for the invoking state,
+*                       the method is obliged to obey the postcondition,
+*                       by returning appropriate values,
+*                       throwing specified exceptions, modifying or not
+*                       modifying objects, and so on.
+*    ..MODIFIES clause: identifies which objects or data structures may
+*                       be modified.
+
+*--------------------------------------------------------------------*
+* INTERFACES DEFINITIONS
+*--------------------------------------------------------------------*
+*--------------------------------------------------------------------*
+* INTERFACE  LIF_ITERATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This interface defines an interator.
+*--------------------------------------------------------------------*
+INTERFACE lif_iterator.
+  DATA  m_next TYPE int4 READ-ONLY.
+  METHODS: rewind,
+*--------------------------------------------------------------------*
+* REWIND
+*--------------------------------------------------------------------*
+*       MODIFIES:  Position on First Object.
+*--------------------------------------------------------------------*
+           first   RETURNING value(rr_object)  TYPE REF TO object,
+*--------------------------------------------------------------------*
+* FIRST
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns First Object.
+*--------------------------------------------------------------------*
+* &lt;-- RR_OBJECT  The first object.
+*--------------------------------------------------------------------*
+            next    RETURNING value(rr_object) TYPE REF TO object,
+*--------------------------------------------------------------------*
+* NEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns Next Object.
+*--------------------------------------------------------------------*
+* &lt;-- RROBJECT The next object.
+*--------------------------------------------------------------------*
+            hasnext RETURNING value(r_result)  TYPE abap_bool.
+*--------------------------------------------------------------------*
+* HASNEXT
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the result.
+*--------------------------------------------------------------------*
+* &lt;-- R_RESULT The next object.
+*--------------------------------------------------------------------*
+ENDINTERFACE.                    &quot;lif_iterator  PUBLIC
+*--------------------------------------------------------------------*
+* CLASSES DEFINITIONS
+*--------------------------------------------------------------------*
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file line.
+*----------------------------------------------------------------------*
+CLASS lcl_file_line DEFINITION.
+  PUBLIC SECTION.
+    DATA  ms_line TYPE zmme061.
+    METHODS  constructor IMPORTING is_fline TYPE zmme061.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_line.
+*--------------------------------------------------------------------*
+*  --&gt; IS_FLINE     File line.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_line DEFINITION
+*----------------------------------------------------------------------*
+*       CLASS lcl_file_iterator DEFINITION
+*----------------------------------------------------------------------*
+* OVERVIEW: This class represents a file iterator.
+*----------------------------------------------------------------------*
+CLASS lcl_file_iterator DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES lif_iterator.
+    ALIASES: m_next  FOR lif_iterator~m_next,
+             rewind  FOR lif_iterator~rewind,
+             next    FOR lif_iterator~next,
+             hasnext FOR lif_iterator~hasnext.
+    METHODS constructor IMPORTING it_fcontent TYPE zmmct061.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA: mt_structured_content TYPE zmmct061,
+          m_lines               TYPE int4.
+ENDCLASS.                    &quot;lcl_file_iterator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file.
+*--------------------------------------------------------------------*
+CLASS lcl_file DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING it_fcontent TYPE table_of_strings,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file.
+*--------------------------------------------------------------------*
+             get_iterator RETURNING value(rr_iterator)
+                                               TYPE REF TO lif_iterator.
+*--------------------------------------------------------------------*
+* GET_ITERATOR
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns a file iterator.
+*--------------------------------------------------------------------*
+* &lt;-- RR_ITERATOR    The iterator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    DATA:  mt_filecontent        TYPE table_of_strings,
+           mt_structured_content TYPE zmmct061.
+ENDCLASS.                    &quot;lcl_file DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_WITH_SEPARATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file with its fields delimited by
+*           a separator.
+*--------------------------------------------------------------------*
+CLASS lcl_file_with_separator DEFINITION ABSTRACT
+                                         INHERITING FROM lcl_file.
+  PUBLIC SECTION.
+    DATA  m_separator TYPE char01 READ-ONLY.
+    METHODS  constructor IMPORTING value(i_separator) TYPE char01
+                                   value(it_content)
+                                                  TYPE table_of_strings.
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_file_with_separator.
+*--------------------------------------------------------------------*
+  PROTECTED SECTION.
+    METHODS  parse_file.
+*--------------------------------------------------------------------*
+* PARSE_FILE
+*--------------------------------------------------------------------*
+*       MODIFIES:  Puts the file in a structured form.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_with_separator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_TXT
+* ------------------------------------------------------------------ *
+* OVERVIEW: Represents a TAB separated file.
+*--------------------------------------------------------------------*
+CLASS lcl_tab DEFINITION INHERITING FROM lcl_file_with_separator.
+  PUBLIC SECTION.
+    METHODS  constructor IMPORTING value(it_content)
+                                                  TYPE table_of_strings.
+ENDCLASS.                    &quot;lcl_txt DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_MEDIA
+* ------------------------------------------------------------------ *
+* OVERVIEW: Generic definition of a file media. It defines basic
+*           methods for a media.
+*--------------------------------------------------------------------*
+CLASS lcl_media DEFINITION ABSTRACT.
+  PUBLIC SECTION.
+    DATA: m_filename TYPE string READ-ONLY,
+          mr_file    TYPE REF TO lcl_file READ-ONLY.
+    METHODS: open_file   RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* OPEN_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Retrieves the file content.
+*--------------------------------------------------------------------*
+             close_file  ABSTRACT RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CLOSE_FILE
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Closes the file.
+*--------------------------------------------------------------------*
+             get_file_name RETURNING value(r_fname) TYPE string,
+*--------------------------------------------------------------------*
+* GET_FILE_NAME
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Returns the file name.
+*--------------------------------------------------------------------*
+             free.
+
+  PROTECTED SECTION.
+    METHODS: confirm_filepathname IMPORTING i_path     TYPE string
+                                            i_name     TYPE string
+                                  EXPORTING r_pathname TYPE string
+                                  RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONFIRM_FILEPATHNAME
+*--------------------------------------------------------------------*
+*       REQUIRES: Current path and file name must be given.
+*       EFFECTS.: Returns the user option for path and file name.
+*--------------------------------------------------------------------*
+*  --&gt; I_PATH     Path.
+*  --&gt; I_NAME     File name.
+*  &lt;-- R_PATHNAME Full name (Path + File name).
+*--------------------------------------------------------------------*
+              open  ABSTRACT RAISING cx_bapi_error.
+*--------------------------------------------------------------------*
+* OPEN_OTHERS
+*--------------------------------------------------------------------*
+*       REQUIRES: The file name, including path, must be given.
+*       MODIFIES:  Creates an object of type lcl_csv or lcl_txt and
+*                  stores it in o_file attribute.
+*--------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_media DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_DESKTOP
+* ------------------------------------------------------------------ *
+* OVERVIEW: Desktop OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_desktop DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING i_filename TYPE string OPTIONAL,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             close_file    REDEFINITION.
+  PROTECTED SECTION.
+    TYPE-POOLS truxs.
+    METHODS  open  REDEFINITION.
+ENDCLASS.                    &quot;lcl_desktop DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_SERVER
+* ------------------------------------------------------------------ *
+* OVERVIEW: Server OS file system.
+*--------------------------------------------------------------------*
+CLASS lcl_server DEFINITION INHERITING FROM lcl_media.
+  PUBLIC SECTION.
+    METHODS: constructor IMPORTING i_filename TYPE string
+                         RAISING   cx_bapi_error,
+*--------------------------------------------------------------------*
+* CONSTRUCTOR
+*--------------------------------------------------------------------*
+*       MODIFIES:  Creates an object of type lcl_media.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+*--------------------------------------------------------------------*
+             close_file    REDEFINITION.
+  PROTECTED SECTION.
+    METHODS  open REDEFINITION.
+ENDCLASS.                    &quot;lcl_server DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_FILE_VALIDATOR
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls is responsible for checking file
+*           content.
+*--------------------------------------------------------------------*
+CLASS lcl_file_validator DEFINITION.
+  PUBLIC SECTION.
+    CLASS-METHODS  check_file IMPORTING ir_file TYPE REF TO lcl_file
+                              RAISING   cx_bapi_error.
+*---------------------------------------------------------------------*
+* CHECK_FILE  S.P.E.C.I.F.I.C.A.T.I.O.N
+*---------------------------------------------------------------------*
+*       REQUIRES: A file instance must be given.
+*       EFFECTS.: If the file does not have a valid content raises
+*                 CX_BAPI_ERROR.
+*--------------------------------------------------------------------*
+*  --&gt;  IR_FILE   The file.
+*----------------------------------------------------------------------*
+ENDCLASS.                    &quot;lcl_file_validator DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_REPORT
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class controls the program behavior, provided the
+*           selection arguments have been set.
+*--------------------------------------------------------------------*
+CLASS lcl_report DEFINITION.
+  PUBLIC SECTION.
+    INTERFACES zif_salv_csqt_content_manager.
+    DATA: mr_media      TYPE REF TO lcl_media,
+          mr_log        TYPE REF TO cl_cacs_bal,
+          ms_path       TYPE string,
+          mt_output     TYPE zmmct062.
+    METHODS: get_field_value IMPORTING i_fieldname  TYPE dynfnam
+                             RETURNING value(r_fvalue) TYPE dynfieldvalue,
+*--------------------------------------------------------------------*
+* GET_FIELD_VALUE
+*--------------------------------------------------------------------*
+*       REQUIRES:  The field name must be informed.
+*       EFFECTS.:  Returns the values of a field, before PAI is
+*                  executed.
+*--------------------------------------------------------------------*
+* --&gt; I_FILENAME  Name of the file.
+* &lt;-- R_FVALUE    Field value.
+                   get_data RAISING cx_bapi_error,
+*--------------------------------------------------------------------*
+* GET_DATA
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Loads the file.
+*--------------------------------------------------------------------*
+                   show_data,
+*--------------------------------------------------------------------*
+* SHOW_DATA
+*--------------------------------------------------------------------*
+*       EFFECTS.:  Prepares data presentation.
+*--------------------------------------------------------------------*
+                   display IMPORTING ir_container TYPE REF TO cl_gui_custom_container
+                             RAISING cx_bapi_error,
+                   on_user_command        FOR EVENT added_function OF cl_salv_events
+                                          IMPORTING e_salv_function,
+                   on_after_salv_function FOR EVENT after_salv_function OF cl_salv_events
+                                          IMPORTING e_salv_function,
+                   on_link_click          FOR EVENT link_click OF cl_salv_events_table
+                                          IMPORTING row
+                                                    column,
+                   background_create_po.
+  PRIVATE SECTION.
+    DATA:
+      mr_container TYPE REF TO cl_gui_custom_container,
+      mr_view      TYPE REF TO cl_salv_table.
+    METHODS:
+      set_view,
+      set_functions,
+      set_custom_functions IMPORTING ir_functions TYPE REF TO cl_salv_functions_list,
+      set_events,
+      set_selection_multiple,
+      set_columns_styles,
+      set_columns_positions.
+ENDCLASS.                    &quot;lcl_report DEFINITION
+*--------------------------------------------------------------------*
+* CLASS  LCL_API
+* ------------------------------------------------------------------ *
+* OVERVIEW: This class mediates the call of APIs.
+*--------------------------------------------------------------------*
+CLASS lcl_api DEFINITION FINAL.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      bapi_po_create1 IMPORTING is_header    TYPE bapimepoheader
+                                is_headerx   TYPE bapimepoheaderx
+                                it_items     TYPE bapimepoitem_tp
+                                it_itemsx    TYPE bapimepoitemx_tp
+                                it_schedule  TYPE bapimeposchedule_tp
+                                it_schedulex TYPE bapimeposchedulx_tp
+                                it_account   TYPE bapimepoaccount_tp
+                                it_accountx  TYPE bapimepoaccountx_tp
+                      RETURNING value(r_ponumber) TYPE ebeln
+                      RAISING   cx_bapi_error,
+      bapi_transaction_commit RAISING cx_bapi_error,
+      conversion_exit_matn1_input IMPORTING i_input TYPE matnr
+                                  RETURNING value(r_output) TYPE string
+                                  RAISING cx_bapi_error,
+      conversion_exit_matn1_output IMPORTING i_input TYPE any
+                                   RETURNING value(r_output) TYPE matnr,
+      conversion_exit_alpha_input  IMPORTING i_input TYPE any
+                                   RETURNING value(r_output) TYPE string,
+      conversion_exit_alpha_output IMPORTING i_input TYPE any
+                                   RETURNING value(r_output) TYPE string.
+ENDCLASS.                    &quot;lcl_api DEFINITION</source>
+ </PROG>
+ <PROG NAME="ZMMR061_P01" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="300" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZMMR061_P01" LENGTH="19 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp;  Include           ZMMR061_P01
+*&amp;---------------------------------------------------------------------*
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_media
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_media IMPLEMENTATION.
+  METHOD open_file.
+    me-&gt;open( ).
+  ENDMETHOD.                    &quot;open_file
+  METHOD confirm_filepathname.
+    DATA: l_name      TYPE string,
+          l_path      TYPE string,
+          l_pathname  TYPE string,
+          l_message   TYPE string,
+          lt_return   TYPE bapiret2_t.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    CALL METHOD cl_gui_frontend_services=&gt;file_save_dialog
+      EXPORTING
+        default_file_name    = i_name
+        initial_directory    = i_path
+      CHANGING
+        filename             = l_name
+        path                 = l_path
+        fullpath             = l_pathname
+      EXCEPTIONS
+        cntl_error           = 1
+        error_no_gui         = 2
+        not_supported_by_gui = 3
+        OTHERS               = 4.
+    IF sy-subrc &lt;&gt; 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+    IF l_pathname IS NOT INITIAL.
+      r_pathname = l_pathname.
+    ELSE.
+      CONCATENATE i_path &apos;\&apos; i_name INTO r_pathname.
+    ENDIF.
+  ENDMETHOD.                    &quot;confirm_filepathname
+  METHOD get_file_name.
+    DATA: lt_fpath TYPE table_of_strings,
+          l_lines  TYPE int4.
+    FIELD-SYMBOLS  &lt;l_knot&gt; TYPE string.
+
+    SPLIT me-&gt;m_filename AT &apos;\&apos; INTO TABLE lt_fpath.
+    l_lines = LINES( lt_fpath ).
+    READ TABLE lt_fpath ASSIGNING &lt;l_knot&gt; INDEX l_lines.
+    IF sy-subrc = 0.
+      r_fname = &lt;l_knot&gt;.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_file_name
+  METHOD free.
+    FREE mr_file.
+  ENDMETHOD.                    &quot;free
+ENDCLASS.               &quot;lcl_media
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_desktop
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_desktop IMPLEMENTATION.
+  METHOD constructor.
+    DATA: lt_filetable TYPE filetable,
+          l_rc         TYPE i,
+          lr_tabt      TYPE REF TO lcl_tab.
+    FIELD-SYMBOLS  &lt;ls_fileline&gt;  TYPE file_table.
+
+    super-&gt;constructor( ).
+
+    IF i_filename IS INITIAL.
+      CALL METHOD cl_gui_frontend_services=&gt;file_open_dialog
+        CHANGING
+          file_table              = lt_filetable
+          rc                      = l_rc
+        EXCEPTIONS
+          file_open_dialog_failed = 1
+          cntl_error              = 2
+          error_no_gui            = 3
+          not_supported_by_gui    = 4
+          OTHERS                  = 5.
+      IF sy-subrc &lt;&gt; 0.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                   WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+      ENDIF.
+      READ TABLE lt_filetable INDEX 1 ASSIGNING &lt;ls_fileline&gt;.
+      IF sy-subrc = 0.
+        me-&gt;m_filename = &lt;ls_fileline&gt;-filename.
+      ENDIF.
+    ELSE.
+      m_filename = i_filename.
+    ENDIF.
+
+  ENDMETHOD.                    &quot;constructor
+  METHOD close_file.
+  ENDMETHOD.                    &quot;close_file
+  METHOD open.
+    DATA: l_message      TYPE string,
+          lt_filecontent TYPE table_of_strings,
+          lt_return      TYPE bapiret2_t,
+          lr_tab         TYPE REF TO lcl_tab.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    CALL METHOD cl_gui_frontend_services=&gt;gui_upload
+      EXPORTING
+        filename                = me-&gt;m_filename
+      CHANGING
+        data_tab                = lt_filecontent[]
+      EXCEPTIONS
+        file_open_error         = 1
+        file_read_error         = 2
+        no_batch                = 3
+        gui_refuse_filetransfer = 4
+        invalid_type            = 5
+        no_authority            = 6
+        unknown_error           = 7
+        bad_data_format         = 8
+        header_not_allowed      = 9
+        separator_not_allowed   = 10
+        header_too_long         = 11
+        unknown_dp_error        = 12
+        access_denied           = 13
+        dp_out_of_memory        = 14
+        disk_full               = 15
+        dp_timeout              = 16
+        not_supported_by_gui    = 17
+        error_no_gui            = 18
+        OTHERS                  = 19.
+    IF sy-subrc &lt;&gt; 0.
+      m_raise_fm_exception sy-msgid sy-msgty sy-msgno
+                           sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    CREATE OBJECT lr_tab
+      EXPORTING
+        it_content = lt_filecontent.
+
+    me-&gt;mr_file ?= lr_tab.
+  ENDMETHOD.                    &quot;open_others
+ENDCLASS.               &quot;lcl_desktop
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_server.
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_server IMPLEMENTATION.
+  METHOD constructor.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    super-&gt;constructor( ).
+    IF i_filename IS INITIAL.
+      m_raise_fm_exception &apos;ZMM&apos; &apos;E&apos; 002 &apos; &apos; &apos; &apos; &apos; &apos; &apos; &apos;.
+    ELSE.
+      m_filename = i_filename.
+    ENDIF.
+  ENDMETHOD.                    &quot;constructor                  &quot;open_xls
+  METHOD open.
+    DATA: l_message    TYPE string,
+          l_fileline   TYPE string,
+          lt_content   TYPE table_of_strings,
+          lt_return    TYPE bapiret2_t,
+          lr_tab       TYPE REF TO lcl_tab,
+          l_encoding   TYPE sychar01.                       &quot; RSWATCH0
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    TRY. &quot; -&gt; RSWATCH0
+        CALL METHOD cl_abap_file_utilities=&gt;check_utf8
+          EXPORTING
+            file_name = me-&gt;m_filename
+          IMPORTING
+            encoding  = l_encoding.
+
+      CATCH cx_sy_file_open cx_sy_file_authority cx_sy_file_io.
+*     File  &amp; could not be opened.
+        m_raise_fm_exception &apos;ZMM&apos; &apos;E&apos; 003 &apos; &apos; &apos; &apos; &apos; &apos; &apos; &apos;.
+    ENDTRY.
+
+    IF l_encoding = cl_abap_file_utilities=&gt;encoding_utf8 OR
+       l_encoding = cl_abap_file_utilities=&gt;encoding_7bit_ascii.
+      OPEN DATASET me-&gt;m_filename FOR INPUT IN TEXT MODE
+                         ENCODING UTF-8 SKIPPING BYTE-ORDER MARK
+                         IGNORING CONVERSION ERRORS.
+    ELSE.
+      OPEN DATASET me-&gt;m_filename FOR INPUT IN TEXT MODE
+                         ENCODING NON-UNICODE
+                         IGNORING CONVERSION ERRORS.
+    ENDIF. &quot; &lt;- RSWATCH0
+
+*    OPEN DATASET me-&gt;filename FOR INPUT IN TEXT MODE ENCODING DEFAULT.
+    IF sy-subrc NE 0.
+*     File  &amp; could not be opened.
+      m_raise_fm_exception &apos;ZMM&apos; &apos;E&apos; 003  &apos; &apos; &apos; &apos; &apos; &apos; &apos; &apos;.
+    ENDIF.
+    DO.
+      READ DATASET me-&gt;m_filename INTO l_fileline.
+      IF sy-subrc NE 0.
+        EXIT.
+      ENDIF.
+      CONCATENATE l_fileline cl_abap_char_utilities=&gt;cr_lf
+             INTO l_fileline.
+      APPEND l_fileline TO lt_content.
+      CLEAR l_fileline.
+    ENDDO.
+
+    CREATE OBJECT lr_tab
+      EXPORTING
+        it_content = lt_content.
+
+    me-&gt;mr_file ?= lr_tab.
+
+  ENDMETHOD.                    &quot;open
+  METHOD close_file.
+    CLOSE DATASET me-&gt;m_filename.
+  ENDMETHOD.                    &quot;close_file
+ENDCLASS.               &quot;lcl_server.
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_report
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_report IMPLEMENTATION.
+  METHOD show_data.
+    CALL FUNCTION &apos;ZSALV_CSQT_CREATE_CONTAINER&apos;
+      EXPORTING
+        r_content_manager = me                &quot; Parameter display
+        title             = &apos;Mass creation of Service POs&apos;(t01).
+  ENDMETHOD.                    &quot;main
+  METHOD get_field_value.
+    DATA  lt_dynpfields TYPE dynpread_tabtype.
+    FIELD-SYMBOLS  &lt;ls_dynpfield&gt;  TYPE dynpread.
+
+    APPEND  i_fieldname TO lt_dynpfields.
+
+    CALL FUNCTION &apos;DYNP_VALUES_READ&apos;
+      EXPORTING
+        dyname               = sy-repid
+        dynumb               = sy-dynnr
+      TABLES
+        dynpfields           = lt_dynpfields
+      EXCEPTIONS
+        invalid_abapworkarea = 1
+        invalid_dynprofield  = 2
+        invalid_dynproname   = 3
+        invalid_dynpronummer = 4
+        invalid_request      = 5
+        no_fielddescription  = 6
+        invalid_parameter    = 7
+        undefind_error       = 8
+        double_conversion    = 9
+        stepl_not_found      = 10
+        OTHERS               = 11.
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    READ TABLE lt_dynpfields ASSIGNING &lt;ls_dynpfield&gt;
+     WITH KEY fieldname = i_fieldname.
+    IF sy-subrc = 0.
+      r_fvalue = &lt;ls_dynpfield&gt;-fieldvalue.
+    ENDIF.
+  ENDMETHOD.                    &quot;get_field_value
+  METHOD get_data.
+    DATA: l_fname  TYPE string,
+          l_logname TYPE balnrext,
+          l_offset  TYPE int4,
+          l_size    TYPE int4.
+
+    TRY .
+      mr_media-&gt;open_file( ).
+      mr_media-&gt;close_file( ).
+      lcl_file_validator=&gt;check_file( mr_media-&gt;mr_file ).
+      l_fname = mr_media-&gt;get_file_name( ).
+
+      IF STRLEN( l_fname ) &gt; 100.
+        l_offset = STRLEN( l_fname ) - 100.
+      ELSE.
+        CLEAR l_offset.
+      ENDIF.
+      l_size = STRLEN( l_fname ) - l_offset.
+
+      l_logname = l_fname+l_offset(l_size).
+
+      TRY.
+          CREATE OBJECT mr_log
+            EXPORTING
+*                               i_handle       = i_handle
+              i_log_name     = l_logname
+              i_object       = &apos;ZMM_LOGS&apos;
+              i_subobject    = &apos;ZMM_MSPOC&apos;.
+*                               i_default_msgid = i_default_msgid
+*                               i_getmsgfilter = i_getmsgfilter
+*                               i_msgfilter    = i_msgfilter
+        CATCH cx_cacs_bal_ex .
+      ENDTRY.
+    ENDTRY.
+  ENDMETHOD.                    &quot;get_data
+  METHOD display.
+    DATA: lr_iterator TYPE REF TO lif_iterator,
+          lr_fline    TYPE REF TO lcl_file_line,
+          lx_error    TYPE REF TO cx_salv_msg,
+          lt_data     TYPE zmmct061,
+          l_message   TYPE string.
+    FIELD-SYMBOLS  &lt;ls_output&gt; TYPE zmme062.
+
+    lr_iterator = mr_media-&gt;mr_file-&gt;get_iterator( ).
+    lr_fline ?= lr_iterator-&gt;next( ).
+    WHILE lr_fline IS BOUND.
+
+      APPEND INITIAL LINE TO mt_output ASSIGNING &lt;ls_output&gt;.
+      MOVE-CORRESPONDING lr_fline-&gt;ms_line TO &lt;ls_output&gt;.
+
+      lr_fline ?= lr_iterator-&gt;next( ).
+    ENDWHILE.
+
+    TRY.
+        cl_salv_table=&gt;factory(
+          EXPORTING
+*            list_display   = if_salv_c_bool_sap=&gt;false &quot; ALV Displayed in List Mode
+            r_container    =  ir_container                         &quot; Abstract Container for GUI Controls
+*            container_name =
+            IMPORTING
+              r_salv_table   =  mr_view                         &quot; Basis Class Simple ALV Tables
+            CHANGING
+              t_table        = mt_output
+        ).
+*      CATCH cx_salv_msg. &quot; ALV: General Error Class with Message
+      CATCH cx_salv_msg INTO lx_error.
+        l_message = lx_error-&gt;get_text( ).
+        MESSAGE l_message TYPE &apos;E&apos;.
+    ENDTRY.
+
+    set_view( ).
+
+    mr_view-&gt;display( ).
+
+  ENDMETHOD.                    &quot;display
+  METHOD zif_salv_csqt_content_manager~fill_container_content.
+
+    TRY .
+        me-&gt;display( ir_container = r_container ).
+      CATCH cx_bapi_error.
+    ENDTRY.
+
+  ENDMETHOD.                    &quot;if_salv_csqt_content_manager~fill_container_content
+  METHOD set_view.
+
+    me-&gt;set_selection_multiple( ).
+
+    me-&gt;set_columns_styles( ).
+
+    me-&gt;set_columns_positions( ).
+
+    me-&gt;set_functions( ).
+
+    me-&gt;set_events( ).
+
+  ENDMETHOD.                    &quot;set_view
+  METHOD set_functions.
+    DATA  lr_functions TYPE REF TO cl_salv_functions_list.
+
+    lr_functions = mr_view-&gt;get_functions( ).
+    lr_functions-&gt;set_all(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+    lr_functions-&gt;set_export_localfile(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    me-&gt;set_custom_functions( lr_functions ).
+  ENDMETHOD.                    &quot;set_functions
+  METHOD set_custom_functions.
+    DATA: l_tooltip TYPE string,
+          l_icon    TYPE string.
+
+    l_tooltip = &apos;Create PO&apos;(p01).
+    l_icon = &apos;@9Z@&apos;. &quot;&apos;ICON_ORDER&apos;.
+
+    TRY.
+        ir_functions-&gt;add_function(
+          EXPORTING
+            name     =   &apos;ZCREATE&apos;               &quot; ALV Function
+            icon     = l_icon
+*            text     =
+            tooltip  = l_tooltip
+            position = if_salv_c_function_position=&gt;left_of_salv_functions                 &quot; Positioning Function
+        ).
+*        CATCH cx_salv_existing.   &quot; ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+  ENDMETHOD.                    &quot;set_custom_functions
+  METHOD set_events.
+    DATA  lr_events TYPE REF TO cl_salv_events_table.
+
+    lr_events = mr_view-&gt;get_event( ).
+
+    SET HANDLER: me-&gt;on_user_command FOR lr_events,
+                 me-&gt;on_after_salv_function FOR lr_events,
+                 me-&gt;on_link_click FOR lr_events.
+  ENDMETHOD.                    &quot;set_events
+  METHOD set_selection_multiple.
+    DATA  lr_selections TYPE REF TO cl_salv_selections.
+
+    lr_selections = mr_view-&gt;get_selections( ).
+
+*    lr_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;multiple ).
+
+    lr_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;row_column ).
+
+  ENDMETHOD.                    &quot;set_selection_multiple
+  METHOD set_columns_styles.
+    DATA: lr_columns TYPE REF TO cl_salv_columns_table,
+          lr_column  TYPE REF TO cl_salv_column_table.
+
+    lr_columns = me-&gt;mr_view-&gt;get_columns( ).
+    IF lr_columns IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    lr_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+    TRY .
+        lr_column ?= lr_columns-&gt;get_column( &apos;PO_NUMBER&apos; ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    IF lr_column IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    lr_column-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+  ENDMETHOD.                    &quot;set_columns_styles
+  METHOD set_columns_positions.
+    DATA  lr_columns TYPE REF TO cl_salv_columns_table.
+
+    lr_columns = me-&gt;mr_view-&gt;get_columns( ).
+    lr_columns-&gt;set_column_position( columnname = &apos;PO_NUMBER&apos; position = 1 ).
+
+  ENDMETHOD.                    &quot;set_columns_styles
+  METHOD on_user_command.
+    DATA: lr_sel       TYPE REF TO cl_salv_selections,
+          lx_error     TYPE REF TO cx_bapi_error,
+          ls_header    TYPE bapimepoheader,
+          ls_headerx   TYPE bapimepoheaderx,
+          lt_items     TYPE bapimepoitem_tp,
+          lt_itemsx    TYPE bapimepoitemx_tp,
+          lt_schedule  TYPE bapimeposchedule_tp,
+          lt_schedulex TYPE bapimeposchedulx_tp,
+          lt_account   TYPE bapimepoaccount_tp,
+          lt_accountx  TYPE bapimepoaccountx_tp,
+          lt_selected  TYPE salv_t_row,
+          lt_messages  TYPE cacs_tt_balmsg,
+          ls_msg       TYPE bal_s_msg,
+          l_tabix      TYPE sytabix,
+          l_remainder  TYPE int4,
+          l_material   TYPE matnr,
+          l_vendor     TYPE lifnr,
+          l_account    TYPE saknr,
+          l_costcenter TYPE kostl.
+    FIELD-SYMBOLS: &lt;l_index&gt;      TYPE int4,
+                   &lt;ls_output&gt;    TYPE zmme062,
+                   &lt;ls_item&gt;      TYPE bapimepoitem,
+                   &lt;ls_itemx&gt;     TYPE bapimepoitemx,
+                   &lt;ls_schedule&gt;  TYPE bapimeposchedule,
+                   &lt;ls_schedulex&gt; TYPE bapimeposchedulx,
+                   &lt;ls_account&gt;   TYPE bapimepoaccount,
+                   &lt;ls_accountx&gt;  TYPE bapimepoaccountx,
+                   &lt;ls_return&gt;    TYPE bapiret2.
+
+    IF e_salv_function &lt;&gt; &apos;ZCREATE&apos;.
+      RETURN.
+    ENDIF.
+
+    lr_sel =  mr_view-&gt;get_selections( ).
+    lt_selected = lr_sel-&gt;get_selected_rows( ).
+    LOOP AT lt_selected ASSIGNING &lt;l_index&gt;.
+
+      l_tabix = sy-tabix.
+
+      READ TABLE me-&gt;mt_output INDEX &lt;l_index&gt; ASSIGNING &lt;ls_output&gt;.
+      IF sy-subrc = 0.
+        IF &lt;ls_output&gt;-po_number IS NOT INITIAL.
+          CONTINUE.
+        ENDIF.
+        l_material = lcl_api=&gt;conversion_exit_matn1_output( &lt;ls_output&gt;-material_code ).
+        TRY .
+            l_material = lcl_api=&gt;conversion_exit_matn1_input( l_material ).
+          CATCH cx_bapi_error.
+            l_material = &lt;ls_output&gt;-material_code.
+        ENDTRY.
+
+        l_vendor = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-vendor_code ).
+        l_vendor = lcl_api=&gt;conversion_exit_alpha_input( l_vendor ).
+        ls_header-vendor = l_vendor.
+        ls_headerx-vendor = abap_true.
+        m_assign2header: comp_code  comp_code,
+                         doc_type   po_type,
+                         pmnttrms   paym_term,
+                         purch_org  pur_organization,
+                         pur_group  pur_group,
+                         currency   currency.
+        ls_header-item_intvl  = &apos;00001&apos;.
+        ls_headerx-item_intvl = abap_true.
+
+        APPEND INITIAL LINE TO: lt_items  ASSIGNING &lt;ls_item&gt;,
+                                lt_itemsx ASSIGNING &lt;ls_itemx&gt;.
+        &lt;ls_item&gt;-po_item = &lt;ls_itemx&gt;-po_item = &lt;ls_output&gt;-item_number.
+        &lt;ls_itemx&gt;-po_itemx = abap_true.
+        &lt;ls_item&gt;-material = l_material.
+        &lt;ls_itemx&gt;-material = abap_true.
+        m_assign2item:   short_text                 material_descr,
+                         plant                      plant,
+                         quantity                   quantity,
+                         po_unit                    unit,
+                         net_price                  price,
+                         tax_code                   iva_code,
+                         acctasscat                 item_category.
+        &lt;ls_item&gt;-period_ind_expiration_date = &apos;D&apos;.
+        &lt;ls_itemx&gt;-gr_ind =  &lt;ls_itemx&gt;-pckg_no = abap_true.
+        &lt;ls_item&gt;-pckg_no = &apos;0000000001&apos;.
+
+        APPEND INITIAL LINE TO: lt_schedule  ASSIGNING &lt;ls_schedule&gt;,
+                                lt_schedulex ASSIGNING &lt;ls_schedulex&gt;.
+        &lt;ls_schedulex&gt;-po_item    = &lt;ls_schedule&gt;-po_item        = &lt;ls_output&gt;-item_number.
+        &lt;ls_schedulex&gt;-sched_line = &lt;ls_schedule&gt;-sched_line     = &apos;0001&apos;.
+        &lt;ls_schedule&gt;-delivery_date = &lt;ls_output&gt;-delivery_date.
+        &lt;ls_schedulex&gt;-po_itemx   = &lt;ls_schedulex&gt;-delivery_date = abap_true.
+
+        APPEND INITIAL LINE TO: lt_account  ASSIGNING &lt;ls_account&gt;,
+                                lt_accountx ASSIGNING &lt;ls_accountx&gt;.
+        &lt;ls_accountx&gt;-po_item   = &lt;ls_account&gt;-po_item     = &lt;ls_output&gt;-item_number.
+        &lt;ls_accountx&gt;-serial_no = &lt;ls_account&gt;-serial_no   = &apos;01&apos;.
+        &lt;ls_accountx&gt;-po_itemx  = &lt;ls_accountx&gt;-serial_nox = abap_true.
+        l_account  = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-account_number ).
+        &lt;ls_account&gt;-gl_account  = lcl_api=&gt;conversion_exit_alpha_input( l_account ).
+        &lt;ls_accountx&gt;-gl_account = abap_true.
+        l_costcenter = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-cost_center ).
+        &lt;ls_account&gt;-costcenter = lcl_api=&gt;conversion_exit_alpha_input( l_costcenter ).
+        &lt;ls_accountx&gt;-costcenter = abap_true.
+
+        TRY .
+            &lt;ls_output&gt;-po_number = lcl_api=&gt;bapi_po_create1( is_header     = ls_header
+                                                              is_headerx    = ls_headerx
+                                                              it_items      = lt_items
+                                                              it_itemsx     = lt_itemsx
+                                                              it_schedule   = lt_schedule
+                                                              it_schedulex  = lt_schedulex
+                                                              it_account    = lt_account
+                                                              it_accountx   = lt_accountx  ).
+            l_remainder = l_tabix MOD 100.
+            IF l_remainder = 0.
+              CALL METHOD lcl_api=&gt;bapi_transaction_commit.
+            ENDIF.
+          CATCH cx_bapi_error INTO lx_error.
+            IF me-&gt;mr_log IS BOUND.
+              LOOP AT lx_error-&gt;status ASSIGNING &lt;ls_return&gt;.
+                m_fill_msg &lt;ls_return&gt;-type &lt;ls_return&gt;-id &lt;ls_return&gt;-number &lt;ls_return&gt;-message_v1 &lt;ls_return&gt;-message_v2
+                           &lt;ls_return&gt;-message_v3 &lt;ls_return&gt;-message_v4 &apos;&apos;.
+                TRY .
+                    mr_log-&gt;add_message( ls_msg ).
+                  CATCH cx_cacs_bal_ex.
+                ENDTRY.
+              ENDLOOP.
+              TRY .
+                  mr_log-&gt;save_messages( ).
+                CATCH cx_cacs_bal_ex.
+              ENDTRY.
+            ENDIF.
+        ENDTRY.
+
+        CLEAR: ls_header,
+               ls_headerx,
+               lt_items,
+               lt_itemsx,
+               lt_schedule,
+               lt_schedulex,
+               lt_account,
+               lt_accountx.
+      ENDIF.
+    ENDLOOP.
+
+    l_remainder = l_tabix MOD 100.
+    IF l_remainder &lt;&gt; 0.
+      TRY .
+          lcl_api=&gt;bapi_transaction_commit( ).
+        CATCH cx_bapi_error.
+      ENDTRY.
+    ENDIF.
+
+    IF me-&gt;mr_log IS BOUND.
+      me-&gt;mr_log-&gt;get_messages( IMPORTING et_balmsg  =  lt_messages ).
+      IF lt_messages IS NOT INITIAL.
+        TRY .
+            me-&gt;mr_log-&gt;display( i_popup = abap_true i_grid = abap_true ).
+          CATCH cx_cacs_bal_ex.
+        ENDTRY.
+      ENDIF.
+    ENDIF.
+
+    me-&gt;set_view( ).
+    me-&gt;mr_view-&gt;refresh( ).
+  ENDMETHOD.                    &quot;on_user_command
+  METHOD on_after_salv_function.
+  ENDMETHOD.                    &quot;on_after_salv_function
+  METHOD on_link_click.
+    FIELD-SYMBOLS  &lt;ls_output&gt; TYPE zmme062.
+
+    READ TABLE me-&gt;mt_output ASSIGNING &lt;ls_output&gt; INDEX row.
+    IF sy-subrc = 0 AND column = &apos;PO_NUMBER&apos;.
+      SET PARAMETER ID &apos;BES&apos; FIELD &lt;ls_output&gt;-po_number.
+      CALL TRANSACTION &apos;ME23N&apos;.
+    ENDIF.
+  ENDMETHOD.                    &quot;on_link_click
+  METHOD background_create_po.
+    DATA: lr_iterator  TYPE REF TO lcl_file_iterator,
+          lr_fline     TYPE REF TO lcl_file_line,
+          lx_error     TYPE REF TO cx_bapi_error,
+          ls_header    TYPE bapimepoheader,
+          ls_headerx   TYPE bapimepoheaderx,
+          lt_items     TYPE bapimepoitem_tp,
+          lt_itemsx    TYPE bapimepoitemx_tp,
+          lt_schedule  TYPE bapimeposchedule_tp,
+          lt_schedulex TYPE bapimeposchedulx_tp,
+          lt_account   TYPE bapimepoaccount_tp,
+          lt_accountx  TYPE bapimepoaccountx_tp,
+          lt_selected  TYPE salv_t_row,
+          lt_messages  TYPE cacs_tt_balmsg,
+          ls_msg       TYPE bal_s_msg,
+          l_tabix      TYPE sytabix,
+          l_remainder  TYPE int4,
+          l_material   TYPE matnr,
+          l_vendor     TYPE lifnr,
+          l_account    TYPE saknr,
+          l_costcenter TYPE kostl.
+    FIELD-SYMBOLS: &lt;l_index&gt;      TYPE int4,
+                   &lt;ls_output&gt;    TYPE zmme062,
+                   &lt;ls_item&gt;      TYPE bapimepoitem,
+                   &lt;ls_itemx&gt;     TYPE bapimepoitemx,
+                   &lt;ls_schedule&gt;  TYPE bapimeposchedule,
+                   &lt;ls_schedulex&gt; TYPE bapimeposchedulx,
+                   &lt;ls_account&gt;   TYPE bapimepoaccount,
+                   &lt;ls_accountx&gt;  TYPE bapimepoaccountx,
+                   &lt;ls_return&gt;    TYPE bapiret2.
+
+    lr_iterator ?= mr_media-&gt;mr_file-&gt;get_iterator( ).
+    lr_fline ?= lr_iterator-&gt;next( ).
+    WHILE lr_fline IS BOUND.
+
+      APPEND INITIAL LINE TO mt_output ASSIGNING &lt;ls_output&gt;.
+      MOVE-CORRESPONDING lr_fline-&gt;ms_line TO &lt;ls_output&gt;.
+
+      lr_fline ?= lr_iterator-&gt;next( ).
+    ENDWHILE.
+
+    LOOP AT me-&gt;mt_output ASSIGNING &lt;ls_output&gt;.
+      IF &lt;ls_output&gt;-po_number IS NOT INITIAL.
+        CONTINUE.
+      ENDIF.
+      l_material = lcl_api=&gt;conversion_exit_matn1_output( &lt;ls_output&gt;-material_code ).
+      TRY .
+          l_material = lcl_api=&gt;conversion_exit_matn1_input( l_material ).
+        CATCH cx_bapi_error.
+          l_material = &lt;ls_output&gt;-material_code.
+      ENDTRY.
+
+      l_vendor = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-vendor_code ).
+      l_vendor = lcl_api=&gt;conversion_exit_alpha_input( l_vendor ).
+      ls_header-vendor = l_vendor.
+      ls_headerx-vendor = abap_true.
+      m_assign2header: comp_code  comp_code,
+                       doc_type   po_type,
+                       pmnttrms   paym_term,
+                       purch_org  pur_organization,
+                       pur_group  pur_group,
+                       currency   currency.
+      ls_header-item_intvl  = &apos;00001&apos;.
+      ls_headerx-item_intvl = abap_true.
+
+      APPEND INITIAL LINE TO: lt_items  ASSIGNING &lt;ls_item&gt;,
+                              lt_itemsx ASSIGNING &lt;ls_itemx&gt;.
+      &lt;ls_item&gt;-po_item = &lt;ls_itemx&gt;-po_item = &lt;ls_output&gt;-item_number.
+      &lt;ls_itemx&gt;-po_itemx = abap_true.
+      &lt;ls_item&gt;-material = l_material.
+      &lt;ls_itemx&gt;-material = abap_true.
+      m_assign2item:   short_text                 material_descr,
+                       plant                      plant,
+                       quantity                   quantity,
+                       po_unit                    unit,
+                       net_price                  price,
+                       tax_code                   iva_code,
+                       acctasscat                 item_category.
+      &lt;ls_item&gt;-period_ind_expiration_date = &apos;D&apos;.
+      &lt;ls_itemx&gt;-gr_ind =  &lt;ls_itemx&gt;-pckg_no = abap_true.
+      &lt;ls_item&gt;-pckg_no = &apos;0000000001&apos;.
+
+      APPEND INITIAL LINE TO: lt_schedule  ASSIGNING &lt;ls_schedule&gt;,
+                              lt_schedulex ASSIGNING &lt;ls_schedulex&gt;.
+      &lt;ls_schedulex&gt;-po_item    = &lt;ls_schedule&gt;-po_item        = &lt;ls_output&gt;-item_number.
+      &lt;ls_schedulex&gt;-sched_line = &lt;ls_schedule&gt;-sched_line     = &apos;0001&apos;.
+      &lt;ls_schedule&gt;-delivery_date = &lt;ls_output&gt;-delivery_date.
+      &lt;ls_schedulex&gt;-po_itemx   = &lt;ls_schedulex&gt;-delivery_date = abap_true.
+
+      APPEND INITIAL LINE TO: lt_account  ASSIGNING &lt;ls_account&gt;,
+                              lt_accountx ASSIGNING &lt;ls_accountx&gt;.
+      &lt;ls_accountx&gt;-po_item   = &lt;ls_account&gt;-po_item     = &lt;ls_output&gt;-item_number.
+      &lt;ls_accountx&gt;-serial_no = &lt;ls_account&gt;-serial_no   = &apos;01&apos;.
+      &lt;ls_accountx&gt;-po_itemx  = &lt;ls_accountx&gt;-serial_nox = abap_true.
+      l_account  = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-account_number ).
+      &lt;ls_account&gt;-gl_account  = lcl_api=&gt;conversion_exit_alpha_input( l_account ).
+      &lt;ls_accountx&gt;-gl_account = abap_true.
+      l_costcenter = lcl_api=&gt;conversion_exit_alpha_output( &lt;ls_output&gt;-cost_center ).
+      &lt;ls_account&gt;-costcenter = lcl_api=&gt;conversion_exit_alpha_input( l_costcenter ).
+      &lt;ls_accountx&gt;-costcenter = abap_true.
+
+      TRY .
+          &lt;ls_output&gt;-po_number = lcl_api=&gt;bapi_po_create1( is_header     = ls_header
+                                                            is_headerx    = ls_headerx
+                                                            it_items      = lt_items
+                                                            it_itemsx     = lt_itemsx
+                                                            it_schedule   = lt_schedule
+                                                            it_schedulex  = lt_schedulex
+                                                            it_account    = lt_account
+                                                            it_accountx   = lt_accountx  ).
+          l_remainder = l_tabix MOD 100.
+          IF l_remainder = 0.
+            CALL METHOD lcl_api=&gt;bapi_transaction_commit.
+          ENDIF.
+        CATCH cx_bapi_error INTO lx_error.
+          IF me-&gt;mr_log IS BOUND.
+            LOOP AT lx_error-&gt;status ASSIGNING &lt;ls_return&gt;.
+              m_fill_msg &lt;ls_return&gt;-type &lt;ls_return&gt;-id &lt;ls_return&gt;-number &lt;ls_return&gt;-message_v1 &lt;ls_return&gt;-message_v2
+                         &lt;ls_return&gt;-message_v3 &lt;ls_return&gt;-message_v4 &apos;&apos;.
+              TRY .
+                  mr_log-&gt;add_message( ls_msg ).
+                CATCH cx_cacs_bal_ex.
+              ENDTRY.
+            ENDLOOP.
+            TRY .
+                mr_log-&gt;save_messages( ).
+              CATCH cx_cacs_bal_ex.
+            ENDTRY.
+          ENDIF.
+      ENDTRY.
+
+      CLEAR: ls_header,
+             ls_headerx,
+             lt_items,
+             lt_itemsx,
+             lt_schedule,
+             lt_schedulex,
+             lt_account,
+             lt_accountx.
+
+      l_remainder = l_tabix MOD 100.
+      IF l_remainder &lt;&gt; 0.
+        TRY .
+            lcl_api=&gt;bapi_transaction_commit( ).
+          CATCH cx_bapi_error.
+        ENDTRY.
+      ENDIF.
+    ENDLOOP.
+
+    IF me-&gt;mr_log IS BOUND.
+      me-&gt;mr_log-&gt;get_messages( IMPORTING et_balmsg  =  lt_messages ).
+      IF lt_messages IS NOT INITIAL.
+        TRY .
+            me-&gt;mr_log-&gt;display( i_popup = abap_false i_grid = abap_false ).
+          CATCH cx_cacs_bal_ex.
+        ENDTRY.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.                    &quot;background_create_po
+ENDCLASS.               &quot;lcl_report
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_file
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file IMPLEMENTATION.
+  METHOD constructor.
+
+    me-&gt;mt_filecontent = it_fcontent.
+
+  ENDMETHOD.                    &quot;constructor
+  METHOD get_iterator.
+    DATA lr_iterator TYPE REF TO lcl_file_iterator.
+
+    CREATE OBJECT lr_iterator
+      EXPORTING
+        it_fcontent = me-&gt;mt_structured_content.
+
+    rr_iterator ?= lr_iterator.
+  ENDMETHOD.                    &quot;get_iterator
+ENDCLASS.               &quot;lcl_file
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_csv
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_tab IMPLEMENTATION.
+  METHOD constructor.
+
+    super-&gt;constructor( i_separator = cl_abap_char_utilities=&gt;horizontal_tab it_content = it_content ).
+    me-&gt;parse_file( ).
+  ENDMETHOD.                    &quot;constructor
+ENDCLASS.               &quot;lcl_csv
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_file_with_separator
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_with_separator IMPLEMENTATION.
+  METHOD constructor.
+    super-&gt;constructor( it_content ).
+    me-&gt;m_separator = i_separator.
+  ENDMETHOD.                    &quot;constructor
+  METHOD parse_file.
+    DATA: lt_fields  TYPE table_of_strings,
+          lr_number  TYPE REF TO zcl_number.
+    FIELD-SYMBOLS: &lt;l_line&gt;                TYPE string,
+                   &lt;ls_structured_content&gt; TYPE zmme061,
+                   &lt;l_value&gt;               TYPE ANY,
+                   &lt;l_field&gt;               TYPE ANY.
+
+    LOOP AT me-&gt;mt_filecontent ASSIGNING &lt;l_line&gt;.
+      SPLIT &lt;l_line&gt; AT me-&gt;m_separator INTO TABLE lt_fields.
+
+      APPEND INITIAL LINE TO me-&gt;mt_structured_content ASSIGNING &lt;ls_structured_content&gt;.
+      LOOP AT lt_fields ASSIGNING &lt;l_value&gt;.
+
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE &lt;ls_structured_content&gt; TO &lt;l_field&gt;.
+        IF &lt;l_field&gt; IS ASSIGNED.
+          IF &lt;l_value&gt; CO &apos;0123456789.,&apos;. &quot;Check whether it is a number
+            CREATE OBJECT lr_number
+              EXPORTING
+                i_value = &lt;l_value&gt;.
+            &lt;l_field&gt; = lr_number-&gt;get( ).
+          ELSE.
+            &lt;l_field&gt; = &lt;l_value&gt;.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+    ENDLOOP.
+  ENDMETHOD.                    &quot;parse_file
+ENDCLASS.               &quot;lcl_file_with_separator
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_file_iterator
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_iterator IMPLEMENTATION.
+  METHOD constructor.
+    me-&gt;mt_structured_content = it_fcontent.
+    m_next = 1.
+    DESCRIBE TABLE me-&gt;mt_structured_content LINES me-&gt;m_lines.
+  ENDMETHOD.                    &quot;constructor
+  METHOD lif_iterator~rewind.
+    me-&gt;m_next = 1.
+  ENDMETHOD.                    &quot;lif_iterator~rewind
+  METHOD lif_iterator~first.
+    DATA  lr_line TYPE REF TO  lcl_file_line.
+    FIELD-SYMBOLS  &lt;ls_structured_content&gt; TYPE zmme061.
+
+    CLEAR rr_object.
+    READ TABLE me-&gt;mt_structured_content INDEX 1 ASSIGNING &lt;ls_structured_content&gt;.
+    IF sy-subrc = 0.
+      CREATE OBJECT lr_line
+        EXPORTING
+          is_fline = &lt;ls_structured_content&gt;.
+
+      rr_object ?= lr_line.
+    ENDIF.
+  ENDMETHOD.                    &quot;lif_iterator~first
+  METHOD lif_iterator~next.
+    DATA lr_line TYPE REF TO  lcl_file_line.
+    FIELD-SYMBOLS  &lt;ls_structured_content&gt; TYPE zmme061.
+
+    CLEAR rr_object.
+
+    READ TABLE me-&gt;mt_structured_content INDEX me-&gt;m_next ASSIGNING &lt;ls_structured_content&gt;.
+    IF sy-subrc = 0.
+      CREATE OBJECT lr_line
+        EXPORTING
+          is_fline = &lt;ls_structured_content&gt;.
+
+      rr_object ?= lr_line.
+      ADD 1 TO me-&gt;m_next.
+    ENDIF.
+  ENDMETHOD.                    &quot;lif_iterator~next
+  METHOD lif_iterator~hasnext.
+
+    IF me-&gt;m_next &lt;= me-&gt;m_lines.
+      r_result = abap_true.
+    ELSE.
+      r_result = abap_false.
+    ENDIF.
+  ENDMETHOD.                    &quot;lif_iterator~hasnext
+ENDCLASS.               &quot;lcl_file_iterator
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_file_line
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_line IMPLEMENTATION.
+  METHOD constructor.
+    me-&gt;ms_line = is_fline.
+  ENDMETHOD.                    &quot;constructor
+ENDCLASS.               &quot;lcl_file_line
+
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_file_validator
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_file_validator IMPLEMENTATION.
+  METHOD check_file.
+    DATA: lr_iterator  TYPE REF TO lcl_file_iterator,
+          lr_fline     TYPE REF TO lcl_file_line,
+          lt_return    TYPE bapiret2_t,
+          l_message    TYPE c.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    lr_iterator ?= ir_file-&gt;get_iterator( ).
+    IF lr_iterator-&gt;hasnext( ) = abap_false.
+* Empty file.
+      m_raise_fm_exception &apos;ZMM&apos; &apos;E&apos; 004  &apos; &apos; &apos; &apos; &apos; &apos; &apos; &apos;.
+    ELSE.
+      &quot; Checking first line.
+      lr_fline  ?= lr_iterator-&gt;next( ).
+      IF lr_fline-&gt;ms_line IS INITIAL.
+* The file has an empty line. Check line &amp;
+        m_raise_fm_exception &apos;ZMM&apos; &apos;E&apos; 005  1 &apos; &apos; &apos; &apos; &apos; &apos;.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.                    &quot;check_file
+ENDCLASS.               &quot;lcl_file_validator
+*&amp;---------------------------------------------------------------------*
+*&amp;       Class (Implementation)  lcl_api
+*&amp;---------------------------------------------------------------------*
+*        Text
+*----------------------------------------------------------------------*
+CLASS lcl_api IMPLEMENTATION.
+  METHOD bapi_po_create1.
+    DATA: ls_header    TYPE bapimepoheader,
+          ls_headerx   TYPE bapimepoheaderx,
+          lt_items     TYPE bapimepoitem_tp,
+          lt_itemsx    TYPE bapimepoitemx_tp,
+          lt_schedule  TYPE bapimeposchedule_tp,
+          lt_schedulex TYPE bapimeposchedulx_tp,
+          lt_account   TYPE bapimepoaccount_tp,
+          lt_accountx  TYPE bapimepoaccountx_tp,
+          lt_return    TYPE bapiret2_t,
+          l_message    TYPE string.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    CLEAR r_ponumber.
+    ls_header    = is_header.
+    ls_headerx   = is_headerx.
+    lt_items     = it_items.
+    lt_itemsx    = it_itemsx.
+    lt_schedule  = it_schedule.
+    lt_schedulex = it_schedulex.
+    lt_account   = it_account.
+    lt_accountx  = it_accountx.
+
+    CALL FUNCTION &apos;BAPI_PO_CREATE1&apos;
+      EXPORTING
+        poheader                     = ls_header
+        poheaderx                    = ls_headerx
+*       POADDRVENDOR                 = POADDRVENDOR
+*       TESTRUN                      = TESTRUN
+*       MEMORY_UNCOMPLETE            = MEMORY_UNCOMPLETE
+*       MEMORY_COMPLETE              = MEMORY_COMPLETE
+*       POEXPIMPHEADER               = POEXPIMPHEADER
+*       POEXPIMPHEADERX              = POEXPIMPHEADERX
+*       VERSIONS                     = VERSIONS
+*       NO_MESSAGING                 = NO_MESSAGING
+*       NO_MESSAGE_REQ               = NO_MESSAGE_REQ
+*       NO_AUTHORITY                 = NO_AUTHORITY
+*       NO_PRICE_FROM_PO             = NO_PRICE_FROM_PO
+     IMPORTING
+        exppurchaseorder             = r_ponumber
+*       EXPHEADER                    = EXPHEADER
+*       EXPPOEXPIMPHEADER            = EXPPOEXPIMPHEADER
+     TABLES
+       return                       = lt_return
+       poitem                       = lt_items
+       poitemx                      = lt_itemsx
+*       POADDRDELIVERY               = POADDRDELIVERY
+       poschedule                   = lt_schedule
+       poschedulex                  = lt_schedulex
+       poaccount                    = lt_account
+*       POACCOUNTPROFITSEGMENT       = POACCOUNTPROFITSEGMENT
+       poaccountx                   = lt_accountx
+*       POCONDHEADER                 = POCONDHEADER
+*       POCONDHEADERX                = POCONDHEADERX
+*       POCOND                       = POCOND
+*       POCONDX                      = POCONDX
+*       POLIMITS                     = POLIMITS
+*       POCONTRACTLIMITS             = POCONTRACTLIMITS
+*       POSERVICES                   = POSERVICES
+*       POSRVACCESSVALUES            = POSRVACCESSVALUES
+*       POSERVICESTEXT               = POSERVICESTEXT
+*       EXTENSIONIN                  = EXTENSIONIN
+*       EXTENSIONOUT                 = EXTENSIONOUT
+*       POEXPIMPITEM                 = POEXPIMPITEM
+*       POEXPIMPITEMX                = POEXPIMPITEMX
+*       POTEXTHEADER                 = POTEXTHEADER
+*       POTEXTITEM                   = POTEXTITEM
+*       ALLVERSIONS                  = ALLVERSIONS
+*       POPARTNER                    = POPARTNER
+*       POCOMPONENTS                 = POCOMPONENTS
+*       POCOMPONENTSX                = POCOMPONENTSX
+*       POSHIPPING                   = POSHIPPING
+*       POSHIPPINGX                  = POSHIPPINGX
+*       POSHIPPINGEXP                = POSHIPPINGEXP
+              .
+    LOOP AT lt_return TRANSPORTING NO FIELDS WHERE type CA &apos;AE&apos;.
+      EXIT.
+    ENDLOOP.
+    IF sy-subrc = 0.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    &quot;bapi_po_create1
+  METHOD bapi_transaction_commit.
+    DATA: lr_return TYPE REF TO bapiret2,
+          lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    CREATE DATA lr_return.
+    ASSIGN lr_return-&gt;* TO &lt;ls_return&gt;.
+
+    CALL FUNCTION &apos;BAPI_TRANSACTION_COMMIT&apos;
+      EXPORTING
+        wait   = abap_true
+      IMPORTING
+        return = &lt;ls_return&gt;.
+    IF &lt;ls_return&gt;-type CA &apos;AE&apos;.
+      APPEND &lt;ls_return&gt; TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+       EXPORTING
+         status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    &quot;BAPI_TRANSACTION_COMMIT
+  METHOD conversion_exit_matn1_input.
+    DATA: lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  &lt;ls_return&gt; TYPE bapiret2.
+
+    CLEAR r_output.
+    CALL FUNCTION &apos;CONVERSION_EXIT_MATN1_INPUT&apos;
+      EXPORTING
+        input        = i_input
+      IMPORTING
+        output       = r_output
+      EXCEPTIONS
+        length_error = 1.
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE
+           ID sy-msgid
+         TYPE sy-msgty
+       NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING &lt;ls_return&gt;.
+      &lt;ls_return&gt;-id         = sy-msgid.
+      &lt;ls_return&gt;-type       = sy-msgty.
+      &lt;ls_return&gt;-number     = sy-msgno.
+      &lt;ls_return&gt;-message    = l_message.
+      &lt;ls_return&gt;-message_v1 = sy-msgv1.
+      &lt;ls_return&gt;-message_v2 = sy-msgv2.
+      &lt;ls_return&gt;-message_v3 = sy-msgv3.
+      &lt;ls_return&gt;-message_v4 = sy-msgv4.
+    ENDIF.
+
+  ENDMETHOD.                    &quot;conversion_exit_matn1_input
+  METHOD conversion_exit_matn1_output.
+
+    CLEAR r_output.
+    CALL FUNCTION &apos;CONVERSION_EXIT_MATN1_OUTPUT&apos;
+      EXPORTING
+        input  = i_input
+      IMPORTING
+        output = r_output.
+
+  ENDMETHOD.                    &quot;conversion_exit_matn1_output
+  METHOD conversion_exit_alpha_input.
+
+    CLEAR r_output.
+    CALL FUNCTION &apos;CONVERSION_EXIT_ALPHA_INPUT&apos;
+      EXPORTING
+        input  = i_input
+      IMPORTING
+        output = r_output.
+
+  ENDMETHOD.                    &quot;conversion_exit_alpha_input
+  METHOD conversion_exit_alpha_output.
+
+    CLEAR r_output.
+    CALL FUNCTION &apos;CONVERSION_EXIT_ALPHA_OUTPUT&apos;
+      EXPORTING
+        input  = i_input
+      IMPORTING
+        output = r_output.
+
+  ENDMETHOD.                    &quot;conversion_exit_alpha_output
+ENDCLASS.                    &quot;lcl_api IMPLEMENTATION</source>
+ </PROG>
+</nugget>
