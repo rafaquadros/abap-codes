@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROG NAME="ZRSD0026_INT_MNTR" VARCL="X" DBAPL="S" SUBC="1" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+ <textPool>
+  <language SPRAS="P">
+   <textElement ID="I" KEY="001" ENTRY="Monitor de eventos relacionados a interfaces" LENGTH="84 "/>
+   <textElement ID="I" KEY="H01" ENTRY="Status" LENGTH="16 "/>
+   <textElement ID="I" KEY="H02" ENTRY="Identificação" LENGTH="23 "/>
+   <textElement ID="I" KEY="L01" ENTRY="eventos" LENGTH="18 "/>
+   <textElement ID="I" KEY="P01" ENTRY="Enviar novamente" LENGTH="26 "/>
+   <textElement ID="I" KEY="P02" ENTRY="Apresentar mensagens" LENGTH="40 "/>
+   <textElement ID="I" KEY="P03" ENTRY="Recarregar dados" LENGTH="16 "/>
+   <textElement ID="I" KEY="T01" ENTRY="Log de eventos relativos à interfaces" LENGTH="68 "/>
+   <textElement ID="R" ENTRY="Monitor de interfaces" LENGTH="21 "/>
+   <textElement ID="S" KEY="S_CDATE" ENTRY="D       ." LENGTH="17 "/>
+   <textElement ID="S" KEY="S_ESTAT" ENTRY="D       ." LENGTH="9 "/>
+   <textElement ID="S" KEY="S_INTRF" ENTRY="D       ." LENGTH="27 "/>
+  </language>
+ </textPool>
+ <source>*&amp;---------------------------------------------------------------------*
+*&amp; Report zrsd0026_int_mntr
+*&amp;---------------------------------------------------------------------*
+*&amp;
+*&amp;---------------------------------------------------------------------*
+
+INCLUDE: zrsd0026_int_mntr_top, &quot;global data
+         zrsd0026_int_mntr_p01. &quot;Classes implementations
+
+START-OF-SELECTION.
+  DATA(r_report) = NEW lcl_report( ).
+  r_report-&gt;get_data( ).
+
+end-OF-SELECTION.
+  r_report-&gt;show_data(  ).</source>
+</PROG>

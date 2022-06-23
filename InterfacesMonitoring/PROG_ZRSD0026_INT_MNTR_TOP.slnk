@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROG NAME="ZRSD0026_INT_MNTR_TOP" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+ <textPool>
+  <language SPRAS="P">
+   <textElement ID="R" ENTRY="Definições globais" LENGTH="18 "/>
+  </language>
+ </textPool>
+ <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include zrsd0026_int_mntr_top
+*&amp;---------------------------------------------------------------------*
+REPORT zrsd0026_int_mntr MESSAGE-ID zint01.
+
+INCLUDE zrsd0026_int_mntr_d01. &quot;Classes definitions
+
+**********************************************************************
+* REFERENCES VARIABLES
+**********************************************************************
+DATA:
+  interface           TYPE zedsd_codigo_interface,
+  creation_date       TYPE erdat,
+  notification_status TYPE zedsd_status_notif.
+
+**********************************************************************
+* SELECTION-SCREEN
+**********************************************************************
+SELECTION-SCREEN  BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+  SELECT-OPTIONS: s_cdate FOR creation_date OBLIGATORY,
+                  s_intrf FOR interface NO INTERVALS MATCHCODE OBJECT zshsd_interfaces,
+                  s_estat FOR notification_status no INTERVALS.
+SELECTION-SCREEN END OF BLOCK b1.</source>
+</PROG>

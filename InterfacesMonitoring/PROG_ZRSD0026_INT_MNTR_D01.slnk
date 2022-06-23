@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PROG NAME="ZRSD0026_INT_MNTR_D01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+ <textPool>
+  <language SPRAS="P">
+   <textElement ID="R" ENTRY="Definições de classes locais" LENGTH="28 "/>
+  </language>
+ </textPool>
+ <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include zrsd0026_int_mntr_d01
+*&amp;---------------------------------------------------------------------*
+
+CLASS lcl_report DEFINITION FINAL.
+  PUBLIC SECTION.
+    INTERFACES if_salv_csqt_content_manager.
+
+    CLASS-METHODS
+      class_constructor.
+
+    METHODS:
+      get_data,
+      show_data,
+      on_user_command FOR EVENT added_function OF cl_salv_events
+        IMPORTING e_salv_function.
+
+  PRIVATE SECTION.
+    CLASS-DATA
+      mt_int_settings TYPE zttsd_int_settings.
+
+    DATA:
+      mr_top_container  TYPE REF TO cl_gui_container,
+      mr_main_container TYPE REF TO cl_gui_container,
+      mr_view           TYPE REF TO cl_salv_table,
+      mr_top            TYPE REF TO cl_dd_document,
+      mt_events         TYPE zttsd_events,
+      mt_data           TYPE zttsd_int_monitor_list.
+
+    METHODS:
+      display IMPORTING ir_container TYPE REF TO cl_gui_container&quot;cl_gui_custom_container
+              RAISING   cx_bapi_error,
+      prepare_data,
+      set_view,
+      set_selection_multiple,
+      set_columns_styles,
+      set_columns_order,
+      set_functions,
+      set_custom_functions IMPORTING ir_functions TYPE REF TO cl_salv_functions_list,
+      set_events,
+      set_sort,
+      set_top_page IMPORTING i_reuse_control TYPE  sdydo_flag,
+      set_redo
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      set_show_messages
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      set_refresh
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      refresh.
+ENDCLASS.</source>
+</PROG>

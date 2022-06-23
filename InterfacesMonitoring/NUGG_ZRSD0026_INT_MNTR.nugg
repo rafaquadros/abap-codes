@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="ZRSD0026_INT_MNTR">
+ <PROG NAME="ZRSD0026_INT_MNTR" VARCL="X" DBAPL="S" SUBC="1" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="001" ENTRY="Monitor de eventos relacionados a interfaces" LENGTH="84 "/>
+    <textElement ID="I" KEY="H01" ENTRY="Status" LENGTH="16 "/>
+    <textElement ID="I" KEY="H02" ENTRY="Identificação" LENGTH="23 "/>
+    <textElement ID="I" KEY="L01" ENTRY="eventos" LENGTH="18 "/>
+    <textElement ID="I" KEY="P01" ENTRY="Enviar novamente" LENGTH="26 "/>
+    <textElement ID="I" KEY="P02" ENTRY="Apresentar mensagens" LENGTH="40 "/>
+    <textElement ID="I" KEY="P03" ENTRY="Recarregar dados" LENGTH="16 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Log de eventos relativos à interfaces" LENGTH="68 "/>
+    <textElement ID="R" ENTRY="Monitor de interfaces" LENGTH="21 "/>
+    <textElement ID="S" KEY="S_CDATE" ENTRY="D       ." LENGTH="17 "/>
+    <textElement ID="S" KEY="S_ESTAT" ENTRY="D       ." LENGTH="9 "/>
+    <textElement ID="S" KEY="S_INTRF" ENTRY="D       ." LENGTH="27 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Report zrsd0026_int_mntr
+*&amp;---------------------------------------------------------------------*
+*&amp;
+*&amp;---------------------------------------------------------------------*
+
+INCLUDE: zrsd0026_int_mntr_top, &quot;global data
+         zrsd0026_int_mntr_p01. &quot;Classes implementations
+
+START-OF-SELECTION.
+  DATA(r_report) = NEW lcl_report( ).
+  r_report-&gt;get_data( ).
+
+end-OF-SELECTION.
+  r_report-&gt;show_data(  ).</source>
+ </PROG>
+ <PROG NAME="ZRSD0026_INT_MNTR_D01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="Definições de classes locais" LENGTH="28 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include zrsd0026_int_mntr_d01
+*&amp;---------------------------------------------------------------------*
+
+CLASS lcl_report DEFINITION FINAL.
+  PUBLIC SECTION.
+    INTERFACES if_salv_csqt_content_manager.
+
+    CLASS-METHODS
+      class_constructor.
+
+    METHODS:
+      get_data,
+      show_data,
+      on_user_command FOR EVENT added_function OF cl_salv_events
+        IMPORTING e_salv_function.
+
+  PRIVATE SECTION.
+    CLASS-DATA
+      mt_int_settings TYPE zttsd_int_settings.
+
+    DATA:
+      mr_top_container  TYPE REF TO cl_gui_container,
+      mr_main_container TYPE REF TO cl_gui_container,
+      mr_view           TYPE REF TO cl_salv_table,
+      mr_top            TYPE REF TO cl_dd_document,
+      mt_events         TYPE zttsd_events,
+      mt_data           TYPE zttsd_int_monitor_list.
+
+    METHODS:
+      display IMPORTING ir_container TYPE REF TO cl_gui_container&quot;cl_gui_custom_container
+              RAISING   cx_bapi_error,
+      prepare_data,
+      set_view,
+      set_selection_multiple,
+      set_columns_styles,
+      set_columns_order,
+      set_functions,
+      set_custom_functions IMPORTING ir_functions TYPE REF TO cl_salv_functions_list,
+      set_events,
+      set_sort,
+      set_top_page IMPORTING i_reuse_control TYPE  sdydo_flag,
+      set_redo
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      set_show_messages
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      set_refresh
+        IMPORTING
+          ir_functions TYPE REF TO cl_salv_functions_list,
+      refresh.
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="ZRSD0026_INT_MNTR_P01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="Implementações de classes locais" LENGTH="32 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include zrsd0026_int_mntr_p01
+*&amp;---------------------------------------------------------------------*
+
+CLASS lcl_report IMPLEMENTATION.
+  METHOD get_data.
+
+    TRY.
+        IF s_cdate IS NOT INITIAL.
+          APPEND s_cdate TO s_cdate[].
+          SORT s_cdate[].
+          DELETE ADJACENT DUPLICATES FROM s_cdate[].
+        ENDIF.
+
+        IF s_intrf IS NOT INITIAL.
+          APPEND s_intrf TO s_intrf[].
+          SORT s_intrf[].
+          DELETE ADJACENT DUPLICATES FROM s_intrf[].
+        ENDIF.
+
+        IF s_estat IS NOT INITIAL.
+          APPEND s_estat TO s_estat[].
+          SORT s_estat[].
+          DELETE ADJACENT DUPLICATES FROM s_estat[].
+        ENDIF.
+
+        mt_events = zclsd_interfaces_controller=&gt;query_control_entries(
+                         ig_interfaces     = s_intrf[]
+                         ig_creation_dates = s_cdate[]
+                         ig_statuses       = s_estat[]
+                       ).
+*                           CATCH cx_bapi_error.
+
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        MESSAGE lx_error-&gt;status[ 1 ]-message TYPE &apos;I&apos; DISPLAY LIKE &apos;E&apos;.
+        LEAVE.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD show_data.
+
+    me-&gt;prepare_data( ).
+    CALL FUNCTION &apos;SALV_CSQT_CREATE_CONTAINER&apos;
+      EXPORTING
+        r_content_manager = me
+        title             = &apos;Log eventos relativos à interfaces&apos;(t01).
+
+  ENDMETHOD.
+
+  METHOD prepare_data.
+
+    LOOP AT me-&gt;mt_events ASSIGNING FIELD-SYMBOL(&lt;lr_event&gt;).
+      APPEND INITIAL LINE TO me-&gt;mt_data ASSIGNING FIELD-SYMBOL(&lt;ls_data&gt;).
+      &lt;ls_data&gt;-zresult = COND #( WHEN &lt;lr_event&gt;-&gt;m_notification_status = &apos;0&apos; THEN &apos;@0V@&apos;
+                                  WHEN &lt;lr_event&gt;-&gt;m_notification_status = &apos;1&apos; THEN &apos;@5D@&apos;
+                                  ELSE &apos;@AG@&apos; ). &quot;Alert &quot;ELSE &apos;@03@&apos; ).
+      &lt;ls_data&gt;-interface = &lt;lr_event&gt;-&gt;m_interface.
+      TRY.
+          &lt;ls_data&gt;-description = mt_int_settings[ int_code = &lt;lr_event&gt;-&gt;m_interface ]-int_desc.
+        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+      ENDTRY.
+      &lt;ls_data&gt;-object_id = |{ &lt;lr_event&gt;-&gt;m_object_id }{ &lt;lr_event&gt;-&gt;m_extended_id }|.
+      &lt;ls_data&gt;-notification_status = &lt;lr_event&gt;-&gt;m_notification_status.
+      &lt;ls_data&gt;-delivery_attempts  = &lt;lr_event&gt;-&gt;m_delivery_attempts.
+      CONVERT TIME STAMP &lt;lr_event&gt;-&gt;m_created_at TIME ZONE sy-zonlo INTO DATE &lt;ls_data&gt;-creation_date
+                                                                          TIME &lt;ls_data&gt;-creation_time.
+      &lt;ls_data&gt;-creator = &lt;lr_event&gt;-&gt;m_creator.
+      CONVERT TIME STAMP &lt;lr_event&gt;-&gt;m_last_changed_at TIME ZONE sy-zonlo INTO DATE &lt;ls_data&gt;-last_change_date
+                                                                               TIME &lt;ls_data&gt;-last_change_time.
+      &lt;ls_data&gt;-last_modifier = &lt;lr_event&gt;-&gt;m_modifier.
+      CONVERT TIME STAMP &lt;lr_event&gt;-&gt;m_queried_at TIME ZONE sy-zonlo INTO DATE &lt;ls_data&gt;-query_date
+                                                                          TIME &lt;ls_data&gt;-query_time.
+      &lt;ls_data&gt;-querier = &lt;lr_event&gt;-&gt;m_querier.
+      &lt;ls_data&gt;-ctrl_entry = &lt;lr_event&gt;.
+    ENDLOOP.
+
+    SORT me-&gt;mt_data BY interface creation_date DESCENDING creation_time DESCENDING.
+  ENDMETHOD.
+
+  METHOD if_salv_csqt_content_manager~fill_container_content.
+
+    DATA(lr_splitter) = NEW cl_gui_splitter_container(
+*      link_dynnr              =
+*      link_repid              =
+*      shellstyle              =
+*      left                    =
+*      top                     =
+*      width                   =
+*      height                  =
+*      metric                  = cntl_metric_dynpro
+*      align                   = 15
+      parent                  = r_container
+      rows                    = 2
+      columns                 = 1
+*      no_autodef_progid_dynnr =
+*      name                    =
+    ).
+
+    me-&gt;mr_top_container = lr_splitter-&gt;get_container(
+                             row    = 1
+                             column = 1
+                           ).
+
+    lr_splitter-&gt;set_row_height(
+      EXPORTING
+        id                = 1
+        height            = 10
+*      IMPORTING
+*        result            =
+      EXCEPTIONS
+        cntl_error        = 1
+        cntl_system_error = 2
+        OTHERS            = 3
+    ).
+    IF sy-subrc &lt;&gt; 0.
+*     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*       WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+    me-&gt;mr_main_container = lr_splitter-&gt;get_container(
+                              row    = 2
+                              column = 1
+                            ).
+
+    TRY .
+        me-&gt;display( ir_container = me-&gt;mr_main_container ).
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD display.
+
+    TRY.
+        cl_salv_table=&gt;factory(
+          EXPORTING
+*            list_display   = if_salv_c_bool_sap=&amp;gt;false &amp;quot; ALV Displayed in List Mode
+            r_container    =  ir_container                         &quot;Abstract Container for GUI Controls
+*            container_name =
+            IMPORTING
+              r_salv_table   =  mr_view                            &quot;Basis Class Simple ALV Tables
+            CHANGING
+              t_table        = mt_data
+        ).
+*      CATCH cx_salv_msg. &amp;quot; ALV: General Error Class with Message
+      CATCH cx_salv_msg INTO DATA(lx_error).
+        DATA(l_message) = lx_error-&gt;get_text( ).
+        MESSAGE l_message TYPE &apos;E&apos;.
+    ENDTRY.
+
+    me-&gt;set_view( ).
+
+    me-&gt;mr_view-&gt;display( ).
+
+  ENDMETHOD.
+
+  METHOD on_user_command.
+    DATA: lt_statuses TYPE STANDARD TABLE OF zedsd_status_notif,
+          l_answer    TYPE c LENGTH 1.
+
+    DATA(lt_selected) = mr_view-&gt;get_selections( )-&gt;get_selected_rows( ).
+
+    CASE e_salv_function.
+      WHEN &apos;ZREDO&apos;.
+        IF lt_selected IS INITIAL.
+          RETURN.
+        ENDIF.
+
+        TRY.
+            lt_statuses = VALUE #( FOR l_index IN lt_selected
+                                  ( mt_data[ l_index ]-notification_status ) ).
+            IF line_exists( lt_statuses[ table_line = &apos;0&apos; ] ). &quot;Sucesso
+              CALL FUNCTION &apos;POPUP_TO_CONFIRM&apos;
+                EXPORTING
+*                 titlebar       = space
+*                 diagnose_object       = space
+                  text_question  = &apos;Alguns eventos já foram enviados com sucesso. Confirma o reenvio?&apos;(q01)
+*                 text_button_1  = text-001
+*                 icon_button_1  = space
+*                 text_button_2  = text-002
+*                 icon_button_2  = space
+*                 default_button = &apos;1&apos;
+*                 display_cancel_button = &apos;X&apos;
+*                 userdefined_f1_help   = space
+*                 start_column   = 25
+*                 start_row      = 6
+*                 popup_type     =
+*                 iv_quickinfo_button_1 = space
+*                 iv_quickinfo_button_2 = space
+                IMPORTING
+                  answer         = l_answer
+*                TABLES
+*                 parameter      =
+                EXCEPTIONS
+                  text_not_found = 1
+                  OTHERS         = 2.
+              IF sy-subrc &lt;&gt; 0.
+*               MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*                 WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+                RETURN.
+              ELSEIF l_answer &lt;&gt; &apos;1&apos;.
+                RETURN.
+              ENDIF.
+            ENDIF.
+
+            &quot;me-&gt;mt_data[ lt_selected[ 1 ] ]-ctrl_entry-&gt;retry(  ).
+            zclsd_interfaces_controller=&gt;retry_multiple( it_events_keys = VALUE zttsd_events_keys( FOR l_index IN lt_selected
+                                                                 ( interface   = mt_data[ l_index ]-interface
+                                                                   object_id   = mt_data[ l_index ]-object_id(32)
+                                                                   extended_id = mt_data[ l_index ]-object_id+32 ) ) ).
+            me-&gt;refresh( ).
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+      WHEN &apos;ZSHMG&apos;.
+        IF lt_selected IS INITIAL.
+          RETURN.
+        ENDIF.
+
+        TRY.
+            me-&gt;mt_data[ lt_selected[ 1 ] ]-ctrl_entry-&gt;show_messages( ).
+            EXIT.
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+      WHEN &apos;ZRFRSH&apos;.
+        refresh( ).
+    ENDCASE.
+  ENDMETHOD.
+
+
+  METHOD set_view.
+
+    me-&gt;set_top_page( i_reuse_control = abap_false ).
+
+    me-&gt;set_selection_multiple( ).
+
+    me-&gt;set_columns_styles( ).
+
+    me-&gt;set_columns_order( ).
+
+    me-&gt;set_functions( ).
+
+    me-&gt;set_events( ).
+
+    me-&gt;set_sort(  ).
+  ENDMETHOD.
+
+
+  METHOD set_selection_multiple.
+
+    DATA(lr_selections) = mr_view-&gt;get_selections( ).
+
+    lr_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;multiple ).
+
+*    lr_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;row_column ).
+  ENDMETHOD.
+
+
+  METHOD set_columns_styles.
+    DATA lr_column_table TYPE REF TO cl_salv_column_table.
+
+    DATA(lr_columns) = me-&gt;mr_view-&gt;get_columns( ).
+    IF lr_columns IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    lr_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+
+    TRY.
+        DATA(lr_column) = lr_columns-&gt;get_column( &apos;INTERFACE&apos; ).
+        lr_column-&gt;set_technical(
+*            value = if_salv_c_bool_sap=&gt;true
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        lr_column = lr_columns-&gt;get_column( &apos;NOTIFICATION_STATUS&apos; ).
+        lr_column-&gt;set_technical(
+*            value = if_salv_c_bool_sap=&gt;true
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        lr_column = lr_columns-&gt;get_column( &apos;CTRL_ENTRY&apos; ).
+        lr_column-&gt;set_technical(
+*            value = if_salv_c_bool_sap=&gt;true
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        lr_column = lr_columns-&gt;get_column( columnname = &apos;ZRESULT&apos; ).
+*                    CATCH cx_salv_not_found.
+        lr_column-&gt;set_short_text( value = CONV #( &apos;Status&apos;(h01) ) ).
+        lr_column-&gt;set_medium_text( value = CONV #( &apos;Status&apos;(h01) ) ).
+        lr_column-&gt;set_long_text( value = CONV #( &apos;Status&apos;(h01) ) ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        lr_column = lr_columns-&gt;get_column( columnname = &apos;OBJECT_ID&apos; ).
+*                    CATCH cx_salv_not_found.
+        lr_column-&gt;set_short_text( value = CONV #( &apos;Identificação&apos;(h02) ) ).
+        lr_column-&gt;set_medium_text( value = CONV #( &apos;Identificação&apos;(h02) ) ).
+        lr_column-&gt;set_long_text( value = CONV #( &apos;Identificação&apos;(h02) ) ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_columns_order.
+
+    DATA(lr_columns) = me-&gt;mr_view-&gt;get_columns( ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;ZRESULT&apos;
+        position   = 1
+    ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;DESCRIPTION&apos;
+        position   = 2
+    ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;CREATION_DATE&apos;
+        position   = 3
+    ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;CREATION_TIME&apos;
+        position   = 4
+    ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;OBJECT_ID&apos;
+        position   = 5
+    ).
+
+    lr_columns-&gt;set_column_position(
+      EXPORTING
+        columnname = &apos;DELIVERY_ATTEMPTS&apos;
+        position   = 6
+    ).
+  ENDMETHOD.
+
+
+  METHOD set_functions.
+
+    DATA(lr_functions) = mr_view-&gt;get_functions( ).
+    lr_functions-&gt;set_all(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+    lr_functions-&gt;set_export_localfile(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    me-&gt;set_custom_functions( lr_functions ).
+  ENDMETHOD.
+
+
+  METHOD set_events.
+
+    DATA(lr_events) = mr_view-&gt;get_event( ).
+
+    SET HANDLER  me-&gt;on_user_command FOR lr_events.
+  ENDMETHOD.
+
+
+  METHOD set_sort.
+
+    DATA(lr_sort) = mr_view-&gt;get_sorts( ).
+    TRY.
+        lr_sort-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;DESCRIPTION&apos;
+        position   = 1
+*        sequence   = if_salv_c_sort=&gt;sort_up
+*        subtotal   = if_salv_c_bool_sap=&gt;false
+*        group      = if_salv_c_sort=&gt;group_none
+*        obligatory = if_salv_c_bool_sap=&gt;false
+*      RECEIVING
+*        value      =
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY.
+        lr_sort-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;CREATION_DATE&apos;
+        position   = 2
+        sequence   = if_salv_c_sort=&gt;sort_down
+*        subtotal   = if_salv_c_bool_sap=&gt;false
+*        group      = if_salv_c_sort=&gt;group_none
+*        obligatory = if_salv_c_bool_sap=&gt;false
+*      RECEIVING
+*        value      =
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY.
+        lr_sort-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;CREATION_TIME&apos;
+        position   = 3
+        sequence   = if_salv_c_sort=&gt;sort_down
+*        subtotal   = if_salv_c_bool_sap=&gt;false
+*        group      = if_salv_c_sort=&gt;group_none
+*        obligatory = if_salv_c_bool_sap=&gt;false
+*      RECEIVING
+*        value      =
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_top_page.
+    DATA l_events TYPE c LENGTH 20.
+
+    IF i_reuse_control IS INITIAL.
+      me-&gt;mr_top = NEW cl_dd_document(
+*      style            =
+*      background_color =
+*      bds_stylesheet   =
+*      no_margins       =
+      ).
+    ELSE.
+      me-&gt;mr_top-&gt;initialize_document(
+*        EXPORTING
+*          first_time       =
+*          style            =
+*          background_color =
+*          bds_stylesheet   =
+*          no_margins       =
+      ).
+    ENDIF.
+
+    WRITE lines( me-&gt;mt_data ) TO l_events.
+
+    me-&gt;mr_top-&gt;add_text(
+      EXPORTING
+        text          = |({ l_events } ) { &apos;eventos&apos;(l01) }|
+*        text_table    =
+*        fix_lines     =
+        sap_style     = cl_dd_document=&gt;heading
+*        sap_color     =
+*        sap_fontsize  =
+*        sap_fontstyle =
+*        sap_emphasis  =
+*        style_class   =
+*        a11y_tooltip  =
+*      CHANGING
+*        document      =
+    ).
+
+    me-&gt;mr_top-&gt;display_document(
+      EXPORTING
+        reuse_control      = i_reuse_control
+*        reuse_registration =
+*        container          =
+        parent             = me-&gt;mr_top_container
+      EXCEPTIONS
+        html_display_error = 1
+        OTHERS             = 2
+    ).
+    IF sy-subrc &lt;&gt; 0.
+*     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*       WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+
+  METHOD set_custom_functions.
+
+    set_redo( ir_functions ).
+
+    set_show_messages(  ir_functions ).
+
+    set_refresh( ir_functions ).
+  ENDMETHOD.
+
+
+  METHOD set_redo.
+
+    DATA(l_tooltip) = CONV string(  &apos;Enviar novamente&apos;(p01)  ).
+    DATA(l_icon) = CONV string( &apos;@4R@&apos; ). &quot;&apos;ICON_SYSTEM_REDO&apos;.
+    TRY.
+        ir_functions-&gt;add_function(
+          EXPORTING
+            name     =  &apos;ZREDO&apos;               &quot;ALV Function
+            icon     = l_icon
+*            text     =
+            tooltip  = l_tooltip
+            position = if_salv_c_function_position=&gt;left_of_salv_functions                 &quot;Positioning Function
+        ).
+*        CATCH cx_salv_existing.   &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+
+  ENDMETHOD.
+
+
+  METHOD set_show_messages.
+
+    DATA(l_tooltip) = CONV string(  &apos;Apresentar mensagens&apos;(p02)  ).
+    DATA(l_icon) = CONV string( &apos;@AL@&apos; ). &quot;&apos;ICON_REPORT&apos;.
+    TRY.
+        ir_functions-&gt;add_function(
+          EXPORTING
+            name     =  &apos;ZSHMG&apos;               &quot;ALV Function
+            icon     = l_icon
+*            text     =
+            tooltip  = l_tooltip
+            position = if_salv_c_function_position=&gt;left_of_salv_functions                 &quot;Positioning Function
+        ).
+*        CATCH cx_salv_existing.   &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_refresh.
+
+    DATA(l_tooltip) = CONV string(  &apos;Recarregar dados&apos;(p03)  ).
+    DATA(l_icon) = CONV string( &apos;@42@&apos; ). &quot;&apos;ICON_REFRESH&apos;.
+    TRY.
+        ir_functions-&gt;add_function(
+          EXPORTING
+            name     =  &apos;ZRFRSH&apos;               &quot;ALV Function
+            icon     = l_icon
+*            text     =
+            tooltip  = l_tooltip
+            position = if_salv_c_function_position=&gt;left_of_salv_functions                 &quot;Positioning Function
+        ).
+*        CATCH cx_salv_existing.   &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+*        CATCH cx_salv_wrong_call. &amp;quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_existing
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD refresh.
+
+    CLEAR: me-&gt;mt_data, me-&gt;mt_events.
+    me-&gt;get_data( ).
+    me-&gt;prepare_data( ).
+
+    me-&gt;set_top_page( i_reuse_control = abap_true ).
+
+    me-&gt;mr_view-&gt;refresh(
+*          EXPORTING
+*            s_stable     =
+*            refresh_mode = if_salv_c_refresh=&gt;soft
+    ).
+
+  ENDMETHOD.
+
+  METHOD class_constructor.
+
+    mt_int_settings = zclsd_interfaces_controller=&gt;get_interfaces_settings( ).
+  ENDMETHOD.
+
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="ZRSD0026_INT_MNTR_TOP" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="Definições globais" LENGTH="18 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include zrsd0026_int_mntr_top
+*&amp;---------------------------------------------------------------------*
+REPORT zrsd0026_int_mntr MESSAGE-ID zint01.
+
+INCLUDE zrsd0026_int_mntr_d01. &quot;Classes definitions
+
+**********************************************************************
+* REFERENCES VARIABLES
+**********************************************************************
+DATA:
+  interface           TYPE zedsd_codigo_interface,
+  creation_date       TYPE erdat,
+  notification_status TYPE zedsd_status_notif.
+
+**********************************************************************
+* SELECTION-SCREEN
+**********************************************************************
+SELECTION-SCREEN  BEGIN OF BLOCK b1 WITH FRAME TITLE TEXT-001.
+  SELECT-OPTIONS: s_cdate FOR creation_date OBLIGATORY,
+                  s_intrf FOR interface NO INTERVALS MATCHCODE OBJECT zshsd_interfaces,
+                  s_estat FOR notification_status no INTERVALS.
+SELECTION-SCREEN END OF BLOCK b1.</source>
+ </PROG>
+</nugget>
