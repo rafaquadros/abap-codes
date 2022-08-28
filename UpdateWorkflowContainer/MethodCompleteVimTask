@@ -1,0 +1,356 @@
+METHOD complete_vim_task.
+  CONSTANTS: lc_ext_event   TYPE swetypecou-event VALUE 'ProcessCompletedExternally',
+             lc_object_type TYPE swo_objtyp       VALUE '/OPT/V1001',
+             lc_ts00275278  TYPE sww_task         VALUE 'TS00275278',
+             lc_ready       TYPE sww_wistat       VALUE 'READY'.
+  DATA: lt_top_wl     TYPE swrtwihdr,
+        lt_child_wl   TYPE swrtwihdr,
+        lt_container  TYPE swrtcont,
+        lv_object_key TYPE c LENGTH 12,
+        lv_objkey     TYPE swo_typeid,
+        lv_top_wi     TYPE sww_wiid,
+        lv_963_wi     TYPE sww_wiid.
+  FIELD-SYMBOLS: <ls_wi>        LIKE LINE OF lt_top_wl,
+                 <ls_container> LIKE LINE OF lt_container.
+
+  lv_object_key = lv_objkey = me->av_vim_doc.
+
+  "Find the top WorkItem
+  lt_top_wl = me->aobj_api->sap_wapi_workitems_to_object(
+      iv_object_type = lc_object_type
+      iv_object_key  = lv_objkey
+  ).
+  "Find the task related to step 963
+  READ TABLE lt_top_wl INDEX 1 ASSIGNING <ls_wi>.
+  IF sy-subrc <> 0.
+    RETURN.
+  ELSE.
+    lv_top_wi = <ls_wi>-wi_id.
+  ENDIF.
+  lt_child_wl = me->aobj_api->sap_wapi_get_child_workitems( iv_workitem_id = lv_top_wi ).
+  "Updates INDICATOR = 'C' in task container
+  UNASSIGN <ls_wi>.
+  READ TABLE lt_child_wl ASSIGNING <ls_wi> WITH KEY wi_rh_task = lc_ts00275278
+                                                    wi_stat    = lc_ready.
+  IF sy-subrc <> 0.
+    RETURN.
+  ELSE.
+    lv_963_wi = <ls_wi>-wi_id.
+  ENDIF.
+  APPEND INITIAL LINE TO lt_container ASSIGNING <ls_container>.
+  <ls_container>-element = 'ACTUAL_END'.
+  <ls_container>-value = 'X'.
+  APPEND INITIAL LINE TO lt_container ASSIGNING <ls_container>.
+  <ls_container>-element = 'FLOWID'.
+  <ls_container>-value = 'ENDPROCESS'.
+
+  IF me->aobj_api->sap_wapi_write_container(
+      iv_workitem_id = lv_963_wi
+      it_container   = lt_container
+  ) IS NOT INITIAL.
+    RETURN.
+  ENDIF.
+  "Raise the event that concludes de task
+  TRY.
+      cl_swf_evt_event=>raise(
+        EXPORTING
+          im_objcateg        = cl_swf_evt_event=>mc_objcateg_bor    " Workflow: Object Type BO, CL ...
+          im_objtype         = '/OPT/V1001'    " Object Type, Class
+          im_event           = lc_ext_event    " Event Name
+          im_objkey          = lv_object_key   " Object Key
+*      im_event_container =     " Event Parameter
+      ).
+*    CATCH cx_swf_evt_invalid_objtype.    " Error in Class / Object Type
+*    CATCH cx_swf_evt_invalid_event.    " Error in Event
+    CATCH cx_swf_evt_invalid_objtype ##NO_HANDLER
+          cx_swf_evt_invalid_event.
+  ENDTRY.
+
+ENDMETHOD.
+
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      bapi_transaction_commit      RAISING   cx_bapi_error,
+      conversion_exit_cunit_input  IMPORTING i_input TYPE string
+                                   RETURNING value(r_output) TYPE string
+                                   RAISING cx_bapi_error,
+      conversion_exit_matn1_input  IMPORTING i_input TYPE string
+                                   RETURNING value(r_output) TYPE string
+                                   RAISING cx_bapi_error,
+      enqueue__opt_e_vim_1head     IMPORTING iv_vim_doc TYPE /opt/docid
+                                   RAISING   cx_bapi_error,
+      dequeue__opt_e_vim_1head     IMPORTING iv_vim_doc TYPE /opt/docid,
+      sap_wapi_workitems_to_object IMPORTING iv_object_type TYPE swo_objtyp
+                                             iv_object_key  TYPE swo_typeid
+                                   RETURNING value(rt_worklist) TYPE swrtwihdr,
+      sap_wapi_get_child_workitems IMPORTING iv_workitem_id     TYPE sww_wiid
+                                   RETURNING value(rt_worklist) TYPE swrtwihdr,
+      sap_wapi_write_container     IMPORTING iv_workitem_id     TYPE sww_wiid
+                                             it_container       TYPE swrtcont
+                                   RETURNING value(rv_result)   TYPE sysubrc.
+ENDCLASS.                    "lcl_api DEFINITION
+
+*"* use this source file for the definition and implementation of
+*"* local helper classes, interface definitions and type
+*"* declarations
+
+CLASS lcl_api IMPLEMENTATION.
+  METHOD bapi_transaction_commit.
+    DATA: lr_return TYPE REF TO bapiret2,
+          lt_return TYPE bapiret2_t,
+          l_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CREATE DATA lr_return.
+    ASSIGN lr_return->* TO <ls_return>.
+
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+      EXPORTING
+        wait   = abap_true
+      IMPORTING
+        return = <ls_return>.
+    IF <ls_return>-type CA 'AE'.
+      APPEND <ls_return> TO lt_return.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    "bapi_transaction_commit
+  METHOD conversion_exit_cunit_input.
+    DATA: lt_return  TYPE bapiret2_t,
+          l_message  TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_output.
+    CALL FUNCTION 'CONVERSION_EXIT_CUNIT_INPUT'
+      EXPORTING
+        input          = i_input    " external display of unit of measurement
+*       language       = SY-LANGU    " Language key (default: logon language)
+      IMPORTING
+        output         = r_output    " internal display of unit of measurement
+      EXCEPTIONS
+        unit_not_found = 1
+        OTHERS         = 2.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                 WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                 INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id = sy-msgid.
+      <ls_return>-type = sy-msgty.
+      <ls_return>-number = sy-msgno.
+      <ls_return>-message = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    "conversion_exit_cunit_input
+  METHOD conversion_exit_matn1_input.
+    DATA: lt_return  TYPE bapiret2_t,
+          l_message  TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CLEAR r_output.
+    CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'
+      EXPORTING
+        input        = i_input
+      IMPORTING
+        output       = r_output
+      EXCEPTIONS
+        length_error = 1
+        OTHERS       = 2.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                 WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                 INTO l_message.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id = sy-msgid.
+      <ls_return>-type = sy-msgty.
+      <ls_return>-number = sy-msgno.
+      <ls_return>-message = l_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.                    "conversion_exit_matn1_input
+  METHOD enqueue__opt_e_vim_1head.
+    DATA: lt_return  TYPE bapiret2_t,
+          lv_message TYPE string.
+    FIELD-SYMBOLS  <ls_return> TYPE bapiret2.
+
+    CALL FUNCTION 'ENQUEUE_/OPT/E_VIM_1HEAD'
+      EXPORTING
+*       MODE_/OPT/VIM_1HEAD = 'X'
+*       MANDT               = SY-MANDT
+        docid               = iv_vim_doc
+*       X_DOCID             = ' '
+*       _SCOPE              = '2'
+*       _WAIT               = ' '
+*       _COLLECT            = ' '
+      EXCEPTIONS
+        foreign_lock        = 1
+        system_failure      = 2
+        OTHERS              = 3.
+    IF sy-subrc <> 0.
+      APPEND INITIAL LINE TO lt_return ASSIGNING <ls_return>.
+      <ls_return>-id = sy-msgid.
+      <ls_return>-type = sy-msgty.
+      <ls_return>-number = sy-msgno.
+      <ls_return>-message = lv_message.
+      <ls_return>-message_v1 = sy-msgv1.
+      <ls_return>-message_v2 = sy-msgv2.
+      <ls_return>-message_v3 = sy-msgv3.
+      <ls_return>-message_v4 = sy-msgv4.
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+
+  ENDMETHOD.                    "enqueue__opt_e_vim_1head
+  METHOD dequeue__opt_e_vim_1head.
+
+    CALL FUNCTION 'DEQUEUE_/OPT/E_VIM_1HEAD'
+      EXPORTING
+*       MODE_/OPT/VIM_1HEAD = 'X'
+*       MANDT               = SY-MANDT
+        docid               = iv_vim_doc
+*       X_DOCID             = ' '
+*       _SCOPE              = '3'
+*       _SYNCHRON           = ' '
+*       _COLLECT            = ' '
+      .
+
+  ENDMETHOD.                    "dequeue__opt_e_vim_1head
+  METHOD sap_wapi_workitems_to_object.
+*    data: lt_return  TYPE bapiret2_t,
+*          lv_message TYPE string.
+*    FIELD-SYMBOLS <ls_return> TYPE bapiret2.
+
+    CLEAR rt_worklist.
+    CALL FUNCTION 'SAP_WAPI_WORKITEMS_TO_OBJECT'
+      EXPORTING
+*        object_por               =     " Local Persistent Object Reference - BOR Compatible
+        objtype                  = iv_object_type
+        objkey                   = iv_object_key    " Object Key
+*        top_level_items          = 'X'
+*        selection_status_variant = 0001    " Status filter
+*        time                     =     " Status filter
+*        text                     = 'X'    " Status filter
+*        output_only_top_level    = SPACE
+*        language                 = SY-LANGU    " SAP R/3 System, Current Language
+*        determine_task_filter    = 'X'    " SAP R/3 System, Current Language
+*        removed_objects          = SPACE    " SAP R/3 System, Current Language
+*      IMPORTING
+*        return_code              =     " Return code (0,999)
+      TABLES
+*        task_filter              =     " Task filter
+        worklist                 = rt_worklist    " Workflow inbox
+*        message_lines            =     " Message Lines
+*        message_struct           =     " Message Structure
+      .
+  ENDMETHOD.                    "sap_wapi_workitems_to_object
+  METHOD sap_wapi_get_child_workitems.
+
+    CLEAR rt_worklist.
+    CALL FUNCTION 'SAP_WAPI_GET_CHILD_WORKITEMS'
+      EXPORTING
+        workitem_id    = iv_workitem_id
+*        user           = SY-UNAME
+*        text           = 'X'
+*        language       = SY-LANGU
+*      IMPORTING
+*        return_code    =
+      TABLES
+        worklist       = rt_worklist
+*        message_lines  =
+*        message_struct =
+      .
+  ENDMETHOD.                    "sap_wapi_get_child_workitems
+  METHOD sap_wapi_write_container.
+
+    CLEAR rv_result.
+    CALL FUNCTION 'SAP_WAPI_WRITE_CONTAINER'
+      EXPORTING
+        workitem_id                  = iv_workitem_id    " Work item ID
+*       language                     = SY-LANGU    " SAP System, Current Language
+*       actual_agent                 = SY-UNAME    " ABAP System, User Logon Name
+*       do_commit                    = 'X' " Checkbox
+*       ifs_xml_container            =     " Workflow Container as XML Data Stream
+*       overwrite_tables_simple_cont = SPACE    " Checkbox
+      IMPORTING
+        return_code                  = rv_result    " Return Value (0 - 2)
+      TABLES
+        simple_container             = it_container    " Single Container (Name-Value-Pair)
+*       message_lines                =     " Message Lines
+*       message_struct               =         " Message Structure
+      .
+  ENDMETHOD.                    "sap_wapi_write_container
+ENDCLASS.                    "lcl_api IMPLEMENTATION
+
+*----------------------------------------------------------------------*
+*       CLASS lcl_db IMPLEMENTATION
+*----------------------------------------------------------------------*
+*
+*----------------------------------------------------------------------*
+CLASS lcl_db IMPLEMENTATION.
+  METHOD query_nfid_in_j_1bfdoc.
+
+    CLEAR: ev_nfenum, ev_series.
+    SELECT nfenum series
+        UP TO 1 ROWS
+      FROM j_1bnfdoc
+      INTO (ev_nfenum, ev_series)
+     WHERE docnum = iv_docnum
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "query_nfid_in_j_1bfdoc
+  METHOD query_item_in_j_1bnflin.
+
+    CLEAR et_items.
+    SELECT itmnum matnr menge meins
+      FROM j_1bnflin
+      INTO TABLE et_items
+     WHERE docnum = iv_docnum.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "query_item_in_j_1bnflin
+  METHOD query_vim_1head_by_xblnr.
+
+    CLEAR rv_vim_doc.
+    SELECT docid
+        UP TO 1 ROWS
+      FROM /opt/vim_1head
+      INTO rv_vim_doc
+     WHERE curr_proc_type = 963
+       AND xblnr = iv_nf_id
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "query_vim_1head_by_xblnr
+  METHOD query_items_in_vim_1item.
+
+    CLEAR et_vim_items.
+    SELECT itemid matnr zzqtde_cega
+      FROM /opt/vim_1item
+      INTO TABLE et_vim_items
+     WHERE docid = iv_vim_doc.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.                    "query_items_in_vim_1item
+ENDCLASS.                    "lcl_db IMPLEMENTATION
