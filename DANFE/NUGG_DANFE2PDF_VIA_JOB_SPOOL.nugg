@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="DANFE2PDF_VIA_JOB_SPOOL">
+ <CLAS CLSNAME="ZCLINT_DANFE" VERSION="1" LANGU="P" DESCRIPT="Recuperar a DANFE" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" MSG_ID="ZINT01" WITH_UNIT_TESTS="X" DURATION_TYPE="0 " RISK_LEVEL="0 " ZSAPLINK_PLUGIN_MAJOR_VERSION="0 " ZSAPLINK_PLUGIN_MINOR_VERSION="1 " ZSAPLINK_PLUGIN_BUILD_VERSION="0 " ZSAPLINK_PLUGIN_INFO1="ZSAPLINK_CLASS is part of the main ZSAPLINK project --&gt; This plugin found there instead of ZSAPLINK_PLUGINS projects" ZSAPLINK_PLUGIN_INFO2="SAPLINK homepage: https://www.assembla.com/spaces/saplink/wiki" ZSAPLINK_PLUGIN_INFO3="Download from https://www.assembla.com/code/saplink/subversion/nodes" ZSAPLINK_PLUGIN_INFO4="and navigate to:  trunk -&gt; core -&gt; ZSAPLINK -&gt; CLAS -&gt; ZSAPLINK_CLASS.slnk">
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <localTestClasses>*&quot;* use this source file for your ABAP unit test classes</localTestClasses>
+  <attribute CLSNAME="ZCLINT_DANFE" CMPNAME="M_DOCNUM" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="1 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="J_1BDOCNUM" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCLINT_DANFE" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="2" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCLINT_DANFE" CMPNAME="CONSTRUCTOR" SCONAME="I_DOCNUM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="J_1BDOCNUM"/>
+   <source>METHOD constructor.
+
+    me-&gt;m_docnum = i_docnum.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCLINT_DANFE" CMPNAME="GET_PDF" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCLINT_DANFE" CMPNAME="GET_PDF" SCONAME="R_PDF" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="XSTRING"/>
+   <exception CLSNAME="ZCLINT_DANFE" CMPNAME="GET_PDF" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="P" MTDTYPE="0" EDITORDER="1 "/>
+   <source>METHOD get_pdf.
+    DATA: ls_spool_parameters  TYPE pri_params,
+          l_keep_alive_timeout TYPE pfepvalue,
+          l_current_time       TYPE tzntstmpl,
+          l_listident          TYPE btclistid.
+
+    CLEAR r_pdf.
+*    PERFORM criar_pdf IN PROGRAM ZNFE_PRINT_DANFE USING 0000
+*                                                        me-&gt;m_docnum
+*                                                        r_pdf IF FOUND.
+* A primeira coisa a se fazer aqui é abrir o job:
+    DATA(l_jobname) = CONV btcjob(  |DANFE_STREAM_{ me-&gt;m_docnum }| ).
+    DATA(l_jobcount) = VALUE btcjobcnt(  ).
+
+    CALL FUNCTION &apos;JOB_OPEN&apos;
+      EXPORTING
+        jobname          = l_jobname
+      IMPORTING
+        jobcount         = l_jobcount
+      EXCEPTIONS
+        cant_create_job  = 1
+        invalid_job_data = 2
+        jobname_missing  = 3
+        OTHERS           = 4.
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE
+           ID sy-msgid
+         TYPE sy-msgty
+       NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+         INTO DATA(l_message).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = VALUE #( ( id = sy-msgid
+                              type  = sy-msgty
+                              number = sy-msgno
+                              message = l_message
+                              message_v1 = sy-msgv1
+                              message_v2 = sy-msgv2
+                              message_v3 = sy-msgv3
+                              message_v4 = sy-msgv4 ) ).
+    ENDIF.
+
+* Agora, damos um SUBMIT no RSNAST00 para fazer uma reimpressão do DANFE:
+    SUBMIT rsnast00 WITH s_kappl = &apos;NF&apos;
+                    WITH s_objky = me-&gt;m_docnum
+                    WITH s_nacha = &apos;1&apos;
+                    WITH p_again = abap_true
+                    TO SAP-SPOOL
+                    SPOOL PARAMETERS ls_spool_parameters
+                    WITHOUT SPOOL DYNPRO
+                    VIA JOB l_jobname NUMBER l_jobcount
+                    AND RETURN.
+
+    CALL FUNCTION &apos;JOB_CLOSE&apos;
+      EXPORTING
+        jobcount  = l_jobcount
+        jobname   = l_jobname
+        strtimmed = abap_true.
+
+* Com o job submetido para execução, começamos o processamento do loop de
+* timeout.
+
+* Primeiro, lemos o parâmetro de timeout padrão do servidor:
+    CALL FUNCTION &apos;RSAN_SYSTEM_PARAMETER_READ&apos;
+      EXPORTING
+        i_name     = &apos;icm/keep_alive_timeout&apos;
+      IMPORTING
+        e_value    = l_keep_alive_timeout
+      EXCEPTIONS
+        read_error = 1
+        OTHERS     = 2.
+
+    IF sy-subrc = 0.
+      DATA(l_timeout) = l_keep_alive_timeout.
+    ELSE.
+      l_timeout = 30. &quot;Valor padrão do icm/keep_alive_timeout
+    ENDIF.
+
+    GET TIME STAMP FIELD DATA(l_begin_time).
+
+    DO.
+
+      CLEAR: l_listident, l_current_time.
+
+*   Já temos o número de spool do job?
+      SELECT listident
+        FROM tbtcp
+        WHERE jobname  = @l_jobname
+          AND jobcount = @l_jobcount
+        ORDER BY PRIMARY KEY
+         INTO @l_listident
+           UP TO 1 ROWS.
+      ENDSELECT.
+
+      IF l_listident &lt;&gt; 0.
+
+*     Sim; hora de sair do loop
+        EXIT.
+
+      ELSE.
+
+        GET TIME STAMP FIELD l_current_time.
+
+*     Fazemos a subtração para ver se já bateu o limite do timeout:
+        TRY .
+
+            DATA(l_spool_gen_time) = cl_abap_tstmp=&gt;subtract(
+                tstmp1 = l_current_time
+                tstmp2 = l_begin_time
+            ).
+
+          CATCH cx_parameter_invalid_range cx_parameter_invalid_type.
+
+*         Deu algum problema na subtração dos tempos, logo é melhor já assumir
+*         o tempo de timeout e sair do método
+            l_spool_gen_time = l_timeout.
+
+        ENDTRY.
+
+        IF l_spool_gen_time &gt;= l_timeout.
+*       O limite do timeout foi batido e nada do spool gerado...
+*       Logo, retornamos uma exception aqui
+          MESSAGE e005 INTO l_message.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = VALUE #( ( id = sy-msgid
+                                  type  = sy-msgty
+                                  number = sy-msgno
+                                  message = l_message
+                                  message_v1 = sy-msgv1
+                                  message_v2 = sy-msgv2
+                                  message_v3 = sy-msgv3
+                                  message_v4 = sy-msgv4 ) ).
+        ENDIF.
+
+      ENDIF.
+
+    ENDDO.
+
+* Com o número do spool encontrado, basta gerar o PDF:
+    DATA(l_src_spoolid) = conv rspoid( l_listident ).
+
+    CALL FUNCTION &apos;CONVERT_OTFSPOOLJOB_2_PDF&apos;
+      EXPORTING
+        src_spoolid              = l_src_spoolid
+        no_dialog                = abap_true
+        pdf_destination          = &apos;X&apos;
+      IMPORTING
+        bin_file                 = r_pdf
+      EXCEPTIONS
+        err_no_otf_spooljob      = 1
+        err_no_spooljob          = 2
+        err_no_permission        = 3
+        err_conv_not_possible    = 4
+        err_bad_dstdevice        = 5
+        user_cancelled           = 6
+        err_spoolerror           = 7
+        err_temseerror           = 8
+        err_btcjob_open_failed   = 9
+        err_btcjob_submit_failed = 10
+        err_btcjob_close_failed  = 11
+        OTHERS                   = 12.
+
+    IF sy-subrc &lt;&gt; 0.
+*   Outra exception se der erro aqui
+*   RAISE EXCEPTION TYPE (...)
+    ENDIF.
+
+* Como limpeza final, podemos opcionalmente deletar o job e o spool:
+    CALL FUNCTION &apos;BP_JOB_DELETE&apos;
+      EXPORTING
+        jobcount               = l_jobcount
+        jobname                = l_jobname
+        forcedmode             = abap_true
+      EXCEPTIONS
+        job_is_already_running = 1
+        OTHERS                 = 2.
+
+    DATA(l_spoolid) = conv rqident( l_listident ).
+
+    CALL FUNCTION &apos;RSPO_R_RDELETE_SPOOLREQ&apos;
+      EXPORTING
+        spoolid = l_spoolid.
+  ENDMETHOD.</source>
+  </method>
+ </CLAS>
+</nugget>
