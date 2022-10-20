@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="ZBROC_CL_FV70">
+ <CLAS CLSNAME="ZBROC_CL_FV70" VERSION="1" LANGU="P" DESCRIPT="WF Fatura pré-editada - FV70" CATEGORY="00" EXPOSURE="0" STATE="1" RELEASE="0" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" DURATION_TYPE="0 " RISK_LEVEL="0 " ZSAPLINK_PLUGIN_MAJOR_VERSION="0 " ZSAPLINK_PLUGIN_MINOR_VERSION="1 " ZSAPLINK_PLUGIN_BUILD_VERSION="0 " ZSAPLINK_PLUGIN_INFO1="ZSAPLINK_CLASS is part of the main ZSAPLINK project --&gt; This plugin found there instead of ZSAPLINK_PLUGINS projects" ZSAPLINK_PLUGIN_INFO2="SAPLINK homepage: https://www.assembla.com/spaces/saplink/wiki" ZSAPLINK_PLUGIN_INFO3="Download from https://www.assembla.com/code/saplink/subversion/nodes" ZSAPLINK_PLUGIN_INFO4="and navigate to:  trunk -&gt; core -&gt; ZSAPLINK -&gt; CLAS -&gt; ZSAPLINK_CLASS.slnk">
+  <implementing CLSNAME="ZBROC_CL_FV70" REFCLSNAME="IF_WORKFLOW" VERSION="1" EXPOSURE="2" STATE="1" RELTYPE="1" EDITORDER="3 "/>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+CLASS lcl_api IMPLEMENTATION.
+  METHOD bapi_user_get_detail.
+    DATA lt_return TYPE bapiret2_t.
+
+    CLEAR rs_address.
+    CALL FUNCTION &apos;BAPI_USER_GET_DETAIL&apos;
+      EXPORTING
+        username = i_user_name    &quot; User Name
+*       cache_results  = cache_results    &quot; Temporarily buffer results in work process
+      IMPORTING
+*       logondata      = logondata    &quot; Structure with Logon Data
+*       defaults = defaults    &quot; Structure with User Defaults
+        address  = rs_address    &quot; Address Data
+*       company  = company    &quot; Company for Company Address
+*       snc      = snc    &quot; Secure Network Communication Data
+*       ref_user = ref_user    &quot; User Name of the Reference User
+*       alias    = alias    &quot; User Name Alias
+*       uclass   = uclass    &quot; License-Related User Classification
+*       lastmodified   = lastmodified    &quot; User: Last Change (Date and Time)
+*       islocked = islocked    &quot; User Lock
+*       identity = identity    &quot; Person Assignment of an Identity
+*       admindata      = admindata    &quot; User: Administration Data
+      TABLES
+*       parameter      = parameter    &quot; Table with User Parameters
+*       profiles = profiles    &quot; Profiles
+*       activitygroups = activitygroups    &quot; Activity Groups
+        return   = lt_return    &quot; Return Structure
+*       addtel   = addtel    &quot; BAPI Structure Telephone Numbers
+*       addfax   = addfax    &quot; BAPI Structure Fax Numbers
+*       addttx   = addttx    &quot; BAPI Structure Teletex Numbers
+*       addtlx   = addtlx    &quot; BAPI Structure Telex Numbers
+*       addsmtp  = addsmtp    &quot; E-Mail Addresses BAPI Structure
+*       addrml   = addrml    &quot; Inhouse Mail BAPI Structure
+*       addx400  = addx400    &quot; BAPI Structure X400 Addresses
+*       addrfc   = addrfc    &quot; BAPI Structure RFC Addresses
+*       addprt   = addprt    &quot; BAPI Structure Printer Addresses
+*       addssf   = addssf    &quot; BAPI Structure SSF Addresses
+*       adduri   = adduri    &quot; BAPI Structure: URL, FTP, and so on
+*       addpag   = addpag    &quot; BAPI Structure Pager Numbers
+*       addcomrem      = addcomrem    &quot; BAPI Structure Communication Comments
+*       parameter1     = parameter1    &quot; Replaces Parameter (Length 18 -&gt; 40)
+*       groups   = groups    &quot; Transfer Structure for a List of User Groups
+*       uclasssys      = uclasssys    &quot; System-Specific License-Related User Classification
+*       extidhead      = extidhead    &quot; Header Data for External ID of a User
+*       extidpart      = extidpart    &quot; Part of a Long Field for the External ID of a User
+*       systems  = systems    &quot; BAPI Structure for CUA Target Systems
+      .
+    IF line_exists( lt_return[ type = &apos;E&apos; ] ) OR
+    line_exists( lt_return[ type = &apos;A&apos; ] ).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = lt_return.
+    ENDIF.
+  ENDMETHOD.
+  METHOD preliminary_posting_doc_delete.
+
+    CALL FUNCTION &apos;PRELIMINARY_POSTING_DOC_DELETE&apos;
+      EXPORTING
+*       belnn              = belnn    &quot; Document number of the new document (change document number)
+        belnr              = i_document_number    &quot; Document number
+*       bstat              = bstat    &quot; BSTAT of BKPF record / If=SPACE, no update
+        bukrs              = i_company_code    &quot; Company code
+*       gjahn              = gjahn    &quot; Fiscal year of the new document
+        gjahr              = i_fiscal_year    &quot; Fiscal year
+*       no_bsip            = no_bsip
+*       split_data         = split_data
+      EXCEPTIONS
+        document_not_found = 1
+        update_error       = 2
+        OTHERS             = 3.
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                 WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                 INTO DATA(l_message).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = VALUE #( ( id = sy-msgid
+          type = sy-msgty
+          number = sy-msgno
+          message = l_message
+          message_v1 = sy-msgv1
+          message_v2 = sy-msgv2
+          message_v3 = sy-msgv3
+          message_v4 = sy-msgv4 ) ).
+    ENDIF.
+  ENDMETHOD.
+  METHOD rh_get_actors.
+
+    CLEAR rt_actors.
+    DATA(lt_container) = it_container.
+    CALL FUNCTION &apos;RH_GET_ACTORS&apos;
+      EXPORTING
+        act_object                = i_act_object    &quot; Role object (type and ID)
+*       act_task                  = act_task    &quot; Task for which role resolution is carried out
+*       act_wi_id                 = act_wi_id
+*       act_plvar                 = act_plvar    &quot; Plan version (default -&gt; active plan version)
+*       search_date               = search_date    &quot; Date for role resolution
+*       actor_container_oo        = actor_container_oo    &quot; Container: Implementing Class
+      TABLES
+        actor_container           = lt_container    &quot; Import container for role resolution
+*       excluded_agents           = excluded_agents
+        actor_tab                 = rt_actors    &quot; Role resolution result
+*       error_tab                 = error_tab    &quot; Agents determined with no task
+      EXCEPTIONS
+        no_active_plvar           = 1
+        no_actor_found            = 2
+        exception_of_role_raised  = 3
+        no_valid_agent_determined = 4
+        no_container              = 5
+        OTHERS                    = 6.
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+         WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+         INTO DATA(l_message).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = VALUE #( ( id = sy-msgid
+          type = sy-msgty
+          number = sy-msgno
+          message = l_message
+          message_v1 = sy-msgv1
+          message_v2 = sy-msgv2
+          message_v3 = sy-msgv3
+          message_v4 = sy-msgv4 ) ).
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      bapi_user_get_detail    IMPORTING i_user_name       TYPE xubname
+                              RETURNING VALUE(rs_address) TYPE bapiaddr3
+                              RAISING   cx_bapi_error,
+      preliminary_posting_doc_delete IMPORTING i_company_code    TYPE bukrs
+                                               i_document_number TYPE belnr_d
+                                               i_fiscal_year     TYPE gjahr
+                                     RAISING   cx_bapi_error,
+      rh_get_actors      IMPORTING i_act_object     TYPE hrobjec_14
+                                   it_container     TYPE swconttab
+                         RETURNING VALUE(rt_actors) TYPE tswhactor
+                         RAISING   cx_bapi_error.
+ENDCLASS.</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="MC_DOCUMENT_TYPE" VERSION="1" LANGU="P" DESCRIPT="Tipo de documento" EXPOSURE="2" STATE="1" EDITORDER="5 " ATTDECLTYP="2" ATTVALUE="&apos;DR&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="BLART" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="MC_RULE" VERSION="1" LANGU="P" DESCRIPT="Identificação concatenada (tipo e ID) de objetos organizac." EXPOSURE="2" STATE="1" EDITORDER="7 " ATTDECLTYP="2" ATTVALUE="&apos;AC91000045&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="HROBJEC_14" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="MC_SUBTYPE" VERSION="1" LANGU="P" DESCRIPT="Subinfotipo" EXPOSURE="2" STATE="1" EDITORDER="6 " ATTDECLTYP="2" ATTVALUE="&apos;9002&apos;" ATTEXPVIRT="0" TYPTYPE="1" TYPE="SUBTY" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="MR_API" VERSION="1" LANGU="P" DESCRIPT="Mediador de APIs" EXPOSURE="0" STATE="1" EDITORDER="8 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="LCL_API" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="MS_LPOR" VERSION="1" LANGU="P" DESCRIPT="Ref.a objetos persistente local" EXPOSURE="0" STATE="1" EDITORDER="4 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="1" TYPE="SIBFLPOR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="M_COMPANY_CODE" VERSION="1" LANGU="P" DESCRIPT="Empresa" EXPOSURE="2" STATE="1" EDITORDER="1 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="BUKRS" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " ATTKEYFLD="X" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="M_DOCUMENT_NUMBER" VERSION="1" LANGU="P" DESCRIPT="Nº documento de um documento contábil" EXPOSURE="2" STATE="1" EDITORDER="2 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="BELNR_D" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " ATTKEYFLD="X" TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZBROC_CL_FV70" CMPNAME="M_FISCAL_YEAR" VERSION="1" LANGU="P" DESCRIPT="Exercício" EXPOSURE="2" STATE="1" EDITORDER="3 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="GJAHR" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " ATTKEYFLD="X" TYPESRC_LENG="0 "/>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_OBJECT~DEFAULT_ATTRIBUTE_VALUE">
+   <source>method BI_OBJECT~DEFAULT_ATTRIBUTE_VALUE.
+  endmethod.</source>
+  </interfaceMethod>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_OBJECT~EXECUTE_DEFAULT_METHOD">
+   <source>method BI_OBJECT~EXECUTE_DEFAULT_METHOD.
+  endmethod.</source>
+  </interfaceMethod>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_OBJECT~RELEASE">
+   <source>method BI_OBJECT~RELEASE.
+  endmethod.</source>
+  </interfaceMethod>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_PERSISTENT~FIND_BY_LPOR">
+   <source>METHOD bi_persistent~find_by_lpor.
+
+    result = NEW zbroc_cl_fv70(
+      i_company_code    = lpor-instid(4)
+      i_document_number = lpor-instid+4(10)
+      i_fiscal_year     = CONV #( lpor-instid+14(4) )
+    ).
+
+  ENDMETHOD.</source>
+  </interfaceMethod>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_PERSISTENT~LPOR">
+   <source>METHOD bi_persistent~lpor.
+
+    result = me-&gt;ms_lpor.
+  ENDMETHOD.</source>
+  </interfaceMethod>
+  <interfaceMethod CLSNAME="ZBROC_CL_FV70" CPDNAME="BI_PERSISTENT~REFRESH">
+   <source>method BI_PERSISTENT~REFRESH.
+  endmethod.</source>
+  </interfaceMethod>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="P" DESCRIPT="CONSTRUCTOR" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="2" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="CONSTRUCTOR" SCONAME="I_COMPANY_CODE" VERSION="1" LANGU="P" DESCRIPT="Empresa" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="BUKRS"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="CONSTRUCTOR" SCONAME="I_DOCUMENT_NUMBER" VERSION="1" LANGU="P" DESCRIPT="Nº documento de um documento contábil" CMPTYPE="1" MTDTYPE="2" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="BELNR_D"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="CONSTRUCTOR" SCONAME="I_FISCAL_YEAR" VERSION="1" LANGU="P" DESCRIPT="Exercício" CMPTYPE="1" MTDTYPE="2" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="GJAHR"/>
+   <source>METHOD constructor.
+
+    me-&gt;m_company_code = i_company_code.
+    me-&gt;m_document_number = i_document_number.
+    me-&gt;m_fiscal_year = i_fiscal_year.
+
+    me-&gt;ms_lpor-catid = &apos;CL&apos;.
+    me-&gt;ms_lpor-typeid = &apos;ZBROC_CL_FV70&apos;.
+    me-&gt;ms_lpor-instid = |{ me-&gt;m_company_code }{ me-&gt;m_document_number }{ me-&gt;m_fiscal_year }|.
+
+    me-&gt;mr_api = NEW lcl_api( ).
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="DELETE_PARKED_INVOICE" VERSION="1" LANGU="P" DESCRIPT="Deleta a fatura pré-editada" EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZBROC_CL_FV70" CMPNAME="DELETE_PARKED_INVOICE" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="P" DESCRIPT='BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;' MTDTYPE="0" EDITORDER="1 "/>
+   <source>METHOD delete_parked_invoice.
+
+    TRY.
+        me-&gt;mr_api-&gt;preliminary_posting_doc_delete(
+        EXPORTING
+            i_company_code    = me-&gt;m_company_code
+            i_document_number = me-&gt;m_document_number
+            i_fiscal_year     = me-&gt;m_fiscal_year
+          ).
+*      CATCH cx_bapi_error.    &quot;
+      CATCH cx_bapi_error INTO DATA(lx_error).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_ACTOR_EMAIL" VERSION="1" LANGU="P" DESCRIPT="Retorna o e-mail do iniciador" EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_ACTOR_EMAIL" SCONAME="I_REF_ACTOR" VERSION="1" LANGU="P" DESCRIPT="Responsável" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="SWP_AGENT"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_ACTOR_EMAIL" SCONAME="RT_EMAILS" VERSION="1" LANGU="P" DESCRIPT="BCS: tabela interna com endereços SMTP" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="BCSY_SMTPA"/>
+   <source>METHOD get_actor_email.
+
+    CLEAR rt_emails.
+
+    TRY.
+        DATA(ls_address) = me-&gt;mr_api-&gt;bapi_user_get_detail( i_user_name = i_ref_actor+2 ).
+*        CATCH cx_bapi_error.    &quot;
+
+        rt_emails = VALUE #( ( ls_address-e_mail ) ).
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_EMAILS" VERSION="1" LANGU="P" DESCRIPT="Retorna os e-mails dos superiores hierárquicos" EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_EMAILS" SCONAME="I_REF_ACTOR" VERSION="1" LANGU="P" DESCRIPT="Responsável" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="SWP_AGENT"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_EMAILS" SCONAME="I_HRQ_LVL" VERSION="1" LANGU="P" DESCRIPT="Nº sequencial" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WRF_LFD_NR"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_EMAILS" SCONAME="RT_EMAILS" VERSION="1" LANGU="P" DESCRIPT="BCS: tabela interna com endereços SMTP" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="BCSY_SMTPA"/>
+   <source>METHOD get_emails.
+
+    CLEAR rt_emails.
+
+    DATA(lt_actors) = me-&gt;get_superiors(
+          i_ref_actor  = i_ref_actor
+          i_hrq_lvl    = i_hrq_lvl
+          ).
+
+    LOOP AT lt_actors ASSIGNING FIELD-SYMBOL(&lt;ls_actor&gt;).
+      TRY.
+          DATA(ls_address) = me-&gt;mr_api-&gt;bapi_user_get_detail( i_user_name = &lt;ls_actor&gt;-objid ).
+*        CATCH cx_bapi_error.    &quot;
+        CATCH cx_bapi_error.
+          CONTINUE.
+      ENDTRY.
+
+      rt_emails = VALUE #( BASE rt_emails ( ls_address-e_mail ) ).
+    ENDLOOP.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_INSTANCE" VERSION="1" LANGU="P" DESCRIPT="Retorna um objeto deste tipo" EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_INSTANCE" SCONAME="I_COMPANY_CODE" VERSION="1" LANGU="P" DESCRIPT="Empresa" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="BUKRS"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_INSTANCE" SCONAME="I_DOCUMENT_NUMBER" VERSION="1" LANGU="P" DESCRIPT="Nº documento de um documento contábil" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="BELNR_D"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_INSTANCE" SCONAME="I_FISCAL_YEAR" VERSION="1" LANGU="P" DESCRIPT="Exercício" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="GJAHR"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_INSTANCE" SCONAME="RR_INSTANCE" VERSION="1" LANGU="P" DESCRIPT="WF Fatura pré-editada - FV70" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="3" TYPE="ZBROC_CL_FV70"/>
+   <source>METHOD get_instance.
+
+    rr_instance = NEW #( i_company_code    = i_company_code
+                         i_document_number = i_document_number
+                         i_fiscal_year     = i_fiscal_year ).
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_SUPERIORS" VERSION="1" LANGU="P" DESCRIPT="Retorna os superiores no próximo nível hierárquico" EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_SUPERIORS" SCONAME="I_REF_ACTOR" VERSION="1" LANGU="P" DESCRIPT="Responsável" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="SWP_AGENT"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_SUPERIORS" SCONAME="I_HRQ_LVL" VERSION="1" LANGU="P" DESCRIPT="Nº sequencial" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="WRF_LFD_NR"/>
+   <parameter CLSNAME="ZBROC_CL_FV70" CMPNAME="GET_SUPERIORS" SCONAME="RT_SUPERIORS" VERSION="1" LANGU="P" DESCRIPT="Tabela com objetos organizacionais" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="TSWHACTOR"/>
+   <source>METHOD get_superiors.
+
+    CLEAR rt_superiors.
+    DATA(lt_container) = VALUE swconttab(
+          ( element = &apos;BLART&apos;        elemlength = 002 type = &apos;C&apos; value = mc_document_type )
+          ( element = &apos;BUKRS&apos;        elemlength = 004 type = &apos;C&apos; value = me-&gt;m_company_code )
+          ( element = &apos;HR_STRUCTURE&apos; elemlength = 001 type = &apos;C&apos; value = abap_true )
+          ( element = &apos;INITIATOR&apos;    elemlength = 014 type = &apos;C&apos; value = i_ref_actor )
+          ( element = &apos;LAND1&apos;        elemlength = 003 type = &apos;C&apos;  )
+          ( element = &apos;LEVEL&apos;        elemlength = 003 type = &apos;N&apos; value = i_hrq_lvl )
+          ( element = &apos;OBJID&apos;        elemlength = 045 type = &apos;C&apos; value = i_ref_actor+2 )
+          ( element = &apos;OTYPE&apos;        elemlength = 002 type = &apos;C&apos; value = i_ref_actor(2) )
+          ( element = &apos;SUBTY&apos;        elemlength = 004 type = &apos;C&apos; value = mc_subtype )
+          ).
+    TRY.
+        rt_superiors = me-&gt;mr_api-&gt;rh_get_actors(
+          i_act_object  = mc_rule
+          it_container  = lt_container
+        ).
+*                 CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+
+    DELETE rt_superiors WHERE otype &lt;&gt; &apos;US&apos;.
+  ENDMETHOD.</source>
+  </method>
+ </CLAS>
+</nugget>
