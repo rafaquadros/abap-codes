@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="RFID_MONITOR">
+ <PROG NAME="ZBRTAR001" VARCL="X" SUBC="1" APPL="Z" SECU="GRSA_PRG" RSTAT="K" RMAND="100" RLOAD="E" FIXPT="X" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="I" KEY="001" ENTRY="Selection parameters" LENGTH="25 "/>
+    <textElement ID="I" KEY="P01" ENTRY="Show log" LENGTH="20 "/>
+    <textElement ID="I" KEY="P02" ENTRY="Reprocess step" LENGTH="20 "/>
+    <textElement ID="I" KEY="P03" ENTRY="Refresh" LENGTH="10 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Monitor of RFID integration steps" LENGTH="33 "/>
+    <textElement ID="R" ENTRY="Monitor of RFID Intercompany processes" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_DTPR" ENTRY="        Processing date" LENGTH="23 "/>
+    <textElement ID="S" KEY="S_SPLT" ENTRY="        Supplying plant" LENGTH="23 "/>
+    <textElement ID="S" KEY="S_SSTL" ENTRY="        Supplying storage location" LENGTH="34 "/>
+    <textElement ID="S" KEY="S_STEP" ENTRY="        Intercompany process" LENGTH="30 "/>
+    <textElement ID="S" KEY="S_TMPR" ENTRY="        Processing time" LENGTH="23 "/>
+    <textElement ID="S" KEY="S_TPLT" ENTRY="        Receiving plant" LENGTH="23 "/>
+    <textElement ID="S" KEY="S_TSTL" ENTRY="        Receiving storage location" LENGTH="34 "/>
+   </language>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="001" ENTRY="Parâmetros de seleção" LENGTH="25 "/>
+    <textElement ID="I" KEY="P01" ENTRY="Mostrar mensagens" LENGTH="20 "/>
+    <textElement ID="I" KEY="P02" ENTRY="Reprocessar etapa" LENGTH="20 "/>
+    <textElement ID="I" KEY="P03" ENTRY="Atualizar" LENGTH="10 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Monitor de integração via RFID" LENGTH="33 "/>
+    <textElement ID="R" ENTRY="Monitor de processos intercompany iniciados através de RFID" LENGTH="70 "/>
+    <textElement ID="S" KEY="S_DTPR" ENTRY="        Data do processamento" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_SPLT" ENTRY="        Planta de origem" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_SSTL" ENTRY="        Depósito de origem" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_STEP" ENTRY="        Processo intercompany" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_TMPR" ENTRY="        Horário do processamento" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_TPLT" ENTRY="        Planta receptora" LENGTH="38 "/>
+    <textElement ID="S" KEY="S_TSTL" ENTRY="        Depósito receptor" LENGTH="38 "/>
+   </language>
+  </textPool>
+  <pfstatus>
+   <pfstatus_sta CODE="STANDARD_FULLSCREEN" MODAL="D" ACTCODE="000001" PFKCODE="000001" BUTCODE="0001" INT_NOTE="Monitor of RFID Intercompany processes"/>
+   <pfstatus_fun CODE="%ML" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Folder" PATH="F"/>
+   <pfstatus_fun CODE="%PC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_EXPORT" ICON_ID="@49@" FUN_TEXT="Local File..." PATH="L"/>
+   <pfstatus_fun CODE="%SC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SEARCH" ICON_ID="@13@" FUN_TEXT="Find" PATH="N"/>
+   <pfstatus_fun CODE="%SC+" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SEARCH_NEXT" ICON_ID="@4E@" FUN_TEXT="Find Next" PATH="W"/>
+   <pfstatus_fun CODE="%SL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_MAIL" ICON_ID="@1S@" FUN_TEXT="Mail Recipient" PATH="M"/>
+   <pfstatus_fun CODE="&amp;ABC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_ABC" ICON_ID="@DL@" FUN_TEXT="ABC Analysis" PATH="A"/>
+   <pfstatus_fun CODE="&amp;ALL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_ALL" ICON_ID="@4B@" FUN_TEXT="Select All" PATH="S"/>
+   <pfstatus_fun CODE="&amp;AQW" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_WORD_PROCESSING" ICON_ID="@DK@" FUN_TEXT="Word Processing..." PATH="W"/>
+   <pfstatus_fun CODE="&amp;AUF" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Define Totals Drilldown..." PATH="S"/>
+   <pfstatus_fun CODE="&amp;AVE" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Saving..." PATH="S"/>
+   <pfstatus_fun CODE="&amp;AVE" TEXTNO="002" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANT_SAVE" ICON_ID="@DN@" FUN_TEXT="Save Layout..."/>
+   <pfstatus_fun CODE="&amp;AVR" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Mean Value" PATH="M"/>
+   <pfstatus_fun CODE="&amp;CDF" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Unfreeze Columns" PATH="U"/>
+   <pfstatus_fun CODE="&amp;CFI" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Freeze to Column" PATH="F"/>
+   <pfstatus_fun CODE="&amp;COUNT" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Count" PATH="C"/>
+   <pfstatus_fun CODE="&amp;DATA_SAVE" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SYSTEM_SAVE" ICON_ID="@2L@" FUN_TEXT="Save"/>
+   <pfstatus_fun CODE="&amp;EB9" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_TABLE_SETTINGS" ICON_ID="@36@" FUN_TEXT="Call Up Report..." PATH="B"/>
+   <pfstatus_fun CODE="&amp;ELP" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SYSTEM_HELP" ICON_ID="@35@" FUN_TEXT="Help"/>
+   <pfstatus_fun CODE="&amp;ERW" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Manage..." PATH="M"/>
+   <pfstatus_fun CODE="&amp;ETA" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_DETAIL" ICON_ID="@16@" FUN_TEXT="Details"/>
+   <pfstatus_fun CODE="&amp;F03" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Back" PATH="B"/>
+   <pfstatus_fun CODE="&amp;F12" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_CANCEL" ICON_ID="@0W@" FUN_TEXT="Cancel" PATH="A"/>
+   <pfstatus_fun CODE="&amp;F15" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Exit" PATH="X"/>
+   <pfstatus_fun CODE="&amp;F4" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Possible Entries"/>
+   <pfstatus_fun CODE="&amp;GRAPH" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_GRAPHICS" ICON_ID="@0N@" FUN_TEXT="Graphic" PATH="G"/>
+   <pfstatus_fun CODE="&amp;IC1" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_DETAIL" ICON_ID="@16@" FUN_TEXT="Choose"/>
+   <pfstatus_fun CODE="&amp;ILD" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_FILTER_UNDO" ICON_ID="@GD@" FUN_TEXT="Delete Filter" PATH="L"/>
+   <pfstatus_fun CODE="&amp;ILT" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_FILTER" ICON_ID="@4G@" FUN_TEXT="Set Filter" PATH="F"/>
+   <pfstatus_fun CODE="&amp;INFO" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_INFORMATION" ICON_ID="@0S@" FUN_TEXT="Information"/>
+   <pfstatus_fun CODE="&amp;MAX" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Maximum" PATH="A"/>
+   <pfstatus_fun CODE="&amp;MIN" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Minimum" PATH="I"/>
+   <pfstatus_fun CODE="&amp;OAD" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Choose..." PATH="H"/>
+   <pfstatus_fun CODE="&amp;OAD" TEXTNO="002" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANT_CHOOSE" ICON_ID="@DM@" FUN_TEXT="Select Layout..."/>
+   <pfstatus_fun CODE="&amp;ODN" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SORT_DOWN" ICON_ID="@3F@" FUN_TEXT="Sort in Descending Order" PATH="O"/>
+   <pfstatus_fun CODE="&amp;OL0" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANTS" ICON_ID="@LZ@" FUN_TEXT="Change Layout..."/>
+   <pfstatus_fun CODE="&amp;OLX" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_VARIANTS" ICON_ID="@0R@" FUN_TEXT="Change..." PATH="C"/>
+   <pfstatus_fun CODE="&amp;OPT" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Optimize Width" PATH="P"/>
+   <pfstatus_fun CODE="&amp;OUP" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SORT_UP" ICON_ID="@3E@" FUN_TEXT="Sort in Ascending Order" PATH="I"/>
+   <pfstatus_fun CODE="&amp;REFRESH" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_REFRESH" ICON_ID="@42@" FUN_TEXT="Refresh"/>
+   <pfstatus_fun CODE="&amp;RNT" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_PRINT" ICON_ID="@0X@" FUN_TEXT="Print" PATH="P"/>
+   <pfstatus_fun CODE="&amp;RNT_PREV" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_LAYOUT_CONTROL" ICON_ID="@3G@" FUN_TEXT="Print Preview" PATH="R"/>
+   <pfstatus_fun CODE="&amp;SAL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_DESELECT_ALL" ICON_ID="@4D@" FUN_TEXT="Deselect All" PATH="D"/>
+   <pfstatus_fun CODE="&amp;SUM" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_INTERMEDIATE_SUM" ICON_ID="@5V@" FUN_TEXT="Subtotals..." PATH="T"/>
+   <pfstatus_fun CODE="&amp;UMC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SUM" ICON_ID="@3Z@" FUN_TEXT="Total" PATH="T"/>
+   <pfstatus_fun CODE="&amp;VCRYSTAL" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Crystal Reports" PATH="C"/>
+   <pfstatus_fun CODE="&amp;VEXCEL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_XLS" ICON_ID="@J2@" FUN_TEXT="Microsoft Excel" PATH="M"/>
+   <pfstatus_fun CODE="&amp;VGRID" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="SAP List Viewer" PATH="S"/>
+   <pfstatus_fun CODE="&amp;VLOTUS" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Lotus 1-2-3" PATH="L"/>
+   <pfstatus_fun CODE="&amp;XXL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_XXL" ICON_ID="@DJ@" FUN_TEXT="Spreadsheet..." PATH="A"/>
+   <pfstatus_fun CODE="&amp;ZLOG" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_PROTOCOL" ICON_ID="@DH@" FUN_TEXT="Display log"/>
+   <pfstatus_fun CODE="&amp;ZRFRSH" TEXTNO="001" TEXT_TYPE="S" ICON_ID="@42@" FUN_TEXT="Refresh"/>
+   <pfstatus_fun CODE="&amp;ZRPRC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SYSTEM_REDO" ICON_ID="@4R@" FUN_TEXT="Reprocess"/>
+   <pfstatus_fun CODE="&amp;ZSKIP" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SKIP" ICON_ID="@43@" FUN_TEXT="Skip step" INFO_TEXT="Skip Step"/>
+   <pfstatus_men CODE="000001" NO="01" REF_TYPE="F" REF_CODE="&amp;RNT_PREV" REF_NO="001"/>
+   <pfstatus_men CODE="000001" NO="02" REF_TYPE="F" REF_CODE="&amp;RNT" REF_NO="001"/>
+   <pfstatus_men CODE="000001" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000001" NO="04" REF_TYPE="M" REF_CODE="000002"/>
+   <pfstatus_men CODE="000001" NO="05" REF_TYPE="M" REF_CODE="000003"/>
+   <pfstatus_men CODE="000001" NO="06" REF_TYPE="S"/>
+   <pfstatus_men CODE="000001" NO="07" REF_TYPE="F" REF_CODE="&amp;F15" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="01" REF_TYPE="F" REF_CODE="&amp;AQW" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="02" REF_TYPE="F" REF_CODE="&amp;XXL" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="03" REF_TYPE="F" REF_CODE="%PC" REF_NO="001"/>
+   <pfstatus_men CODE="000003" NO="01" REF_TYPE="F" REF_CODE="%SL" REF_NO="001"/>
+   <pfstatus_men CODE="000003" NO="02" REF_TYPE="F" REF_CODE="%ML" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="01" REF_TYPE="F" REF_CODE="&amp;ALL" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="02" REF_TYPE="F" REF_CODE="&amp;SAL" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="04" REF_TYPE="F" REF_CODE="&amp;ILT" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="05" REF_TYPE="F" REF_CODE="&amp;ILD" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="06" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="07" REF_TYPE="F" REF_CODE="&amp;OUP" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="08" REF_TYPE="F" REF_CODE="&amp;ODN" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="09" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="10" REF_TYPE="M" REF_CODE="000005"/>
+   <pfstatus_men CODE="000004" NO="11" REF_TYPE="F" REF_CODE="&amp;SUM" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="12" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="13" REF_TYPE="F" REF_CODE="%SC" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="14" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="15" REF_TYPE="F" REF_CODE="&amp;F12" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="01" REF_TYPE="F" REF_CODE="&amp;UMC" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="02" REF_TYPE="F" REF_CODE="&amp;AVR" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="03" REF_TYPE="F" REF_CODE="&amp;MIN" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="04" REF_TYPE="F" REF_CODE="&amp;MAX" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="05" REF_TYPE="F" REF_CODE="&amp;COUNT" REF_NO="001"/>
+   <pfstatus_men CODE="000006" NO="01" REF_TYPE="F" REF_CODE="&amp;ABC" REF_NO="001"/>
+   <pfstatus_men CODE="000006" NO="02" REF_TYPE="S"/>
+   <pfstatus_men CODE="000006" NO="03" REF_TYPE="F" REF_CODE="&amp;F03" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="01" REF_TYPE="F" REF_CODE="&amp;VGRID" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="02" REF_TYPE="F" REF_CODE="&amp;VEXCEL" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="03" REF_TYPE="F" REF_CODE="&amp;VLOTUS" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="04" REF_TYPE="F" REF_CODE="&amp;VCRYSTAL" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="05" REF_TYPE="S"/>
+   <pfstatus_men CODE="000007" NO="06" REF_TYPE="F" REF_CODE="&amp;GRAPH" REF_NO="001"/>
+   <pfstatus_men CODE="000008" NO="01" REF_TYPE="M" REF_CODE="000009"/>
+   <pfstatus_men CODE="000008" NO="02" REF_TYPE="M" REF_CODE="000010"/>
+   <pfstatus_men CODE="000008" NO="03" REF_TYPE="F" REF_CODE="&amp;AUF" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="01" REF_TYPE="F" REF_CODE="&amp;OLX" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="02" REF_TYPE="F" REF_CODE="&amp;OAD" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000009" NO="04" REF_TYPE="F" REF_CODE="&amp;AVE" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="05" REF_TYPE="S"/>
+   <pfstatus_men CODE="000009" NO="06" REF_TYPE="F" REF_CODE="&amp;ERW" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="01" REF_TYPE="F" REF_CODE="&amp;OPT" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="02" REF_TYPE="S"/>
+   <pfstatus_men CODE="000010" NO="03" REF_TYPE="F" REF_CODE="&amp;CFI" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="04" REF_TYPE="F" REF_CODE="&amp;CDF" REF_NO="001"/>
+   <pfstatus_mtx CODE="000001" TEXT_TYPE="S" TEXT="List" PATH="L" INT_NOTE="Monitor of RFID Intercompany processes"/>
+   <pfstatus_mtx CODE="000002" TEXT_TYPE="S" TEXT="Export" PATH="E" INT_NOTE="STANDARD Save"/>
+   <pfstatus_mtx CODE="000003" TEXT_TYPE="S" TEXT="Send To" PATH="S"/>
+   <pfstatus_mtx CODE="000004" TEXT_TYPE="S" TEXT="Edit" PATH="E" INT_NOTE="STANDARD"/>
+   <pfstatus_mtx CODE="000005" TEXT_TYPE="S" TEXT="Calculate" PATH="C"/>
+   <pfstatus_mtx CODE="000006" TEXT_TYPE="S" TEXT="Goto" PATH="G" INT_NOTE="STANDARD"/>
+   <pfstatus_mtx CODE="000007" TEXT_TYPE="S" TEXT="Views" PATH="I"/>
+   <pfstatus_mtx CODE="000008" TEXT_TYPE="S" TEXT="Settings" PATH="S" INT_NOTE="STANDARD_FULLSCREEN"/>
+   <pfstatus_mtx CODE="000009" TEXT_TYPE="S" TEXT="Layout" PATH="A" INT_NOTE="Sub STANDARD"/>
+   <pfstatus_mtx CODE="000010" TEXT_TYPE="S" TEXT="Columns" PATH="C"/>
+   <pfstatus_act CODE="000001" NO="01" MENUCODE="000001"/>
+   <pfstatus_act CODE="000001" NO="02" MENUCODE="000004"/>
+   <pfstatus_act CODE="000001" NO="03" MENUCODE="000006"/>
+   <pfstatus_act CODE="000001" NO="04" MENUCODE="000007"/>
+   <pfstatus_act CODE="000001" NO="05" MENUCODE="000008"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="01" PFNO="39"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="02" PFNO="37"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="03" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="04" PFNO="05"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="05" PFNO="06"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="06" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="07" PFNO="28"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="08" PFNO="40"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="09" PFNO="29"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="10" PFNO="38"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="11" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="12" PFNO="30"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="13" PFNO="42"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="14" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="15" PFNO="46"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="16" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="17" PFNO="43"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="18" PFNO="44"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="19" PFNO="45"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="20" PFNO="31"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="21" PFNO="25"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="22" PFNO="47"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="23" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="24" PFNO="32"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="25" PFNO="33"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="26" PFNO="34"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="27" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="28" PFNO="36"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="29" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="30" PFNO="13"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="31" PFNO="18"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="32" PFNO="08"/>
+   <pfstatus_pfk CODE="000001" PFNO="01" FUNCODE="&amp;ELP" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="02" FUNCODE="&amp;IC1" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="03" FUNCODE="&amp;F03" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="04" FUNCODE="&amp;F4" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="05" FUNCODE="&amp;ALL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="06" FUNCODE="&amp;SAL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="08" FUNCODE="&amp;ZRFRSH" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="12" FUNCODE="&amp;F12" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="13" FUNCODE="&amp;ZLOG" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="15" FUNCODE="&amp;F15" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="18" FUNCODE="&amp;ZRPRC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="25" FUNCODE="&amp;ABC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="28" FUNCODE="&amp;OUP" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="29" FUNCODE="&amp;ILT" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="30" FUNCODE="&amp;UMC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="31" FUNCODE="%SL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="32" FUNCODE="&amp;OL0" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="33" FUNCODE="&amp;OAD" FUNNO="002"/>
+   <pfstatus_pfk CODE="000001" PFNO="34" FUNCODE="&amp;AVE" FUNNO="002"/>
+   <pfstatus_pfk CODE="000001" PFNO="36" FUNCODE="&amp;INFO" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="37" FUNCODE="&amp;EB9" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="38" FUNCODE="&amp;ILD" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="39" FUNCODE="&amp;ETA" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="40" FUNCODE="&amp;ODN" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="41" FUNCODE="&amp;VGRID" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="42" FUNCODE="&amp;SUM" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="43" FUNCODE="&amp;VEXCEL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="44" FUNCODE="&amp;AQW" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="45" FUNCODE="%PC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="46" FUNCODE="&amp;RNT_PREV" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="47" FUNCODE="&amp;GRAPH" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="48" FUNCODE="&amp;VCRYSTAL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="71" FUNCODE="%SC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="84" FUNCODE="%SC+" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="86" FUNCODE="&amp;RNT" FUNNO="001"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%CH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%ML"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%PC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SC+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ABC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ALL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AQW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AUF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AVR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS-"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CDF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CFI"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;COUNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRB"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRBATCH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRDESIG"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRTEMPL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRYSTAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DATA_SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DAU"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DOF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DON"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;EB3"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;EB9"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ELP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ERW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ETA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F03"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F12"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F15"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F4"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;GRAPH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;IC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ILD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ILT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;INFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;KOM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;LFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;LIS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;MAX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;MIN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;NFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;NTE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OAD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ODN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OL0"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OLX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OMP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OPT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OUP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;REFRESH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;RNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;RNT_PREV"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SUM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;UMC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;URL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VCRYSTAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VEXCEL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VGRID"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VLOTUS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XML"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XPA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XXL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ZLOG"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ZRFRSH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ZRPRC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ZSKIP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BAC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BACK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB2"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB3"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB9"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEBN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="COL0"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="COLX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DETA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DRUK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DSAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="ENTE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="EXIT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="EXPA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="FILD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="FILT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="GLIS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="HELP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="INFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="KOMP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P++"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P-"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P--"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PF09"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PF13"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PIC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PICK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRI"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRIN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="RW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SALL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SAUF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRB"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SKOM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SODN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SOUP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SUMC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="ZSUM"/>
+   <pfstatus_doc OBJ_TYPE="A" OBJ_CODE="000001" MODAL="D" INT_NOTE="Custom Interface              STANDARD_FULLSCREEN"/>
+   <pfstatus_doc OBJ_TYPE="P" OBJ_CODE="000001" MODAL="D" NORM="X" INT_NOTE="Standard Maximum Interaction STANDARD_FULLSCREEN"/>
+   <pfstatus_doc OBJ_TYPE="B" OBJ_CODE="000001" SUB_CODE="0001" INT_NOTE="STANDARD_FULLSCREEN"/>
+  </pfstatus>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Report       ZBRTAR001
+*&amp;
+*&amp;---------------------------------------------------------------------*
+*&amp;
+*&amp;
+*&amp;---------------------------------------------------------------------*
+
+
+INCLUDE: zbrtar001_top                           ,    &quot; global Data
+         zbrtar001_p01                           .    &quot; classes implementations
+INITIALIZATION.
+
+START-OF-SELECTION.
+  CREATE OBJECT obj_report.
+  obj_report-&gt;get_data( ).
+
+END-OF-SELECTION.
+  obj_report-&gt;show_data(  ).</source>
+ </PROG>
+ <PROG NAME="ZBRTAR001_TOP" VARCL="X" SUBC="I" RMAND="100" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRTAR001_TOP" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp; Include ZBRTAR001_TOP                          Report      ZBRTAR001
+*&amp;
+*&amp;---------------------------------------------------------------------*
+
+REPORT  zbrtar001 MESSAGE-ID zbr01.
+
+INCLUDE zbrtar001_d01. &quot; classes definitions
+
+**********************************************************************
+* REFERENCES VARIABLES
+**********************************************************************
+DATA: rfid_intercompany_step TYPE zdeta_rfid_int_intrcmpn_step,
+      plant                  TYPE werks_d,
+      storage_location       TYPE lgort_d,
+      date                   TYPE dats,
+      time                   TYPE tims.
+
+**********************************************************************
+* SELECTION-SCREEN
+**********************************************************************
+SELECTION-SCREEN BEGIN OF BLOCK b1 WITH FRAME TITLE text-001.
+SELECT-OPTIONS: s_step FOR rfid_intercompany_step NO INTERVALS,
+                s_splt FOR plant,
+                s_sstl FOR storage_location,
+                s_tplt FOR plant,
+                s_tstl FOR storage_location,
+                s_dtpr FOR date OBLIGATORY,
+                s_tmpr FOR time.
+SELECTION-SCREEN END OF BLOCK b1.
+
+**********************************************************************
+* GLOBAL OBJECTS
+**********************************************************************
+
+DATA
+      obj_report TYPE REF TO lcl_report.</source>
+ </PROG>
+ <PROG NAME="ZBRTAR001_D01" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="100" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRTAR001_D01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp;  Include           ZBRTAR001_D01
+*&amp;---------------------------------------------------------------------*
+
+CLASS lcl_report DEFINITION FINAL.
+  PUBLIC SECTION.
+    &quot;INTERFACES if_salv_csqt_content_manager.
+    METHODS:
+      get_data,
+      show_data.
+
+  PRIVATE SECTION.
+    DATA:
+      aobj_view           TYPE REF TO cl_salv_hierseq_table,
+      at_output_hdr       TYPE zpta_rfid_intgrtn_mntr_hdr,
+      at_output_itm       TYPE zpta_rfid_intgrtn_mntr_itm,
+      at_binding          TYPE salv_t_hierseq_binding.
+
+    METHODS:
+      display              &quot;IMPORTING iobj_container TYPE REF TO cl_gui_custom_container
+                           RAISING   cx_bapi_error,
+      on_user_command      FOR EVENT added_function OF cl_salv_events_hierseq
+                           IMPORTING e_salv_function,
+      on_link_click        FOR EVENT link_click OF cl_salv_events_hierseq
+                           IMPORTING row
+                                     column,
+      set_columns_order,
+      set_columns_styles,
+      &quot;set_custom_functions IMPORTING iobj_functions TYPE REF TO cl_salv_functions_list,
+      set_events,
+      set_expand_option,
+      set_functions,
+      set_selection_mode,
+      set_sort,
+      set_view.
+ENDCLASS.                    &quot;lcl_report DEFINITION</source>
+ </PROG>
+ <PROG NAME="ZBRTAR001_P01" VARCL="X" SUBC="I" APPL="Z" RSTAT="K" RMAND="100" RLOAD="E" UCCHECK="X">
+  <textPool>
+   <language SPRAS="E">
+    <textElement ID="R" ENTRY="Include ZBRTAR001_P01" LENGTH="21 "/>
+   </language>
+  </textPool>
+  <source>*&amp;---------------------------------------------------------------------*
+*&amp;  Include           ZBRTAR001_P01
+*&amp;---------------------------------------------------------------------*
+
+CLASS lcl_report IMPLEMENTATION.
+*  METHOD if_salv_csqt_content_manager~fill_container_content.
+*
+*    TRY .
+*        me-&gt;display( iobj_container = r_container ).
+*      CATCH cx_bapi_error.
+*    ENDTRY.
+*  ENDMETHOD.                    &quot;if_salv_csqt_content_manager~FILL_CONTAINER_CONTENT
+  METHOD get_data.
+    DATA: lobj_transfer_order    TYPE REF TO zcl_ta_rfid_stock_trnf_order,
+          lobj_outb_delivery     TYPE REF TO zcl_ta_outbound_delivery,
+          lobj_picking           TYPE REF TO zcl_ta_picking,
+          lobj_goods_issue       TYPE REF TO zcl_ta_goods_issue,
+          lobj_nf_writer         TYPE REF TO zcl_ta_rfid_packings_nf,
+          lobj_blind_count       TYPE REF TO zcl_ta_rfid_blind_count,
+          lobj_pcks_blnd_cnt     TYPE REF TO zcl_ta_rfid_pcks_blind_count,
+          lobj_strg_lcnt_trnf    TYPE REF TO zcl_ta_rfid_items_transfer,
+          lobj_iterator          TYPE REF TO zif_ta_iterator,
+          lobj_trsfr_ordr_itm    TYPE REF TO zcl_ta_intrcmp_trnsfr_item,
+          lt_steps_collection    TYPE zpta_rfid_int_steps,
+          lt_transfer_orders     TYPE zpta_rfid_intgrtn_mntr_hdr,
+          lg_src_plants          TYPE range_t_werks,
+          lg_tgt_plants          TYPE range_t_werks,
+          lg_src_strg_lcnts      TYPE range_t_lgort_d,
+          lg_tgt_strg_lcnts      TYPE range_t_lgort_d,
+          lg_dates               TYPE zpta_dates_range,
+          lg_times               TYPE zpta_times_range,
+          lg_steps               TYPE zpta_rfid_int_intrcmpn_stp_rgn,
+          ls_strg_lcnt_trnf_item TYPE zsta_strg_location_transfer,
+          lv_process_id          TYPE c LENGTH 32.
+    FIELD-SYMBOLS: &lt;lr_rfid_int_step&gt; TYPE REF TO zcl_ta_rfid_int_step,
+                   &lt;ls_step&gt;          LIKE LINE OF lg_steps,
+                   &lt;ls_output_hdr&gt;    LIKE LINE OF me-&gt;at_output_hdr,
+                   &lt;ls_trnsf_ordr&gt;    LIKE LINE OF me-&gt;at_output_hdr,
+                   &lt;ls_output_itm&gt;    LIKE LINE OF me-&gt;at_output_itm,
+                   &lt;ls_binding&gt;       LIKE LINE OF me-&gt;at_binding.
+    DEFINE lm_assign_range.
+      if &amp;2 is not initial or
+         &amp;2[] is not initial.
+        &amp;1 = &amp;2[].
+        append &amp;2 to &amp;1.
+        sort &amp;1 by table_line.
+        delete adjacent duplicates from &amp;1 comparing table_line.
+      endif.
+    END-OF-DEFINITION.
+
+    CLEAR: me-&gt;at_output_hdr, me-&gt;at_output_itm, me-&gt;at_binding.
+* Macro example
+*    lg_src_plants = s_splt[].
+*    APPEND s_splt TO lg_src_plants.
+*    SORT lg_src_plants BY table_line.
+*    DELETE ADJACENT DUPLICATES FROM lg_src_plants COMPARING table_line.
+    lm_assign_range: lg_src_plants     s_splt,
+                     lg_tgt_plants     s_tplt,
+                     lg_src_strg_lcnts s_sstl,
+                     lg_tgt_strg_lcnts s_tstl,
+                     lg_dates          s_dtpr,
+                     lg_times          s_tmpr,
+                     lg_steps          s_step.
+
+    &quot;Excluding Kitting and Circuits from this monitor
+    APPEND INITIAL LINE TO lg_steps ASSIGNING &lt;ls_step&gt;.
+    &lt;ls_step&gt;-sign = &apos;E&apos;.
+    &lt;ls_step&gt;-option = &apos;EQ&apos;.
+    &lt;ls_step&gt;-low = 06. &quot;Kitting
+    APPEND INITIAL LINE TO lg_steps ASSIGNING &lt;ls_step&gt;.
+    &lt;ls_step&gt;-sign = &apos;E&apos;.
+    &lt;ls_step&gt;-option = &apos;EQ&apos;.
+    &lt;ls_step&gt;-low = 07. &quot;Circuits
+
+    lt_steps_collection = zcl_ta_rfid_controller=&gt;intercompany_steps_factory( ig_src_plants            = lg_src_plants
+                                                                              ig_src_storage_locations = lg_src_strg_lcnts
+                                                                              ig_tgt_plants            = lg_tgt_plants
+                                                                              ig_tgt_storage_locations = lg_tgt_strg_lcnts
+                                                                              ig_dates                 = lg_dates
+                                                                              ig_times                 = lg_times
+                                                                              ig_steps                 = lg_steps  ).
+    LOOP AT lt_steps_collection ASSIGNING &lt;lr_rfid_int_step&gt;.
+      APPEND INITIAL LINE TO me-&gt;at_output_hdr ASSIGNING &lt;ls_output_hdr&gt;.
+      CASE &lt;lr_rfid_int_step&gt;-&gt;av_idoc_status.
+        WHEN &apos;51&apos;.
+          &lt;ls_output_hdr&gt;-status = &apos;@0A@&apos;.&quot;  Red light; Negative
+        WHEN &apos;53&apos;.
+          &lt;ls_output_hdr&gt;-status = &apos;@08@&apos;.&quot;  Green light; Go; OK
+        WHEN OTHERS.
+          &lt;ls_output_hdr&gt;-status = &apos;@09@&apos;.&quot;  Yellow light; Caution
+      ENDCASE.
+
+      &lt;ls_output_hdr&gt;-idoc_status      = &lt;lr_rfid_int_step&gt;-&gt;av_idoc_status.
+      &lt;ls_output_hdr&gt;-idoc_number      = &lt;lr_rfid_int_step&gt;-&gt;av_idoc_number.
+      &lt;ls_output_hdr&gt;-process_id       = &lt;lr_rfid_int_step&gt;-&gt;av_process_id.
+      &lt;ls_output_hdr&gt;-step             = &lt;lr_rfid_int_step&gt;-&gt;av_step.
+      lv_process_id = &lt;lr_rfid_int_step&gt;-&gt;av_process_id.
+      CONCATENATE &lt;lr_rfid_int_step&gt;-&gt;av_step lv_process_id
+             INTO &lt;ls_output_hdr&gt;-process_step_id.
+      &lt;ls_output_hdr&gt;-step_description = &lt;lr_rfid_int_step&gt;-&gt;get_step_description( ).
+      &lt;ls_output_hdr&gt;-creation_date    = &lt;lr_rfid_int_step&gt;-&gt;av_creation_date.
+      &lt;ls_output_hdr&gt;-creation_time    = &lt;lr_rfid_int_step&gt;-&gt;av_creation_time.
+      &lt;ls_output_hdr&gt;-rfid_step        = &lt;lr_rfid_int_step&gt;.
+      CASE &lt;lr_rfid_int_step&gt;-&gt;av_step.
+        WHEN 01. &quot;Intercompany transfer order creation
+          lobj_transfer_order ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-src_plant            = lobj_transfer_order-&gt;av_supp_plant.
+          &lt;ls_output_hdr&gt;-tgt_plant            = lobj_transfer_order-&gt;av_recv_plant.
+          &lt;ls_output_hdr&gt;-src_storage_location = lobj_transfer_order-&gt;av_supp_str_loc.
+          &lt;ls_output_hdr&gt;-tgt_storage_location = lobj_transfer_order-&gt;av_recv_str_loc.
+          &lt;ls_output_hdr&gt;-stock_transfer_order = lobj_transfer_order-&gt;av_stock_transfer_order.
+          &lt;ls_output_hdr&gt;-carrier              = lobj_transfer_order-&gt;av_carrier.
+          &lt;ls_output_hdr&gt;-vehicle_plate        = lobj_transfer_order-&gt;av_vehicle_plate.
+          &lt;ls_output_hdr&gt;-nf_docnum            = lobj_transfer_order-&gt;av_nf_docnum.
+
+          lobj_iterator ?= lobj_transfer_order-&gt;get_items_iterator( ).
+          WHILE lobj_iterator-&gt;has_next( ) = abap_true.
+            lobj_trsfr_ordr_itm ?= lobj_iterator-&gt;next( ).
+            IF lobj_trsfr_ordr_itm IS BOUND.
+              APPEND INITIAL LINE TO me-&gt;at_output_itm ASSIGNING &lt;ls_output_itm&gt;.
+              MOVE-CORRESPONDING &lt;ls_output_hdr&gt; TO &lt;ls_output_itm&gt;.
+              &lt;ls_output_itm&gt;-rfid_tag = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-rfid_tag.
+              &lt;ls_output_itm&gt;-item     = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-item.
+              &lt;ls_output_itm&gt;-quantity = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-quantity.
+              &lt;ls_output_itm&gt;-unit     = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-unit.
+              &lt;ls_output_itm&gt;-document_item = lobj_transfer_order-&gt;get_po_item( i_rfid_tag = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-rfid_tag ).
+              CLEAR lobj_trsfr_ordr_itm.
+            ENDIF.
+          ENDWHILE.
+
+        WHEN 02. &quot;Outbound delivery creation
+          lobj_outb_delivery ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-stock_transfer_order = lobj_outb_delivery-&gt;av_stock_transfer_order.
+          &lt;ls_output_hdr&gt;-carrier              = lobj_outb_delivery-&gt;av_carrier.
+          &lt;ls_output_hdr&gt;-vehicle_plate        = lobj_outb_delivery-&gt;av_vehicle_plate.
+          &lt;ls_output_hdr&gt;-delivery             = lobj_outb_delivery-&gt;av_delivery.
+
+        WHEN 03. &quot;Picking
+          lobj_picking ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-delivery             = lobj_picking-&gt;av_delivery.
+
+        WHEN 04. &quot;Goods issue
+          lobj_goods_issue ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-delivery             = lobj_goods_issue-&gt;av_delivery.
+
+        WHEN 05. &quot;Blind count
+          lobj_blind_count ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-stock_transfer_order = lobj_blind_count-&gt;av_stock_transfer_order.
+          &lt;ls_output_hdr&gt;-vim_doc              = lobj_blind_count-&gt;av_vim_doc.
+
+          lobj_iterator ?= lobj_blind_count-&gt;get_items_iterator( ).
+          WHILE lobj_iterator-&gt;has_next( ) = abap_true.
+            lobj_trsfr_ordr_itm ?= lobj_iterator-&gt;next( ).
+            IF lobj_trsfr_ordr_itm IS BOUND.
+              APPEND INITIAL LINE TO me-&gt;at_output_itm ASSIGNING &lt;ls_output_itm&gt;.
+              MOVE-CORRESPONDING &lt;ls_output_hdr&gt; TO &lt;ls_output_itm&gt;.
+              &lt;ls_output_itm&gt;-rfid_tag = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-rfid_tag.
+              &lt;ls_output_itm&gt;-item     = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-item.
+              &lt;ls_output_itm&gt;-quantity = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-quantity.
+              &lt;ls_output_itm&gt;-unit     = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-unit.
+              &lt;ls_output_itm&gt;-document_item = lobj_blind_count-&gt;get_po_item( i_rfid_tag = lobj_trsfr_ordr_itm-&gt;as_item_2b_transfered-rfid_tag ).
+              CLEAR lobj_trsfr_ordr_itm.
+            ENDIF.
+          ENDWHILE.
+
+        WHEN 06 OR 07. &quot;Transfers of items between storage locations: Kitting an Circuits
+          lobj_strg_lcnt_trnf ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-document_date        = lobj_strg_lcnt_trnf-&gt;av_document_date.
+          &lt;ls_output_hdr&gt;-posting_date         = lobj_strg_lcnt_trnf-&gt;av_posting_date.
+          &lt;ls_output_hdr&gt;-document             = lobj_strg_lcnt_trnf-&gt;av_document.
+          &lt;ls_output_hdr&gt;-fiscal_year          = lobj_strg_lcnt_trnf-&gt;av_fiscal_year.
+          &lt;ls_output_hdr&gt;-src_plant            = ls_strg_lcnt_trnf_item-plant.
+          &lt;ls_output_hdr&gt;-src_storage_location = ls_strg_lcnt_trnf_item-src_storage_location.
+          &lt;ls_output_hdr&gt;-tgt_storage_location = ls_strg_lcnt_trnf_item-tgt_storage_location.
+
+          ls_strg_lcnt_trnf_item = lobj_strg_lcnt_trnf-&gt;get_item_data( ).
+          APPEND INITIAL LINE TO me-&gt;at_output_itm ASSIGNING &lt;ls_output_itm&gt;.
+          MOVE-CORRESPONDING &lt;ls_output_hdr&gt; TO &lt;ls_output_itm&gt;.
+          &lt;ls_output_itm&gt;-rfid_tag             = lobj_strg_lcnt_trnf-&gt;av_rfid_master_tag.
+          &lt;ls_output_itm&gt;-item                 = ls_strg_lcnt_trnf_item-item.
+          &lt;ls_output_itm&gt;-quantity             = ls_strg_lcnt_trnf_item-quantity.
+          &lt;ls_output_itm&gt;-unit                 = ls_strg_lcnt_trnf_item-unit.
+
+        WHEN 08. &quot;Nota fiscal writer
+          lobj_nf_writer ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-nf_docnum            = lobj_nf_writer-&gt;av_nf_docnum.
+
+        WHEN 09. &quot;Blind count of packings nota fiscal
+          lobj_pcks_blnd_cnt ?= &lt;lr_rfid_int_step&gt;.
+          &lt;ls_output_hdr&gt;-nf_docnum = lobj_pcks_blnd_cnt-&gt;av_nf_docnum.
+          &lt;ls_output_hdr&gt;-vim_doc = lobj_pcks_blnd_cnt-&gt;av_vim_doc.
+          &lt;ls_output_hdr&gt;-stock_transfer_order = lobj_pcks_blnd_cnt-&gt;get_related_trnf_ordr( ).
+
+        WHEN OTHERS.
+      ENDCASE.
+    ENDLOOP.
+
+    APPEND INITIAL LINE TO me-&gt;at_binding ASSIGNING &lt;ls_binding&gt;.
+    &lt;ls_binding&gt;-master = &apos;PROCESS_STEP_ID&apos;.
+    &lt;ls_binding&gt;-slave  = &apos;PROCESS_STEP_ID&apos;.
+
+    SORT me-&gt;at_output_hdr BY creation_date DESCENDING creation_time DESCENDING process_id step DESCENDING.
+    lt_transfer_orders = me-&gt;at_output_hdr.
+    DELETE lt_transfer_orders WHERE step &lt;&gt; 01.
+    LOOP AT lt_transfer_orders ASSIGNING &lt;ls_trnsf_ordr&gt;.
+      LOOP AT me-&gt;at_output_hdr ASSIGNING &lt;ls_output_hdr&gt; WHERE process_id = &lt;ls_trnsf_ordr&gt;-process_id.
+        &lt;ls_output_hdr&gt;-stock_transfer_order = &lt;ls_trnsf_ordr&gt;-stock_transfer_order.
+      ENDLOOP.
+    ENDLOOP.
+  ENDMETHOD.                    &quot;get_data
+  METHOD display.
+    DATA: lobj_data_error        TYPE REF TO cx_salv_data_error,
+          lobj_not_found         TYPE REF TO cx_salv_not_found,
+          lv_message             TYPE string.
+
+    TRY.
+        cl_salv_hierseq_table=&gt;factory(
+          EXPORTING
+            t_binding_level1_level2 = me-&gt;at_binding    &quot; Binding Between Two Tables
+          IMPORTING
+            r_hierseq               = me-&gt;aobj_view    &quot; Sequential ALV Tables
+          CHANGING
+            t_table_level1          = me-&gt;at_output_hdr
+            t_table_level2          = me-&gt;at_output_itm
+        ).
+*          CATCH cx_salv_data_error.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*          CATCH cx_salv_not_found.    &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_data_error INTO lobj_data_error.
+        lv_message = lobj_data_error-&gt;get_text( ).
+        MESSAGE lv_message TYPE &apos;E&apos;.
+      CATCH cx_salv_not_found INTO lobj_not_found.
+        lv_message = lobj_not_found-&gt;get_text( ).
+        MESSAGE lv_message TYPE &apos;E&apos;.
+    ENDTRY.
+
+    set_view( ).
+
+    aobj_view-&gt;display( ).
+  ENDMETHOD.                    &quot;display
+  METHOD on_user_command.
+    DATA: lobj_transfer_order TYPE REF TO zcl_ta_rfid_stock_trnf_order,
+          lobj_outb_delivery  TYPE REF TO zcl_ta_outbound_delivery,
+          lobj_picking        TYPE REF TO zcl_ta_picking,
+          lobj_goods_issue    TYPE REF TO zcl_ta_goods_issue,
+          lobj_nf_writer      TYPE REF TO zcl_ta_rfid_packings_nf,
+          lobj_blind_count    TYPE REF TO zcl_ta_rfid_blind_count,
+          lobj_pcks_blnd_cnt  TYPE REF TO zcl_ta_rfid_pcks_blind_count,
+          lobj_sel            TYPE REF TO cl_salv_selections,
+          lobj_error          TYPE REF TO cx_bapi_error,
+          lt_selected         TYPE salv_t_row,
+          lv_tabix           TYPE sytabix.
+    FIELD-SYMBOLS: &lt;lv_index&gt;     TYPE int4,
+                   &lt;ls_output&gt;    LIKE LINE OF at_output_hdr.
+
+    IF e_salv_function &lt;&gt; &apos;&amp;ZLOG&apos;   AND
+       e_salv_function &lt;&gt; &apos;&amp;ZRPRC&apos;  AND
+       e_salv_function &lt;&gt; &apos;&amp;ZRFRSH&apos; AND
+       e_salv_function &lt;&gt; &apos;&amp;ZSKIP&apos;.
+      RETURN.
+    ENDIF.
+
+    IF e_salv_function = &apos;&amp;ZRFRSH&apos;.
+      me-&gt;get_data( ).
+      me-&gt;aobj_view-&gt;refresh( ).
+    ELSE.
+      TRY.
+          lobj_sel =  aobj_view-&gt;get_selections( 1 ).
+        CATCH cx_salv_not_found.
+          RETURN.
+      ENDTRY.
+
+      lt_selected = lobj_sel-&gt;get_selected_rows( ).
+      LOOP AT lt_selected ASSIGNING &lt;lv_index&gt;.
+        lv_tabix = sy-tabix.
+
+        READ TABLE at_output_hdr INDEX &lt;lv_index&gt; ASSIGNING &lt;ls_output&gt;.
+        IF sy-subrc = 0.
+          IF e_salv_function = &apos;&amp;ZLOG&apos;.
+            &lt;ls_output&gt;-rfid_step-&gt;show_messages( ).
+          ELSEIF e_salv_function = &apos;&amp;ZRPRC&apos; AND &lt;ls_output&gt;-idoc_status &lt;&gt; &apos;53&apos;.
+            &lt;ls_output&gt;-rfid_step-&gt;execute( ).
+            CASE &lt;ls_output&gt;-step.
+              WHEN 01. &quot;Intercompany transfer order creation
+                lobj_transfer_order ?= &lt;ls_output&gt;-rfid_step.
+                IF lobj_transfer_order-&gt;av_stock_transfer_order IS NOT INITIAL.
+                  CREATE OBJECT lobj_outb_delivery
+                    EXPORTING
+                      iv_process_id           = &lt;ls_output&gt;-process_id    &quot; RFID - Process Id
+                      iv_stock_transfer_order = lobj_transfer_order-&gt;av_stock_transfer_order    &quot; Purchasing Document Number
+                      iv_carrier              = lobj_transfer_order-&gt;av_carrier    &quot; Account Number of Vendor or Creditor
+                      iv_vehicle_plate        = lobj_transfer_order-&gt;av_vehicle_plate.    &quot; Means of Transport ID.
+                  lobj_outb_delivery-&gt;execute( ).
+                  IF lobj_outb_delivery-&gt;av_delivery IS NOT INITIAL.
+                    CREATE OBJECT lobj_picking
+                      EXPORTING
+                        iv_process_id = lobj_outb_delivery-&gt;av_process_id    &quot; RFID - Process Id
+                        iv_delivery   = lobj_outb_delivery-&gt;av_delivery.    &quot; Delivery
+                    lobj_picking-&gt;execute( ).
+                    IF lobj_picking-&gt;av_idoc_status = &apos;53&apos;.
+                      CREATE OBJECT lobj_goods_issue
+                        EXPORTING
+                          iv_process_id = lobj_picking-&gt;av_process_id    &quot; RFID - Process Id
+                          iv_delivery   = lobj_picking-&gt;av_delivery.    &quot; Delivery
+                      lobj_goods_issue-&gt;execute( ).
+                      IF lobj_goods_issue-&gt;av_idoc_status = &apos;53&apos;.
+                        CREATE OBJECT lobj_nf_writer
+                          EXPORTING
+                            iv_process_id = lobj_goods_issue-&gt;av_process_id    &quot; RFID - Process Id
+                            iv_delivery   = lobj_goods_issue-&gt;av_delivery.     &quot; Delivery
+                        lobj_nf_writer-&gt;execute( ).
+                      ENDIF.
+                    ENDIF.
+                  ENDIF.
+                ENDIF.
+              WHEN 02. &quot;Outbound delivery creation or partner assignment
+                lobj_outb_delivery ?= &lt;ls_output&gt;-rfid_step.
+                IF lobj_outb_delivery-&gt;av_idoc_status = &apos;53&apos;.
+                  CREATE OBJECT lobj_picking
+                    EXPORTING
+                      iv_process_id = lobj_outb_delivery-&gt;av_process_id    &quot; RFID - Process Id
+                      iv_delivery   = lobj_outb_delivery-&gt;av_delivery.    &quot; Delivery
+                  lobj_picking-&gt;execute( ).
+                  IF lobj_picking-&gt;av_idoc_status = &apos;53&apos;.
+                    CREATE OBJECT lobj_goods_issue
+                      EXPORTING
+                        iv_process_id = lobj_picking-&gt;av_process_id    &quot; RFID - Process Id
+                        iv_delivery   = lobj_picking-&gt;av_delivery.    &quot; Delivery
+                    lobj_goods_issue-&gt;execute( ).
+                    IF lobj_goods_issue-&gt;av_idoc_status = &apos;53&apos;.
+                      CREATE OBJECT lobj_nf_writer
+                        EXPORTING
+                          iv_process_id = lobj_goods_issue-&gt;av_process_id    &quot; RFID - Process Id
+                          iv_delivery   = lobj_goods_issue-&gt;av_delivery.     &quot; Delivery
+                      lobj_nf_writer-&gt;execute( ).
+                    ENDIF.
+                  ENDIF.
+                ENDIF.
+              WHEN 03. &quot;Picking
+                lobj_picking ?= &lt;ls_output&gt;-rfid_step.
+                IF lobj_picking-&gt;av_idoc_status = &apos;53&apos;.
+                  CREATE OBJECT lobj_goods_issue
+                    EXPORTING
+                      iv_process_id = lobj_picking-&gt;av_process_id    &quot; RFID - Process Id
+                      iv_delivery   = lobj_picking-&gt;av_delivery.    &quot; Delivery
+                  lobj_goods_issue-&gt;execute( ).
+                  IF lobj_goods_issue-&gt;av_idoc_status = &apos;53&apos;.
+                    CREATE OBJECT lobj_nf_writer
+                      EXPORTING
+                        iv_process_id = lobj_goods_issue-&gt;av_process_id    &quot; RFID - Process Id
+                        iv_delivery   = lobj_goods_issue-&gt;av_delivery.     &quot; Delivery
+                    lobj_nf_writer-&gt;execute( ).
+                  ENDIF.
+                ENDIF.
+              WHEN 04. &quot;Goods issue
+                lobj_goods_issue ?= &lt;ls_output&gt;-rfid_step.
+                IF lobj_goods_issue-&gt;av_idoc_status = &apos;53&apos;.
+                  CREATE OBJECT lobj_goods_issue
+                    EXPORTING
+                      iv_process_id = lobj_picking-&gt;av_process_id    &quot; RFID - Process Id
+                      iv_delivery   = lobj_picking-&gt;av_delivery.    &quot; Delivery
+                  lobj_goods_issue-&gt;execute( ).
+                  IF lobj_goods_issue-&gt;av_idoc_status = &apos;53&apos;.
+                    CREATE OBJECT lobj_nf_writer
+                      EXPORTING
+                        iv_process_id = lobj_goods_issue-&gt;av_process_id    &quot; RFID - Process Id
+                        iv_delivery   = lobj_goods_issue-&gt;av_delivery.     &quot; Delivery
+                    lobj_nf_writer-&gt;execute( ).
+                  ENDIF.
+                ENDIF.
+              WHEN 05. &quot;Blind count
+                lobj_blind_count ?= &lt;ls_output&gt;-rfid_step.
+                IF lobj_blind_count-&gt;av_idoc_status = &apos;53&apos;.
+                  CREATE OBJECT lobj_pcks_blnd_cnt
+                    EXPORTING
+                      iv_process_id = lobj_blind_count-&gt;av_process_id.    &quot; RFID - Process Id
+                  lobj_pcks_blnd_cnt-&gt;execute( ).
+                ENDIF.
+            ENDCASE.
+          ELSEIF e_salv_function = &apos;&amp;ZSKIP&apos;.
+            IF &lt;ls_output&gt;-step = &apos;02&apos;. &quot;Outbound delivery creation or partner assignment
+              lobj_outb_delivery ?= &lt;ls_output&gt;-rfid_step.
+              lobj_outb_delivery-&gt;check_freight_agent( ).
+              IF lobj_outb_delivery-&gt;av_idoc_status = &apos;53&apos;.
+                CREATE OBJECT lobj_picking
+                  EXPORTING
+                    iv_process_id = lobj_outb_delivery-&gt;av_process_id    &quot; RFID - Process Id
+                    iv_delivery   = lobj_outb_delivery-&gt;av_delivery.    &quot; Delivery
+                lobj_picking-&gt;execute( ).
+                IF lobj_picking-&gt;av_idoc_status = &apos;53&apos;.
+                  CREATE OBJECT lobj_goods_issue
+                    EXPORTING
+                      iv_process_id = lobj_picking-&gt;av_process_id    &quot; RFID - Process Id
+                      iv_delivery   = lobj_picking-&gt;av_delivery.    &quot; Delivery
+                  lobj_goods_issue-&gt;execute( ).
+                ENDIF.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+
+      IF e_salv_function = &apos;&amp;ZRPRC&apos;.
+        me-&gt;get_data( ).
+        me-&gt;aobj_view-&gt;refresh( ).
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.                    &quot;on_user_command
+  METHOD on_link_click.
+    FIELD-SYMBOLS  &lt;ls_output_hdr&gt; LIKE LINE OF me-&gt;at_output_hdr.
+
+    READ TABLE me-&gt;at_output_hdr ASSIGNING &lt;ls_output_hdr&gt; INDEX row.
+    IF sy-subrc = 0.
+      CASE column.
+        WHEN &apos;STOCK_TRANSFER_ORDER&apos;.
+          SET PARAMETER ID &apos;BES&apos; FIELD &lt;ls_output_hdr&gt;-stock_transfer_order.
+          CALL TRANSACTION &apos;ME23N&apos;.
+        WHEN &apos;DELIVERY&apos;.
+          SET PARAMETER ID &apos;VL&apos; FIELD &lt;ls_output_hdr&gt;-delivery.
+          CALL TRANSACTION &apos;VL03N&apos; AND SKIP FIRST SCREEN.
+        WHEN &apos;NF_DOCNUM&apos;.
+          SET PARAMETER ID &apos;JEF&apos; FIELD &lt;ls_output_hdr&gt;-nf_docnum.
+          CALL TRANSACTION &apos;J1B3N&apos; AND SKIP FIRST SCREEN.
+        WHEN &apos;VIM_DOC&apos;.
+          SET PARAMETER ID &apos;/OPT/DOCID&apos; FIELD &lt;ls_output_hdr&gt;-vim_doc.
+          CALL TRANSACTION &apos;/OPT/VIM_1AX13&apos; AND SKIP FIRST SCREEN.
+        WHEN OTHERS.
+      ENDCASE.
+    ENDIF.
+  ENDMETHOD.                    &quot;on_link_click
+  METHOD show_data.
+
+*    CALL FUNCTION &apos;SALV_CSQT_CREATE_CONTAINER&apos;
+*      EXPORTING
+*        r_content_manager = me                &quot; Parameter display
+*        title             = &apos;Monitor of RFID integration steps&apos;(t01).
+    TRY .
+        me-&gt;display( ).
+*        CATCH cx_bapi_error.    &quot; BAPI Error Exception: Migrated Error Messages Type &quot;E&quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.                    &quot;show_data
+  METHOD set_columns_order.
+
+    TRY.
+        me-&gt;aobj_view-&gt;get_columns( 1 )-&gt;set_column_position(
+            columnname = &apos;STEP&apos;
+            position   = 3
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        me-&gt;aobj_view-&gt;get_columns( 1 )-&gt;set_column_position(
+            columnname = &apos;STEP_DESCRIPTION&apos;
+            position   = 4
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        me-&gt;aobj_view-&gt;get_columns( 1 )-&gt;set_column_position(
+            columnname = &apos;CREATION_DATE&apos;
+            position   = 5
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        me-&gt;aobj_view-&gt;get_columns( 1 )-&gt;set_column_position(
+            columnname = &apos;CREATION_TIME&apos;
+            position   = 6
+        ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+
+  ENDMETHOD.                    &quot;set_columns_order
+  METHOD set_columns_styles.
+    DATA: lobj_columns TYPE REF TO cl_salv_columns_hierseq,
+          lobj_column  TYPE REF TO cl_salv_column_list.&quot;,
+*          l_cname_s    TYPE scrtext_s,
+*          l_cname_m    TYPE scrtext_m,
+*          l_cname_l    TYPE scrtext_l.
+    DEFINE lm_set_technical.
+      try .
+          lobj_columns-&gt;get_column( &amp;1 )-&gt;set_technical( if_salv_c_bool_sap=&gt;true ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+    DEFINE lm_set_hotspot.
+      try .
+          lobj_column ?= lobj_columns-&gt;get_column( &amp;1 ).
+          lobj_column-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    TRY.
+        lobj_columns = me-&gt;aobj_view-&gt;get_columns( 1 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    lobj_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+
+*    TRY
+*        lr_column ?= lr_columns-&gt;get_column( &apos;BASIC_UNIT&apos; ).
+*        lr_column-&gt;set_edit_mask( &apos;==CUNIT&apos; ).
+*      CATCH cx_salv_not_found.
+*    ENDTRY.
+*    m_set_conversion_exit: &apos;BASIC_UNIT&apos; &apos;==CUNIT&apos;,
+    .
+
+    lm_set_technical: &apos;RFID_STEP&apos;,       &apos;EXPAND&apos;,        &apos;PROCESS_ID&apos;,
+                      &apos;PROCESS_STEP_ID&apos;, &apos;DOCUMENT_DATE&apos;, &apos;POSTING_DATE&apos;,
+                      &apos;DOCUMENT&apos;       , &apos;FISCAL_YEAR&apos;  , &apos;HOTSPOTS&apos;.
+
+    lm_set_hotspot: &apos;STOCK_TRANSFER_ORDER&apos;, &apos;DELIVERY&apos;, &apos;NF_DOCNUM&apos;, &apos;VIM_DOC&apos;.
+
+    TRY .
+        lobj_columns-&gt;set_hyperlink_entry_column( &apos;CONTROL&apos; ). &quot;( &apos;HOTSPOTS&apos; ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error ##NO_HANDLER.
+    ENDTRY.
+
+
+    TRY .
+        lobj_column ?= lobj_columns-&gt;get_column( &apos;STEP&apos; ).
+        lobj_column-&gt;set_visible( if_salv_c_bool_sap=&gt;false ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY .
+        lobj_column ?= lobj_columns-&gt;get_column( &apos;IDOC_NUMBER&apos; ).
+        lobj_column-&gt;set_visible( if_salv_c_bool_sap=&gt;false ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY .
+        lobj_column ?= lobj_columns-&gt;get_column( &apos;IDOC_STATUS&apos; ).
+        lobj_column-&gt;set_visible( if_salv_c_bool_sap=&gt;false ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+    ENDTRY.
+
+*    TRY .
+*        lobj_column ?= lobj_columns-&gt;get_column( &apos;CREATION_TIME&apos; ).
+*        lobj_column-&gt;set_visible( if_salv_c_bool_sap=&gt;false ).
+*      CATCH cx_salv_not_found
+*            cx_salv_data_error.
+*    ENDTRY.
+
+    TRY .
+        lobj_column ?= lobj_columns-&gt;get_column( &apos;STATUS&apos; ).
+        lobj_column-&gt;set_long_text( &apos;Status&apos;  ).
+        lobj_column-&gt;set_medium_text( &apos;&apos;  ).
+        lobj_column-&gt;set_short_text( &apos;&apos; ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY.
+        lobj_columns = me-&gt;aobj_view-&gt;get_columns( 2 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    TRY .
+        lobj_column ?= lobj_columns-&gt;get_column( &apos;PROCESS_STEP_ID&apos; ).
+        lobj_column-&gt;set_technical( if_salv_c_bool_sap=&gt;true ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error ##NO_HANDLER.
+    ENDTRY.
+
+  ENDMETHOD.                    &quot;set_columns_styles
+*  METHOD set_custom_functions.
+*    DATA: lv_tooltip TYPE string,
+*          lv_icon    TYPE string.
+*    DEFINE lm_add_function.
+*      lv_tooltip = &amp;1.
+*      lv_icon = &amp;2.
+*
+*      try.
+*          iobj_functions-&gt;add_function(
+*            exporting
+*              name     =   &amp;3               &quot; ALV Function
+*              icon     = lv_icon
+**              text     =
+*              tooltip  = lv_tooltip
+*              position = if_salv_c_function_position=&gt;left_of_salv_functions                 &quot; Positioning Function
+*          ).
+**          CATCH cx_salv_existing.   &quot; ALV: General Error Class (Checked During Syntax Check)
+**          CATCH cx_salv_wrong_call. &quot; ALV: General Error Class (Checked During Syntax Check)
+*        catch cx_salv_existing
+*              cx_salv_not_found
+*              cx_salv_wrong_call.
+*      endtry.
+*    END-OF-DEFINITION.
+*
+*    lm_add_function: &apos;Show log&apos;(p01)       &apos;@DH@&apos; &apos;ZLOG&apos;,   &quot;  Display log
+*                     &apos;Reprocess step&apos;(p02) &apos;@4R@&apos; &apos;ZRPRC&apos;,  &quot;  Redo
+*                     &apos;Refresh&apos;(p03)        &apos;@42@&apos; &apos;ZRFRSH&apos;. &quot;  Refresh.
+*
+*  ENDMETHOD.                    &quot;set_custom_functions
+  METHOD set_events.
+    DATA  lobj_events TYPE REF TO cl_salv_events_hierseq.
+
+    lobj_events = aobj_view-&gt;get_event( ).
+
+    SET HANDLER: me-&gt;on_user_command FOR lobj_events,
+                 me-&gt;on_link_click   FOR lobj_events.
+
+  ENDMETHOD.                    &quot;set_events
+  METHOD set_expand_option.
+*
+*   Set expand column
+    TRY.
+        me-&gt;aobj_view-&gt;get_columns( 1 )-&gt;set_expand_column( &apos;EXPAND&apos; ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+        RETURN.
+    ENDTRY.
+*
+*   Set items expanded by default
+    TRY.
+        me-&gt;aobj_view-&gt;get_level( 1 )-&gt;set_items_expanded( if_salv_c_bool_sap=&gt;false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.                    &quot;set_expand_option
+  METHOD set_functions.
+    DATA  lobj_functions TYPE REF TO cl_salv_functions_list.
+
+    aobj_view-&gt;set_screen_status(
+      EXPORTING
+        report        = sy-repid    &quot; ABAP Program: Current Main Program
+        pfstatus      = &apos;STANDARD_FULLSCREEN&apos;    &quot; Screens, Current GUI Status
+*        set_functions = C_FUNCTIONS_NONE    &quot; ALV: Data Element for Constants
+    ).
+
+    lobj_functions = aobj_view-&gt;get_functions( ).
+    lobj_functions-&gt;set_all(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    lobj_functions-&gt;set_export_localfile(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+*    me-&gt;set_custom_functions( lobj_functions ).
+
+  ENDMETHOD.                    &quot;set_functions
+  METHOD set_selection_mode.
+    DATA  lobj_selections TYPE REF TO cl_salv_selections.
+
+    TRY.
+        lobj_selections = aobj_view-&gt;get_selections( 1 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+*    lr_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;multiple ).
+
+    lobj_selections-&gt;set_selection_mode( if_salv_c_selection_mode=&gt;row_column ).
+
+  ENDMETHOD.                    &quot;set_selection_mode
+  METHOD set_sort.
+    DATA lobj_sorts TYPE REF TO cl_salv_sorts.
+
+    TRY .
+        lobj_sorts = aobj_view-&gt;get_sorts( 1 ).
+        lobj_sorts-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;CREATION_DATE&apos;    &quot; ALV Control: Field Name of Internal Table Field
+            position   = 1
+            sequence   = if_salv_c_sort=&gt;sort_down    &quot; Sort Sequence
+*        subtotal   = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*        group      = IF_SALV_C_SORT=&gt;GROUP_NONE    &quot; Control Break
+*        obligatory = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*      RECEIVING
+*        value      =     &quot; ALV Sort Settings
+        ).
+*      CATCH cx_salv_not_found.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_existing.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_data_error.    &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY .
+        lobj_sorts-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;CREATION_TIME&apos;    &quot; ALV Control: Field Name of Internal Table Field
+            position   = 2
+            sequence   = if_salv_c_sort=&gt;sort_down    &quot; Sort Sequence
+*        subtotal   = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*        group      = IF_SALV_C_SORT=&gt;GROUP_NONE    &quot; Control Break
+*        obligatory = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*      RECEIVING
+*        value      =     &quot; ALV Sort Settings
+        ).
+*      CATCH cx_salv_not_found.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_existing.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_data_error.    &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY .
+        lobj_sorts-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;PROCESS_ID&apos;    &quot; ALV Control: Field Name of Internal Table Field
+            position   = 3
+*          sequence   = if_salv_c_sort=&gt;sort_up    &quot; Sort Sequence
+*        subtotal   = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*        group      = IF_SALV_C_SORT=&gt;GROUP_NONE    &quot; Control Break
+*        obligatory = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*      RECEIVING
+*        value      =     &quot; ALV Sort Settings
+        ).
+*      CATCH cx_salv_not_found.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_existing.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_data_error.    &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+    TRY .
+        lobj_sorts-&gt;add_sort(
+          EXPORTING
+            columnname = &apos;STEP&apos;    &quot; ALV Control: Field Name of Internal Table Field
+            position   = 4
+        sequence   = if_salv_c_sort=&gt;sort_down   &quot; Sort Sequence
+*        subtotal   = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*        group      = IF_SALV_C_SORT=&gt;GROUP_NONE    &quot; Control Break
+*        obligatory = IF_SALV_C_BOOL_SAP=&gt;FALSE    &quot; Boolean Variable (X=True, Space=False)
+*      RECEIVING
+*        value      =     &quot; ALV Sort Settings
+        ).
+*      CATCH cx_salv_not_found.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_existing.    &quot; ALV: General Error Class (Checked During Syntax Check)
+*      CATCH cx_salv_data_error.    &quot; ALV: General Error Class (Checked During Syntax Check)
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+
+  ENDMETHOD.                    &quot;set_sort
+  METHOD set_view.
+
+    me-&gt;set_sort( ).
+
+    me-&gt;set_columns_order( ).
+
+    me-&gt;set_selection_mode( ).
+
+    me-&gt;set_columns_styles( ).
+
+    me-&gt;set_functions( ).
+
+    me-&gt;set_events( ).
+
+    me-&gt;set_expand_option( ).
+
+  ENDMETHOD.                    &quot;set_view
+ENDCLASS.                    &quot;lcl_report IMPLEMENTATION</source>
+ </PROG>
+</nugget>
