@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="PRV_OPX_GRD">
+ <PROG NAME="Z_FI_RP_RL_X_FRCST_MONTH_GRID" VARCL="X" DBAPL="S" SUBC="1" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="H01" ENTRY="janeiro/" LENGTH="8 "/>
+    <textElement ID="I" KEY="H02" ENTRY="fevereiro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H03" ENTRY="março/" LENGTH="6 "/>
+    <textElement ID="I" KEY="H04" ENTRY="abril/" LENGTH="6 "/>
+    <textElement ID="I" KEY="H05" ENTRY="maio/" LENGTH="5 "/>
+    <textElement ID="I" KEY="H06" ENTRY="junho/" LENGTH="6 "/>
+    <textElement ID="I" KEY="H07" ENTRY="julho/" LENGTH="6 "/>
+    <textElement ID="I" KEY="H08" ENTRY="agosto/" LENGTH="7 "/>
+    <textElement ID="I" KEY="H09" ENTRY="setembro/" LENGTH="9 "/>
+    <textElement ID="I" KEY="H10" ENTRY="outubro/" LENGTH="8 "/>
+    <textElement ID="I" KEY="H11" ENTRY="novembro/" LENGTH="9 "/>
+    <textElement ID="I" KEY="H12" ENTRY="dezembro/" LENGTH="9 "/>
+    <textElement ID="I" KEY="H14" ENTRY="Real" LENGTH="4 "/>
+    <textElement ID="I" KEY="H15" ENTRY="Orçamento" LENGTH="9 "/>
+    <textElement ID="I" KEY="H16" ENTRY="Reforecast" LENGTH="10 "/>
+    <textElement ID="I" KEY="H17" ENTRY="Orçamento x Real (%)" LENGTH="20 "/>
+    <textElement ID="I" KEY="H18" ENTRY="Reforecast x Real (%)" LENGTH="21 "/>
+    <textElement ID="I" KEY="T01" ENTRY="Opex - Relatório Real x Forecast" LENGTH="32 "/>
+    <textElement ID="I" KEY="TT1" ENTRY="Visão hierárquica" LENGTH="17 "/>
+    <textElement ID="R" ENTRY="Opex - Relatório Real x Forecast" LENGTH="32 "/>
+    <textElement ID="S" KEY="P_MONTH" ENTRY="        Mês" LENGTH="11 "/>
+    <textElement ID="S" KEY="P_YEAR" ENTRY="D       ." LENGTH="17 "/>
+    <textElement ID="S" KEY="S_CSTC" ENTRY="D       ." LENGTH="20 "/>
+   </language>
+  </textPool>
+  <source>INCLUDE: z_fi_in_rl_x_fcst_mnth_grd_top,  &quot;Definições globais
+         z_fi_in_rl_x_fcst_mnth_grd_p01.  &quot;Implementações de classes
+
+INITIALIZATION.
+  DATA(gr_controller) = NEW lcl_controller(  ).
+  p_year = sy-datlo(4).
+  p_month = sy-datlo+4(2).
+
+START-OF-SELECTION.
+  gr_controller-&gt;get_data( ).
+
+END-OF-SELECTION.
+  gr_controller-&gt;show_data( ).</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FCST_MNTH_GRD_D01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Definições de classes" LENGTH="57 "/>
+   </language>
+  </textPool>
+  <source>CLASS lcl_controller DEFINITION FINAL.
+  PUBLIC SECTION.
+    INTERFACES if_salv_csqt_content_manager.
+
+    DATA
+          mt_output  TYPE zfi_tt_real_x_budget_month.
+    METHODS:
+             constructor,
+             get_data,
+             show_data.
+  PRIVATE SECTION.
+    DATA:
+          mr_model   TYPE REF TO zcl_fi_opex_model,
+          mr_view    TYPE REF TO cl_salv_table.
+    METHODS:
+             display              IMPORTING ir_container TYPE REF TO cl_gui_custom_container,
+             on_link_click        FOR EVENT link_click OF  cl_salv_events_table
+                                  IMPORTING row
+                                            column,
+             on_user_command      FOR EVENT added_function OF cl_salv_events
+                                  IMPORTING e_salv_function,
+             set_columns_styles,
+             set_custom_functions IMPORTING ir_functions TYPE REF TO cl_salv_functions_list,
+             set_events,
+             set_functions,
+             set_sort,
+             set_texts,
+             set_view.
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FCST_MNTH_GRD_P01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Implementações de classes" LENGTH="61 "/>
+   </language>
+  </textPool>
+  <source>CLASS lcl_controller IMPLEMENTATION.
+  METHOD constructor.
+
+    me-&gt;mr_model = NEW zcl_fi_opex_model( ).
+  ENDMETHOD.
+
+  METHOD if_salv_csqt_content_manager~fill_container_content.
+
+    TRY .
+        me-&gt;display( ir_container = r_container ).
+      CATCH cx_bapi_error.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD display.
+
+    TRY.
+        cl_salv_table=&gt;factory(
+          EXPORTING
+*            list_display   = list_display    &quot; ALV Displayed in List Mode
+            r_container    = ir_container    &quot; Abstract Container for GUI Controls
+*            container_name = container_name
+          IMPORTING
+            r_salv_table   = me-&gt;mr_view    &quot; Basis Class Simple ALV Tables
+          CHANGING
+            t_table        = me-&gt;mt_output
+        ).
+*          CATCH cx_salv_msg.    &quot;
+      CATCH cx_salv_msg INTO DATA(lx_salv_msg).
+        DATA(l_message) = lx_salv_msg-&gt;get_text( ).
+        MESSAGE l_message TYPE &apos;E&apos;.
+    ENDTRY.
+
+    set_view( ).
+
+    mr_view-&gt;display( ).
+  ENDMETHOD.
+
+
+  METHOD on_link_click.
+
+    IF column = &apos;ZCURRENT&apos;.
+      TRY.
+          mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                            option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                            low    = mt_output[ row ]-cost_center ) )
+                                              ig_accounts = VALUE j_3rf_acc_range( ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                     option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                     low    = mt_output[ row ]-account ) )
+                                              i_fiscal_year = p_year
+                                              i_period      = p_month ).
+        CATCH cx_sy_itab_line_not_found.
+          RETURN.
+      ENDTRY.
+    ELSEIF column = &apos;PREVIOUS&apos;.
+      DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+      TRY.
+          mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                            option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                            low    = mt_output[ row ]-cost_center ) )
+                                              ig_accounts = VALUE j_3rf_acc_range( ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                     option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                     low    = mt_output[ row ]-account ) )
+                                              i_fiscal_year = l_previous_year
+                                              i_period      = p_month ).
+        CATCH cx_sy_itab_line_not_found.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD on_user_command.
+
+    IF e_salv_function &lt;&gt; zif_fi_opex_constants=&gt;mc_alv_custom_function-hierarchical_view.
+      RETURN.
+    ELSE.
+      SUBMIT z_fi_rp_rl_x_frcst_month
+        WITH p_year = p_year
+        WITH p_month = p_month
+        WITH s_cstc IN s_cstc
+         AND RETURN.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_data.
+    DEFINE lm_fill_forecast.
+      try.
+          &lt;ls_item&gt;-&amp;2 = lt_forecast_data[ type          = &amp;1
+                                           ctrl_cst_area = zif_fi_opex_constants=&gt;mc_priv
+                                           cost_center   = &lt;ls_item&gt;-cost_center
+                                           account_plan  = zif_fi_opex_constants=&gt;mc_pcpr
+                                           account       = &lt;ls_item&gt;-account
+                                           fiscal_year   = p_year                           ]-items[ zmonth = p_month ]-amount.
+        catch cx_sy_itab_line_not_found ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    CLEAR me-&gt;mt_output.
+
+    DATA(lg_sctc) = s_cstc[].
+    IF s_cstc IS NOT INITIAL.
+      APPEND s_cstc TO lg_sctc.
+      DELETE ADJACENT DUPLICATES FROM lg_sctc COMPARING table_line.
+    ENDIF.
+    DATA(lg_cost_centers) = VALUE fagl_range_t_kostl( FOR ls_sctc IN lg_sctc
+                                                      ( ls_sctc ) ).
+    TRY.
+        DATA(lt_reforecast) = me-&gt;mr_model-&gt;get_rfrcst_rprt_data(
+                             i_type          = zif_fi_opex_constants=&gt;mc_forecast-reforecast
+                             i_fiscal_year   = p_year
+                             ig_cost_centers = lg_cost_centers
+                         ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER. &quot;INTO DATA(lx_error).
+*        TRY.
+*            MESSAGE lx_error-&gt;status[ 1 ]-message TYPE &apos;E&apos;.
+*          CATCH cx_sy_itab_line_not_found.
+*            LEAVE TO CURRENT TRANSACTION.
+*        ENDTRY.
+    ENDTRY.
+
+    TRY.
+        DATA(lt_forecast_data) = me-&gt;mr_model-&gt;get_rfrcst_rprt_data(
+                             i_type          = zif_fi_opex_constants=&gt;mc_forecast-budget
+                             i_fiscal_year   = p_year
+                             ig_cost_centers = lg_cost_centers
+                         ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER. &quot;INTO DATA(lx_error).
+*        TRY.
+*            MESSAGE lx_error-&gt;status[ 1 ]-message TYPE &apos;E&apos;.
+*          CATCH cx_sy_itab_line_not_found.
+*            LEAVE TO CURRENT TRANSACTION.
+*        ENDTRY.
+    ENDTRY.
+    APPEND LINES OF lt_reforecast TO lt_forecast_data.
+
+    DATA(lt_items) = VALUE zfi_tt_real_x_budget_month( FOR ls_forecast IN lt_forecast_data
+                                                 ( CORRESPONDING #( ls_forecast ) ) ).
+    SORT lt_items BY cost_center account.
+    DELETE ADJACENT DUPLICATES FROM lt_items COMPARING cost_center account.
+    LOOP AT lt_items ASSIGNING FIELD-SYMBOL(&lt;ls_item&gt;).
+*      TRY.
+*          &lt;ls_item&gt;-currency     = lt_forecast_data[ type          = zif_fi_opex_constants=&gt;mc_forecast-budget
+*                                                     ctrl_cst_area = zif_fi_opex_constants=&gt;mc_priv
+*                                                     cost_center   = &lt;ls_item&gt;-cost_center
+*                                                     account_plan  = zif_fi_opex_constants=&gt;mc_pcpr
+*                                                     account       = &lt;ls_item&gt;-account
+*                                                     fiscal_year   = p_year                           ]-currency.
+*        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+*      ENDTRY.
+
+      lm_fill_forecast: &quot;Budget amounts
+                      zif_fi_opex_constants=&gt;mc_forecast-budget budget,
+                      &quot;Reforecast amounts
+                      zif_fi_opex_constants=&gt;mc_forecast-reforecast reforecast.
+
+      COLLECT &lt;ls_item&gt; INTO me-&gt;mt_output.
+    ENDLOOP.
+
+    &quot;Getting executed
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+    TRY.
+        DATA(lt_real_previous) = me-&gt;mr_model-&gt;get_executed( i_fiscal_year = l_previous_year
+                                                             ig_cost_centers = lg_cost_centers ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+    TRY.
+        DATA(lt_real_current) = me-&gt;mr_model-&gt;get_executed( i_fiscal_year   = p_year
+                                                            ig_cost_centers = lg_cost_centers ).
+*                          CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+
+    IF lt_real_previous IS NOT INITIAL.
+      LOOP AT lt_real_previous ASSIGNING FIELD-SYMBOL(&lt;ls_executed&gt;)
+       WHERE month = p_month.
+        TRY.
+            me-&gt;mt_output[ cost_center = &lt;ls_executed&gt;-cost_center
+                           account     = &lt;ls_executed&gt;-account
+                           currency    = &lt;ls_executed&gt;-currency ]-previous = &lt;ls_executed&gt;-amount.
+          CATCH cx_sy_itab_line_not_found.
+            TRY.
+                DATA(ls_item) = VALUE zfi_es_real_x_budget_month( cost_center = &lt;ls_executed&gt;-cost_center
+                                                                  account     = &lt;ls_executed&gt;-account
+                                                                  currency    = &lt;ls_executed&gt;-currency
+                                                                  previous    = &lt;ls_executed&gt;-amount      ).
+                APPEND ls_item TO me-&gt;mt_output.
+              CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+            ENDTRY.
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+    IF lt_real_current IS NOT INITIAL.
+      LOOP AT lt_real_current ASSIGNING &lt;ls_executed&gt;
+       WHERE month = p_month.
+        TRY.
+            me-&gt;mt_output[ cost_center = &lt;ls_executed&gt;-cost_center
+                           account     = &lt;ls_executed&gt;-account
+                           currency    = &lt;ls_executed&gt;-currency ]-zcurrent = &lt;ls_executed&gt;-amount.
+          CATCH cx_sy_itab_line_not_found.
+            CLEAR ls_item.
+            TRY.
+                ls_item = VALUE zfi_es_real_x_budget_month( cost_center = &lt;ls_executed&gt;-cost_center
+                                                            account     = &lt;ls_executed&gt;-account
+                                                            currency    = &lt;ls_executed&gt;-currency
+                                                            zcurrent    = &lt;ls_executed&gt;-amount      ).
+                APPEND ls_item TO me-&gt;mt_output.
+              CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+            ENDTRY.
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+    LOOP AT me-&gt;mt_output ASSIGNING &lt;ls_item&gt;.
+      TRY.&quot;Cost center description
+          &lt;ls_item&gt;-cost_center_dsc = me-&gt;mr_model-&gt;get_cost_center_dsc(
+                                    i_ctrl_cst_area   = zif_fi_opex_constants=&gt;mc_priv
+                                    i_cost_center     = &lt;ls_item&gt;-cost_center
+                                    i_valid_to        = sy-datlo
+                                ).
+*                              CATCH cx_bapi_error.  &quot;
+        CATCH cx_bapi_error ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.&quot;Account description
+          &lt;ls_item&gt;-account_dsc = me-&gt;mr_model-&gt;get_account_dsc(
+                            i_account_plan = zif_fi_opex_constants=&gt;mc_pcpr
+                            i_account      = &lt;ls_item&gt;-account
+                        ).
+*                          CATCH cx_bapi_error.  &quot;
+        CATCH cx_bapi_error ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.
+          &lt;ls_item&gt;-var_bdg = ( &lt;ls_item&gt;-zcurrent / &lt;ls_item&gt;-budget ) * 100.
+        CATCH cx_sy_zerodivide.
+          IF &lt;ls_item&gt;-budget IS INITIAL.
+            &lt;ls_item&gt;-var_bdg = 100.
+          ENDIF.
+      ENDTRY.
+      TRY.
+          &lt;ls_item&gt;-var_rfc = ( &lt;ls_item&gt;-zcurrent / &lt;ls_item&gt;-reforecast ) * 100.
+        CATCH cx_sy_zerodivide.
+          IF &lt;ls_item&gt;-budget IS INITIAL.
+            &lt;ls_item&gt;-var_bdg = 100.
+          ENDIF.
+      ENDTRY.
+    ENDLOOP.
+
+    SORT me-&gt;mt_output BY cost_center account.
+  ENDMETHOD.
+
+
+  METHOD set_columns_styles.
+    DEFINE lm_set_technical.
+      try .
+          lr_columns-&gt;get_column( &amp;1 )-&gt;set_technical( if_salv_c_bool_sap=&gt;true ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+    DEFINE lm_set_sign.
+      try .
+          lr_columns-&gt;get_column( &amp;1 )-&gt;set_sign( if_salv_c_bool_sap=&gt;true ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+    DEFINE lm_set_alignment.
+      try .
+          lr_columns-&gt;get_column( &amp;1 )-&gt;SET_ALIGNMENT( &amp;2 ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    TRY.
+        DATA(lr_columns) = me-&gt;mr_view-&gt;get_columns(  ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    &quot;lr_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+
+    lm_set_technical: &apos;EXPAND&apos;,
+                      &apos;CURRENCY&apos;.
+
+*    TRY. &quot;Changing color
+*        DATA(lr_columnlist) = CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( columnname = &apos;SEPARATOR1&apos; ) ).
+**          CATCH cx_salv_not_found.    &quot;
+*        lr_columnlist-&gt;set_color( value = VALUE #( col = 6 int = 0 inv = 0 ) ).
+*        lr_columnlist = CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( columnname = &apos;SEPARATOR2&apos; ) ).
+**          CATCH cx_salv_not_found.    &quot;
+*        lr_columnlist-&gt;set_color( value = VALUE #( col = 6 int = 0 inv = 0 ) ).
+*      CATCH cx_salv_not_found ##NO_HANDLER.
+*    ENDTRY.
+    &quot;Setting sign for variations
+    lm_set_sign: &apos;PREVIOUS&apos;  ,
+                 &apos;BUDGET&apos;    ,
+                 &apos;REFORECAST&apos;,
+                 &apos;ZCURRENT&apos;  ,
+                 &apos;VAR_BDG&apos;,
+                 &apos;VAR_RFC&apos;.
+    &quot;Setting alignment for variations
+    lm_set_alignment: &apos;VAR_BDG&apos; if_salv_c_alignment=&gt;centered,
+                      &apos;VAR_RFC&apos; if_salv_c_alignment=&gt;centered,
+                      &apos;VAR_BDG&apos; if_salv_c_alignment=&gt;centered,
+                      &apos;VAR_RFC&apos; if_salv_c_alignment=&gt;centered.
+    &quot;Setting hotspot
+    IF me-&gt;mr_model-&gt;is_realized_loaded( i_fiscal_year = p_year ) = abap_false.
+      TRY .
+          CAST cl_salv_column_list( lr_columns-&gt;get_column( &apos;ZCURRENT&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+        CATCH cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      ENDTRY.
+    ENDIF.
+
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+    IF me-&gt;mr_model-&gt;is_realized_loaded( i_fiscal_year = l_previous_year ) = abap_false.
+      TRY .
+          CAST cl_salv_column_list( lr_columns-&gt;get_column( &apos;PREVIOUS&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+        CATCH cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      ENDTRY.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD set_custom_functions.
+
+    TRY.
+        ir_functions-&gt;add_function(
+          EXPORTING
+            name               = zif_fi_opex_constants=&gt;mc_alv_custom_function-hierarchical_view    &quot; ALV Function
+            icon               = zif_fi_opex_constants=&gt;mc_icon-hierarchical_list_view
+*            text               =
+            tooltip            = CONV #( &apos;Visão hierárquica&apos;(tt1) )
+            position           = if_salv_c_function_position=&gt;right_of_salv_functions    &quot; Positioning Function
+        ).
+*          CATCH cx_salv_existing.    &quot;
+*          CATCH cx_salv_wrong_call.    &quot;
+      CATCH cx_salv_existing ##NO_HANDLER
+            cx_salv_not_found
+            cx_salv_wrong_call.
+    ENDTRY.
+  ENDMETHOD.
+
+
+  METHOD set_events.
+
+    DATA(lr_event) = me-&gt;mr_view-&gt;get_event( ).
+    SET HANDLER:
+                 me-&gt;on_link_click   FOR lr_event,
+                 me-&gt;on_user_command FOR lr_event.
+  ENDMETHOD.
+
+  METHOD set_functions.
+
+    DATA(lr_functions) = mr_view-&gt;get_functions( ).
+    lr_functions-&gt;set_all(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    lr_functions-&gt;set_export_localfile(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    me-&gt;set_custom_functions( ir_functions = lr_functions ).
+
+  ENDMETHOD.
+
+
+  METHOD set_sort.
+
+    TRY.
+        DATA(lr_sorts) = me-&gt;mr_view-&gt;get_sorts(  ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    TRY.
+        lr_sorts-&gt;add_sort(
+          EXPORTING
+            columnname         =  &apos;COST_CENTER&apos;    &quot; ALV Control: Field Name of Internal Table Field
+*            position           = position
+*            sequence           = sequence    &quot; Sort Sequence
+*            subtotal           = if_salv_c_bool_sap=&gt;true    &quot; Boolean Variable (X=True, Space=False)
+*            group              = group    &quot; Control Break
+*            obligatory         = obligatory    &quot; Boolean Variable (X=True, Space=False)
+*          RECEIVING
+*            value              = value    &quot; ALV Sort Settings
+        ).
+*          CATCH cx_salv_not_found.    &quot;
+*          CATCH cx_salv_existing.    &quot;
+*          CATCH cx_salv_data_error.    &quot;
+        lr_sorts-&gt;add_sort(
+          EXPORTING
+            columnname         = &apos;ACCOUNT&apos;    &quot; ALV Control: Field Name of Internal Table Field
+*            position           = position
+*            sequence           = sequence    &quot; Sort Sequence
+*            subtotal           = if_salv_c_bool_sap=&gt;true    &quot; Boolean Variable (X=True, Space=False)
+*            group              = group    &quot; Control Break
+*            obligatory         = obligatory    &quot; Boolean Variable (X=True, Space=False)
+*          RECEIVING
+*            value              = value    &quot; ALV Sort Settings
+        ).
+*          CATCH cx_salv_not_found.    &quot;
+*          CATCH cx_salv_existing.    &quot;
+*          CATCH cx_salv_data_error.    &quot;
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD set_texts.
+    DATA:
+          lr_column  TYPE REF TO cl_salv_column,
+          l_hdr_text TYPE string,
+          l_month_text TYPE string,
+          l_length     TYPE lvc_outlen.
+    DEFINE lm_set_header_text.
+      l_hdr_text = cond string( WHEN &amp;1 = abap_true then |{ l_month_text }{ l_previous_year+2(2) } - { &amp;2 }|
+                                ELSE  |{ l_month_text }{ p_year+2(2) } - { &amp;2 }| ).
+      l_length = strlen( l_hdr_text ).
+      TRY.
+          lr_column = lr_columns-&gt;get_column( columnname = &amp;3 ).
+*                    CATCH cx_salv_not_found.  &quot; .
+          lr_column-&gt;set_medium_text( value = conv #( l_hdr_text ) ).
+          lr_column-&gt;set_long_text( value = conv #( l_hdr_text ) ).
+          lr_column-&gt;set_output_length( value = l_length ).
+        CATCH cx_salv_not_found ##NO_HANDLER.
+      ENDTRY.
+    END-OF-DEFINITION.
+
+    TRY.
+        DATA(lr_columns) = me-&gt;mr_view-&gt;get_columns(  ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+
+    CASE p_month.
+      WHEN zif_fi_opex_constants=&gt;mc_month-jan.
+        l_month_text = &apos;janeiro/&apos;(h01).
+      WHEN zif_fi_opex_constants=&gt;mc_month-feb.
+        l_month_text = &apos;fevereiro/&apos;(h02).
+      WHEN zif_fi_opex_constants=&gt;mc_month-mar.
+        l_month_text = &apos;março/&apos;(h03).
+      WHEN zif_fi_opex_constants=&gt;mc_month-apr.
+        l_month_text = &apos;abril/&apos;(h04).
+      WHEN zif_fi_opex_constants=&gt;mc_month-may.
+        l_month_text = &apos;maio/&apos;(h05).
+      WHEN zif_fi_opex_constants=&gt;mc_month-jun.
+        l_month_text = &apos;junho/&apos;(h06).
+      WHEN zif_fi_opex_constants=&gt;mc_month-jul.
+        l_month_text = &apos;julho/&apos;(h07).
+      WHEN zif_fi_opex_constants=&gt;mc_month-aug.
+        l_month_text = &apos;agosto/&apos;(h08).
+      WHEN zif_fi_opex_constants=&gt;mc_month-sep.
+        l_month_text = &apos;setembro/&apos;(h09).
+      WHEN zif_fi_opex_constants=&gt;mc_month-oct.
+        l_month_text = &apos;outubro/&apos;(h10).
+      WHEN zif_fi_opex_constants=&gt;mc_month-nov.
+        l_month_text = &apos;novembro/&apos;(h11).
+      WHEN zif_fi_opex_constants=&gt;mc_month-dec.
+        l_month_text = &apos;dezembro/&apos;(h12).
+    ENDCASE.
+
+    lm_set_header_text: &apos;X&apos; &apos;Real&apos;(h14)              &apos;PREVIOUS&apos;,
+                        &apos; &apos; &apos;Orçamento&apos;(h15)         &apos;BUDGET&apos;,
+                        &apos; &apos; &apos;Reforecast&apos;(h16)        &apos;REFORECAST&apos;,
+                        &apos; &apos; &apos;Real&apos;(h14)              &apos;ZCURRENT&apos;,
+                        &apos; &apos; &apos;Orçamento x Real&apos;(h17)  &apos;VAR_BDG&apos;,
+                        &apos; &apos; &apos;Reforecast x Real&apos;(h18) &apos;VAR_RFC&apos;.
+  ENDMETHOD.
+
+  METHOD set_view.
+
+    me-&gt;set_sort( ).
+
+    me-&gt;set_columns_styles( ).
+
+    me-&gt;set_functions( ).
+
+    me-&gt;set_events( ).
+
+    me-&gt;set_texts( ).
+  ENDMETHOD.
+
+  METHOD show_data.
+
+    CALL FUNCTION &apos;SALV_CSQT_CREATE_CONTAINER&apos;
+      EXPORTING
+        r_content_manager = me    &quot; Parameter display
+        title             = &apos;Opex - Relatório Real x Forecast&apos;(t01).
+  ENDMETHOD.
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FCST_MNTH_GRD_TOP" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Definições globais" LENGTH="54 "/>
+   </language>
+  </textPool>
+  <source>REPORT z_fi_rp_rl_x_frcst_month_grid MESSAGE-ID zfi01.
+INCLUDE z_fi_in_rl_x_fcst_mnth_grd_d01. &quot;Definições de classes
+
+**********************************************************************
+* Variáveis de referência
+**********************************************************************
+DATA
+     costcenter TYPE kostl.
+**********************************************************************
+* Tela de seleção
+**********************************************************************
+SELECTION-SCREEN BEGIN OF BLOCK b1.
+PARAMETERS:
+            p_year  TYPE gjahr OBLIGATORY,
+            p_month TYPE monat OBLIGATORY.
+SELECT-OPTIONS
+    s_cstc FOR costcenter.
+SELECTION-SCREEN END OF BLOCK b1.</source>
+ </PROG>
+</nugget>

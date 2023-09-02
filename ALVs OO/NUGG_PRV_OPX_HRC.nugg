@@ -1,1 +1,1011 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="PRV_OPX_HRC">
+ <PROG NAME="Z_FI_RP_RL_X_FRCST_MONTH" VARCL="X" DBAPL="S" SUBC="1" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="I" KEY="H01" ENTRY="janeiro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H02" ENTRY="fevereiro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H03" ENTRY="março/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H04" ENTRY="abril/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H05" ENTRY="maio/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H06" ENTRY="junho/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H07" ENTRY="julho/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H08" ENTRY="agosto/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H09" ENTRY="setembro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H10" ENTRY="outubro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H11" ENTRY="novembro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H12" ENTRY="dezembro/" LENGTH="10 "/>
+    <textElement ID="I" KEY="H14" ENTRY="Real" LENGTH="4 "/>
+    <textElement ID="I" KEY="H15" ENTRY="Orçamento" LENGTH="9 "/>
+    <textElement ID="I" KEY="H16" ENTRY="Reforecast" LENGTH="10 "/>
+    <textElement ID="I" KEY="H17" ENTRY="Orçamento x Real (%)" LENGTH="20 "/>
+    <textElement ID="I" KEY="H18" ENTRY="Reforecast x Real (%)" LENGTH="21 "/>
+    <textElement ID="R" ENTRY="Opex - Relatório Real x Forecast" LENGTH="32 "/>
+    <textElement ID="S" KEY="P_MONTH" ENTRY="        Mês" LENGTH="24 "/>
+    <textElement ID="S" KEY="P_YEAR" ENTRY="D       ." LENGTH="17 "/>
+    <textElement ID="S" KEY="S_CSTC" ENTRY="D       ." LENGTH="20 "/>
+   </language>
+  </textPool>
+  <pfstatus>
+   <pfstatus_sta CODE="STANDARD_FULLSCREEN" MODAL="D" ACTCODE="000001" PFKCODE="000001" BUTCODE="0001" INT_NOTE="Standard für allgemeine Listausgabe im Fullscreen Grid"/>
+   <pfstatus_fun CODE="%ML" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Pasta" PATH="A"/>
+   <pfstatus_fun CODE="%PC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_EXPORT" ICON_ID="@49@" FUN_TEXT="File local..." PATH="F"/>
+   <pfstatus_fun CODE="%SC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SEARCH" ICON_ID="@13@" FUN_TEXT="Procurar" PATH="U"/>
+   <pfstatus_fun CODE="%SC+" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SEARCH_NEXT" ICON_ID="@4E@" FUN_TEXT="Continuar procurando" PATH="W"/>
+   <pfstatus_fun CODE="%SL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_MAIL" ICON_ID="@1S@" FUN_TEXT="Destinatário do e-mail" PATH="M"/>
+   <pfstatus_fun CODE="&amp;ABC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_ABC" ICON_ID="@DL@" FUN_TEXT="Análise ABC" PATH="A"/>
+   <pfstatus_fun CODE="&amp;ALL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_ALL" ICON_ID="@4B@" FUN_TEXT="Marcar tudo" PATH="M"/>
+   <pfstatus_fun CODE="&amp;AQW" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_WORD_PROCESSING" ICON_ID="@DK@" FUN_TEXT="Processamento de texto..." PATH="T"/>
+   <pfstatus_fun CODE="&amp;AUF" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Determinar lista expandida de totais..." PATH="S"/>
+   <pfstatus_fun CODE="&amp;AVE" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Gravar..." PATH="G"/>
+   <pfstatus_fun CODE="&amp;AVE" TEXTNO="002" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANT_SAVE" ICON_ID="@DN@" FUN_TEXT="Gravar layout..."/>
+   <pfstatus_fun CODE="&amp;AVR" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Valor médio" PATH="M"/>
+   <pfstatus_fun CODE="&amp;CDF" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Liberar colunas" PATH="I"/>
+   <pfstatus_fun CODE="&amp;CFI" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Fixar até coluna" PATH="F"/>
+   <pfstatus_fun CODE="&amp;COUNT" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Contar" PATH="C"/>
+   <pfstatus_fun CODE="&amp;DATA_SAVE" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SYSTEM_SAVE" ICON_ID="@2L@" FUN_TEXT="Gravar"/>
+   <pfstatus_fun CODE="&amp;EB9" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_TABLE_SETTINGS" ICON_ID="@36@" FUN_TEXT="Chamar relatório..." PATH="B"/>
+   <pfstatus_fun CODE="&amp;ELP" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SYSTEM_HELP" ICON_ID="@35@" FUN_TEXT="Ajuda"/>
+   <pfstatus_fun CODE="&amp;ERW" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Administrar..." PATH="A"/>
+   <pfstatus_fun CODE="&amp;ETA" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_DETAIL" ICON_ID="@16@" FUN_TEXT="Detalhes"/>
+   <pfstatus_fun CODE="&amp;F03" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Voltar" PATH="L"/>
+   <pfstatus_fun CODE="&amp;F12" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_CANCEL" ICON_ID="@0W@" FUN_TEXT="Cancelar" PATH="O"/>
+   <pfstatus_fun CODE="&amp;F15" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Encerrar" PATH="E"/>
+   <pfstatus_fun CODE="&amp;F4" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Entradas possíveis"/>
+   <pfstatus_fun CODE="&amp;GRAPH" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_GRAPHICS" ICON_ID="@0N@" FUN_TEXT="Gráfico" PATH="G"/>
+   <pfstatus_fun CODE="&amp;IC1" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SELECT_DETAIL" ICON_ID="@16@" FUN_TEXT="Selecionar"/>
+   <pfstatus_fun CODE="&amp;ILD" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_FILTER_UNDO" ICON_ID="@GD@" FUN_TEXT="Eliminar filtro" PATH="L"/>
+   <pfstatus_fun CODE="&amp;ILT" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_FILTER" ICON_ID="@4G@" FUN_TEXT="Definir filtro" PATH="F"/>
+   <pfstatus_fun CODE="&amp;INFO" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_INFORMATION" ICON_ID="@0S@" FUN_TEXT="Informação"/>
+   <pfstatus_fun CODE="&amp;MAX" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Máximo" PATH="Á"/>
+   <pfstatus_fun CODE="&amp;MIN" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Mínimo" PATH="I"/>
+   <pfstatus_fun CODE="&amp;OAD" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Selecionar..." PATH="E"/>
+   <pfstatus_fun CODE="&amp;OAD" TEXTNO="002" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANT_CHOOSE" ICON_ID="@DM@" FUN_TEXT="Selecionar layout..."/>
+   <pfstatus_fun CODE="&amp;ODN" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SORT_DOWN" ICON_ID="@3F@" FUN_TEXT="Ordenar em ordem decrescente" PATH="D"/>
+   <pfstatus_fun CODE="&amp;OL0" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_ALV_VARIANTS" ICON_ID="@LZ@" FUN_TEXT="Modificar layout..."/>
+   <pfstatus_fun CODE="&amp;OLX" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_VARIANTS" ICON_ID="@0R@" FUN_TEXT="Modificar..." PATH="M"/>
+   <pfstatus_fun CODE="&amp;OPT" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Largura otimizada" PATH="L"/>
+   <pfstatus_fun CODE="&amp;OUP" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SORT_UP" ICON_ID="@3E@" FUN_TEXT="Ordenar em ordem crescente" PATH="R"/>
+   <pfstatus_fun CODE="&amp;REFRESH" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_REFRESH" ICON_ID="@42@" FUN_TEXT="Renovar"/>
+   <pfstatus_fun CODE="&amp;RNT" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_PRINT" ICON_ID="@0X@" FUN_TEXT="Imprimir" PATH="I"/>
+   <pfstatus_fun CODE="&amp;RNT_PREV" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_LAYOUT_CONTROL" ICON_ID="@3G@" FUN_TEXT="Visualização" PATH="V"/>
+   <pfstatus_fun CODE="&amp;SAL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_DESELECT_ALL" ICON_ID="@4D@" FUN_TEXT="Desmarcar tudo" PATH="K"/>
+   <pfstatus_fun CODE="&amp;SUM" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_INTERMEDIATE_SUM" ICON_ID="@5V@" FUN_TEXT="Subtotais..." PATH="S"/>
+   <pfstatus_fun CODE="&amp;UMC" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_SUM" ICON_ID="@3Z@" FUN_TEXT="Total" PATH="T"/>
+   <pfstatus_fun CODE="&amp;VCRYSTAL" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Crystal Reports" PATH="C"/>
+   <pfstatus_fun CODE="&amp;VEXCEL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_XLS" ICON_ID="@J2@" FUN_TEXT="Microsoft Excel" PATH="M"/>
+   <pfstatus_fun CODE="&amp;VGRID" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="SAP List Viewer" PATH="S"/>
+   <pfstatus_fun CODE="&amp;VLOTUS" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Lotus 1-2-3" PATH="L"/>
+   <pfstatus_fun CODE="&amp;XINT" TEXTNO="001" TEXT_TYPE="S" FUN_TEXT="Arquivo ampliado da SAP Query" PATH="E"/>
+   <pfstatus_fun CODE="&amp;XXL" TEXTNO="001" TEXT_TYPE="S" TEXT_NAME="ICON_XXL" ICON_ID="@DJ@" FUN_TEXT="Planilha eletrônica..." PATH="A"/>
+   <pfstatus_men CODE="000001" NO="01" REF_TYPE="F" REF_CODE="&amp;RNT_PREV" REF_NO="001"/>
+   <pfstatus_men CODE="000001" NO="02" REF_TYPE="F" REF_CODE="&amp;RNT" REF_NO="001"/>
+   <pfstatus_men CODE="000001" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000001" NO="04" REF_TYPE="M" REF_CODE="000002"/>
+   <pfstatus_men CODE="000001" NO="05" REF_TYPE="M" REF_CODE="000003"/>
+   <pfstatus_men CODE="000001" NO="06" REF_TYPE="S"/>
+   <pfstatus_men CODE="000001" NO="07" REF_TYPE="F" REF_CODE="&amp;F15" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="01" REF_TYPE="F" REF_CODE="&amp;AQW" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="02" REF_TYPE="F" REF_CODE="&amp;XXL" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="03" REF_TYPE="F" REF_CODE="%PC" REF_NO="001"/>
+   <pfstatus_men CODE="000002" NO="04" REF_TYPE="F" REF_CODE="&amp;XINT" REF_NO="001"/>
+   <pfstatus_men CODE="000003" NO="01" REF_TYPE="F" REF_CODE="%SL" REF_NO="001"/>
+   <pfstatus_men CODE="000003" NO="02" REF_TYPE="F" REF_CODE="%ML" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="01" REF_TYPE="F" REF_CODE="&amp;ALL" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="02" REF_TYPE="F" REF_CODE="&amp;SAL" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="04" REF_TYPE="F" REF_CODE="&amp;ILT" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="05" REF_TYPE="F" REF_CODE="&amp;ILD" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="06" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="07" REF_TYPE="F" REF_CODE="&amp;OUP" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="08" REF_TYPE="F" REF_CODE="&amp;ODN" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="09" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="10" REF_TYPE="M" REF_CODE="000005"/>
+   <pfstatus_men CODE="000004" NO="11" REF_TYPE="F" REF_CODE="&amp;SUM" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="12" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="13" REF_TYPE="F" REF_CODE="%SC" REF_NO="001"/>
+   <pfstatus_men CODE="000004" NO="14" REF_TYPE="S"/>
+   <pfstatus_men CODE="000004" NO="15" REF_TYPE="F" REF_CODE="&amp;F12" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="01" REF_TYPE="F" REF_CODE="&amp;UMC" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="02" REF_TYPE="F" REF_CODE="&amp;AVR" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="03" REF_TYPE="F" REF_CODE="&amp;MIN" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="04" REF_TYPE="F" REF_CODE="&amp;MAX" REF_NO="001"/>
+   <pfstatus_men CODE="000005" NO="05" REF_TYPE="F" REF_CODE="&amp;COUNT" REF_NO="001"/>
+   <pfstatus_men CODE="000006" NO="01" REF_TYPE="F" REF_CODE="&amp;ABC" REF_NO="001"/>
+   <pfstatus_men CODE="000006" NO="02" REF_TYPE="S"/>
+   <pfstatus_men CODE="000006" NO="03" REF_TYPE="F" REF_CODE="&amp;F03" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="01" REF_TYPE="F" REF_CODE="&amp;VGRID" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="02" REF_TYPE="F" REF_CODE="&amp;VEXCEL" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="03" REF_TYPE="F" REF_CODE="&amp;VLOTUS" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="04" REF_TYPE="F" REF_CODE="&amp;VCRYSTAL" REF_NO="001"/>
+   <pfstatus_men CODE="000007" NO="05" REF_TYPE="S"/>
+   <pfstatus_men CODE="000007" NO="06" REF_TYPE="F" REF_CODE="&amp;GRAPH" REF_NO="001"/>
+   <pfstatus_men CODE="000008" NO="01" REF_TYPE="M" REF_CODE="000009"/>
+   <pfstatus_men CODE="000008" NO="02" REF_TYPE="M" REF_CODE="000010"/>
+   <pfstatus_men CODE="000008" NO="03" REF_TYPE="F" REF_CODE="&amp;AUF" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="01" REF_TYPE="F" REF_CODE="&amp;OLX" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="02" REF_TYPE="F" REF_CODE="&amp;OAD" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="03" REF_TYPE="S"/>
+   <pfstatus_men CODE="000009" NO="04" REF_TYPE="F" REF_CODE="&amp;AVE" REF_NO="001"/>
+   <pfstatus_men CODE="000009" NO="05" REF_TYPE="S"/>
+   <pfstatus_men CODE="000009" NO="06" REF_TYPE="F" REF_CODE="&amp;ERW" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="01" REF_TYPE="F" REF_CODE="&amp;OPT" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="02" REF_TYPE="S"/>
+   <pfstatus_men CODE="000010" NO="03" REF_TYPE="F" REF_CODE="&amp;CFI" REF_NO="001"/>
+   <pfstatus_men CODE="000010" NO="04" REF_TYPE="F" REF_CODE="&amp;CDF" REF_NO="001"/>
+   <pfstatus_mtx CODE="000001" TEXT_TYPE="S" TEXT="Lista" PATH="L" INT_NOTE="STANDARD_FULLSCREEN Liste"/>
+   <pfstatus_mtx CODE="000002" TEXT_TYPE="S" TEXT="Exportar" PATH="X" INT_NOTE="STANDARD Sichern"/>
+   <pfstatus_mtx CODE="000003" TEXT_TYPE="S" TEXT="Enviar a" PATH="N"/>
+   <pfstatus_mtx CODE="000004" TEXT_TYPE="S" TEXT="Processar" PATH="E" INT_NOTE="STANDARD"/>
+   <pfstatus_mtx CODE="000005" TEXT_TYPE="S" TEXT="Calcular" PATH="C"/>
+   <pfstatus_mtx CODE="000006" TEXT_TYPE="S" TEXT="Ir para" PATH="G" INT_NOTE="STANDARD"/>
+   <pfstatus_mtx CODE="000007" TEXT_TYPE="S" TEXT="Visões" PATH="I"/>
+   <pfstatus_mtx CODE="000008" TEXT_TYPE="S" TEXT="Configurações" PATH="C" INT_NOTE="STANDARD_FULLSCREEN"/>
+   <pfstatus_mtx CODE="000009" TEXT_TYPE="S" TEXT="Layout" PATH="A" INT_NOTE="Sub STANDARD"/>
+   <pfstatus_mtx CODE="000010" TEXT_TYPE="S" TEXT="Colunas" PATH="C"/>
+   <pfstatus_act CODE="000001" NO="01" MENUCODE="000001"/>
+   <pfstatus_act CODE="000001" NO="02" MENUCODE="000004"/>
+   <pfstatus_act CODE="000001" NO="03" MENUCODE="000006"/>
+   <pfstatus_act CODE="000001" NO="04" MENUCODE="000007"/>
+   <pfstatus_act CODE="000001" NO="05" MENUCODE="000008"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="01" PFNO="39"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="02" PFNO="37"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="03" PFNO="08"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="04" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="05" PFNO="05"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="06" PFNO="06"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="07" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="08" PFNO="28"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="09" PFNO="40"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="10" PFNO="29"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="11" PFNO="38"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="12" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="13" PFNO="30"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="14" PFNO="42"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="15" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="16" PFNO="46"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="17" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="18" PFNO="43"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="19" PFNO="44"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="20" PFNO="45"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="21" PFNO="31"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="22" PFNO="25"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="23" PFNO="47"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="24" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="25" PFNO="32"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="26" PFNO="33"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="27" PFNO="34"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="28" PFNO="S"/>
+   <pfstatus_but PFK_CODE="000001" CODE="0001" NO="29" PFNO="36"/>
+   <pfstatus_pfk CODE="000001" PFNO="01" FUNCODE="&amp;ELP" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="02" FUNCODE="&amp;IC1" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="03" FUNCODE="&amp;F03" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="04" FUNCODE="&amp;F4" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="05" FUNCODE="&amp;ALL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="06" FUNCODE="&amp;SAL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="08" FUNCODE="&amp;REFRESH" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="11" FUNCODE="&amp;DATA_SAVE" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="12" FUNCODE="&amp;F12" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="15" FUNCODE="&amp;F15" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="25" FUNCODE="&amp;ABC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="28" FUNCODE="&amp;OUP" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="29" FUNCODE="&amp;ILT" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="30" FUNCODE="&amp;UMC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="31" FUNCODE="%SL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="32" FUNCODE="&amp;OL0" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="33" FUNCODE="&amp;OAD" FUNNO="002"/>
+   <pfstatus_pfk CODE="000001" PFNO="34" FUNCODE="&amp;AVE" FUNNO="002"/>
+   <pfstatus_pfk CODE="000001" PFNO="36" FUNCODE="&amp;INFO" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="37" FUNCODE="&amp;EB9" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="38" FUNCODE="&amp;ILD" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="39" FUNCODE="&amp;ETA" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="40" FUNCODE="&amp;ODN" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="41" FUNCODE="&amp;VGRID" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="42" FUNCODE="&amp;SUM" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="43" FUNCODE="&amp;VEXCEL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="44" FUNCODE="&amp;AQW" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="45" FUNCODE="%PC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="46" FUNCODE="&amp;RNT_PREV" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="47" FUNCODE="&amp;GRAPH" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="48" FUNCODE="&amp;VCRYSTAL" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="71" FUNCODE="%SC" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="84" FUNCODE="%SC+" FUNNO="001"/>
+   <pfstatus_pfk CODE="000001" PFNO="86" FUNCODE="&amp;RNT" FUNNO="001"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%CH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%ML"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%PC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SC+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="%SL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ABC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ALL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AQW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AUF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;AVR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;BS-"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CDF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CFI"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;COUNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRB"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRBATCH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRDESIG"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRTEMPL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;CRYSTAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DATA_SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DAU"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DOF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;DON"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;EB3"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;EB9"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ELP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ERW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ETA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F03"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F12"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F15"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;F4"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;GRAPH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;IC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ILD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ILT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;INFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;KOM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;LFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;LIS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;MAX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;MIN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;NFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;NTE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OAD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;ODN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OL0"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OLX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OMP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OPT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;OUP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;REFRESH"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;RNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;RNT_PREV"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;SUM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;UMC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;URL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VCRYSTAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VEXCEL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VGRID"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;VLOTUS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XML"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XPA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="&amp;XXL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BAC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BACK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB2"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB3"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEB9"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="BEBN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="COL0"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="COLX"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DETA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DRUK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="DSAL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="ENTE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="EXIT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="EXPA"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="FILD"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="FILT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="GLIS"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="HELP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="INFO"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="KOMP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P+"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P++"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P-"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="P--"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PF09"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PF13"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PIC1"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PICK"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRI"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRIN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="PRNT"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="RW"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SALL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SAUF"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SAVE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRB"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRE"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRL"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SCRR"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SKOM"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SODN"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SOUP"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="SUMC"/>
+   <pfstatus_set STATUS="STANDARD_FULLSCREEN" FUNCTION="ZSUM"/>
+   <pfstatus_doc OBJ_TYPE="A" OBJ_CODE="000001" MODAL="D" INT_NOTE="Standardoberfläche              STANDARD_FULLSCREEN"/>
+   <pfstatus_doc OBJ_TYPE="P" OBJ_CODE="000001" MODAL="D" NORM="X" INT_NOTE="Standard maximale Interaktion STANDARD_FULLSCREEN"/>
+   <pfstatus_doc OBJ_TYPE="B" OBJ_CODE="000001" SUB_CODE="0001" INT_NOTE="STANDARD_FULLSCREEN"/>
+  </pfstatus>
+  <source>INCLUDE: z_fi_in_rl_x_frcst_month_top, &quot;Definições globais
+         z_fi_in_rl_x_frcst_month_p01. &quot;Implementações de classes
 
+INITIALIZATION.
+  DATA(gr_controller) = NEW lcl_controller(  ).
+  p_year              = sy-datlo(4).
+  p_month             = sy-datlo+4(2).
+
+START-OF-SELECTION.
+  gr_controller-&gt;get_data( ).
+
+END-OF-SELECTION.
+  gr_controller-&gt;show_data( ).</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FRCST_MONTH_D01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Definições de classes" LENGTH="57 "/>
+   </language>
+  </textPool>
+  <source>CLASS lcl_controller DEFINITION FINAL.
+  PUBLIC SECTION.
+    METHODS:
+             constructor,
+             get_data,
+             show_data.
+  PRIVATE SECTION.
+    DATA:
+          mr_model      TYPE REF TO zcl_fi_opex_model,
+          mr_view       TYPE REF TO cl_salv_hierseq_table,
+          mt_output_hdr TYPE zfi_tt_real_x_budget_month,
+          mt_output_itm TYPE zfi_tt_real_x_budget_month,
+          mt_binding    TYPE salv_t_hierseq_binding.
+    METHODS:
+             display         , &quot;IMPORTING ir_container TYPE REF TO cl_gui_custom_container,
+             on_link_click FOR EVENT link_click OF cl_salv_events_hierseq
+                           IMPORTING level
+                                     row
+                                     column,
+             set_columns_order,
+             set_columns_styles,
+             set_events,
+             set_expand_option,
+             set_functions,
+             set_sort,
+             set_texts,
+             set_view.
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FRCST_MONTH_P01" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Implementações de classes" LENGTH="61 "/>
+   </language>
+  </textPool>
+  <source>CLASS lcl_controller IMPLEMENTATION.
+  METHOD constructor.
+
+    me-&gt;mr_model = NEW zcl_fi_opex_model( ).
+  ENDMETHOD.
+
+  METHOD display.
+
+    TRY.
+        cl_salv_hierseq_table=&gt;factory(
+          EXPORTING
+            t_binding_level1_level2 = me-&gt;mt_binding    &quot; Binding Between Two Tables
+          IMPORTING
+            r_hierseq               = me-&gt;mr_view    &quot; Sequential ALV Tables
+          CHANGING
+            t_table_level1          = me-&gt;mt_output_hdr
+            t_table_level2          = me-&gt;mt_output_itm
+        ).
+*          CATCH cx_salv_data_error.    &quot;
+*          CATCH cx_salv_not_found.    &quot;
+      CATCH cx_salv_data_error INTO DATA(lx_data_error).
+        DATA(l_message) = lx_data_error-&gt;get_text( ).
+        MESSAGE l_message TYPE &apos;E&apos;.
+      CATCH cx_salv_not_found INTO DATA(lx_not_found).
+        l_message = lx_not_found-&gt;get_text( ).
+        MESSAGE l_message TYPE &apos;E&apos;.
+    ENDTRY.
+
+    set_view( ).
+
+    mr_view-&gt;display( ).
+  ENDMETHOD.
+
+
+  METHOD on_link_click.
+
+    IF column = &apos;ZCURRENT&apos;.
+      IF level = zif_fi_opex_constants=&gt;mc_hierarchical_level-detail.
+        TRY.
+            mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                              option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                              low    = mt_output_itm[ row ]-cost_center ) )
+                                                 ig_accounts = VALUE j_3rf_acc_range( ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                        option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                        low    = mt_output_itm[ row ]-account ) )
+                                                i_fiscal_year = p_year
+                                                i_period      = p_month ).
+          CATCH cx_sy_itab_line_not_found.
+            RETURN.
+        ENDTRY.
+      ELSEIF level = zif_fi_opex_constants=&gt;mc_hierarchical_level-header.
+        TRY.
+            mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                            option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                            low    = mt_output_hdr[ row ]-cost_center ) )
+                                                 ig_accounts = VALUE j_3rf_acc_range( FOR ls_detail IN me-&gt;mt_output_itm
+                                                                                     WHERE ( cost_center =  mt_output_hdr[ row ]-cost_center )
+                                                                                     ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                       option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                       low    = ls_detail-account ) )
+                                                i_fiscal_year = p_year
+                                                i_period      = p_month ).
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+      ENDIF.
+    ELSEIF column = &apos;PREVIOUS&apos;.
+      DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+      IF level = zif_fi_opex_constants=&gt;mc_hierarchical_level-detail.
+        TRY.
+            mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                              option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                              low    = mt_output_itm[ row ]-cost_center ) )
+                                                ig_accounts = VALUE j_3rf_acc_range( ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                       option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                       low    = mt_output_itm[ row ]-account ) )
+                                                i_fiscal_year = l_previous_year
+                                                i_period      = p_month ).
+          CATCH cx_sy_itab_line_not_found.
+            RETURN.
+        ENDTRY.
+      ELSEIF level = zif_fi_opex_constants=&gt;mc_hierarchical_level-header.
+        TRY.
+            mr_model-&gt;navigate_fbl3n( EXPORTING ig_cost_centers = VALUE fagl_range_t_kostl( ( sign = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                            option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                            low    = mt_output_hdr[ row ]-cost_center ) )
+                                                ig_accounts = VALUE j_3rf_acc_range( FOR ls_detail IN me-&gt;mt_output_itm
+                                                                                     WHERE ( cost_center =  mt_output_hdr[ row ]-cost_center )
+                                                                                     ( sign   = zif_fi_opex_constants=&gt;mc_dictionary-sign-includes
+                                                                                       option = zif_fi_opex_constants=&gt;mc_dictionary-option-equals
+                                                                                       low    = ls_detail-account ) )
+                                                i_fiscal_year = l_previous_year
+                                                i_period      = p_month ).
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD get_data.
+    DEFINE lm_fill_forecast.
+      try.
+          &lt;ls_item&gt;-&amp;2 = lt_forecast_data[ type          = &amp;1
+                                           ctrl_cst_area = zif_fi_opex_constants=&gt;mc_priv
+                                           cost_center   = &lt;ls_item&gt;-cost_center
+                                           account_plan  = zif_fi_opex_constants=&gt;mc_pcpr
+                                           account       = &lt;ls_item&gt;-account
+                                           fiscal_year   = p_year                           ]-items[ zmonth = p_month ]-amount.
+        catch cx_sy_itab_line_not_found ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    CLEAR: me-&gt;mt_output_hdr, me-&gt;mt_output_itm, me-&gt;mt_binding.
+
+    DATA(lg_sctc) = s_cstc[].
+    IF s_cstc IS NOT INITIAL.
+      APPEND s_cstc TO lg_sctc.
+      DELETE ADJACENT DUPLICATES FROM lg_sctc COMPARING table_line.
+    ENDIF.
+    DATA(lg_cost_centers) = VALUE fagl_range_t_kostl( FOR ls_sctc IN lg_sctc
+                                                      ( ls_sctc ) ).
+    TRY.
+        DATA(lt_reforecast) = me-&gt;mr_model-&gt;get_rfrcst_rprt_data(
+                             i_type          = zif_fi_opex_constants=&gt;mc_forecast-reforecast
+                             i_fiscal_year   = p_year
+                             ig_cost_centers = lg_cost_centers
+                         ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER. &quot;INTO DATA(lx_error).
+*        TRY.
+*            MESSAGE lx_error-&gt;status[ 1 ]-message TYPE &apos;E&apos;.
+*          CATCH cx_sy_itab_line_not_found.
+*            LEAVE TO CURRENT TRANSACTION.
+*        ENDTRY.
+    ENDTRY.
+
+    TRY.
+        DATA(lt_forecast_data) = me-&gt;mr_model-&gt;get_rfrcst_rprt_data(
+                             i_type          = zif_fi_opex_constants=&gt;mc_forecast-budget
+                             i_fiscal_year   = p_year
+                             ig_cost_centers = lg_cost_centers
+                         ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER. &quot;INTO DATA(lx_error).
+*        TRY.
+*            MESSAGE lx_error-&gt;status[ 1 ]-message TYPE &apos;E&apos;.
+*          CATCH cx_sy_itab_line_not_found.
+*            LEAVE TO CURRENT TRANSACTION.
+*        ENDTRY.
+    ENDTRY.
+    APPEND LINES OF lt_reforecast TO lt_forecast_data.
+
+    DATA(lt_items) = VALUE zfi_tt_real_x_budget_month( FOR ls_forecast IN lt_forecast_data
+                                                 ( CORRESPONDING #( ls_forecast ) ) ).
+    SORT lt_items BY cost_center account.
+    DELETE ADJACENT DUPLICATES FROM lt_items COMPARING cost_center account.
+    LOOP AT lt_items ASSIGNING FIELD-SYMBOL(&lt;ls_item&gt;).
+*      TRY.
+*          &lt;ls_item&gt;-currency     = lt_forecast_data[ type          = zif_fi_opex_constants=&gt;mc_forecast-budget
+*                                                     ctrl_cst_area = zif_fi_opex_constants=&gt;mc_priv
+*                                                     cost_center   = &lt;ls_item&gt;-cost_center
+*                                                     account_plan  = zif_fi_opex_constants=&gt;mc_pcpr
+*                                                     account       = &lt;ls_item&gt;-account
+*                                                     fiscal_year   = p_year                           ]-currency.
+*        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+*      ENDTRY.
+
+      lm_fill_forecast: &quot;Budget amounts
+                      zif_fi_opex_constants=&gt;mc_forecast-budget budget,
+                      &quot;Reforecast amounts
+                      zif_fi_opex_constants=&gt;mc_forecast-reforecast reforecast.
+
+      COLLECT &lt;ls_item&gt; INTO me-&gt;mt_output_itm.
+    ENDLOOP.
+
+    &quot;Getting executed
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+    TRY.
+        DATA(lt_real_previous) = me-&gt;mr_model-&gt;get_executed( i_fiscal_year   = l_previous_year
+                                                             ig_cost_centers = lg_cost_centers ).
+*                           CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+    TRY.
+        DATA(lt_real_current) = me-&gt;mr_model-&gt;get_executed( i_fiscal_year   = p_year
+                                                            ig_cost_centers = lg_cost_centers ).
+*                          CATCH cx_bapi_error.  &quot;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+
+    IF lt_real_previous IS NOT INITIAL.
+      LOOP AT lt_real_previous ASSIGNING FIELD-SYMBOL(&lt;ls_executed&gt;)
+       WHERE month = p_month.
+        TRY.
+            me-&gt;mt_output_itm[ cost_center = &lt;ls_executed&gt;-cost_center
+                               account     = &lt;ls_executed&gt;-account
+                               currency    = &lt;ls_executed&gt;-currency ]-previous = &lt;ls_executed&gt;-amount.
+          CATCH cx_sy_itab_line_not_found.
+            TRY.
+                DATA(ls_item) = VALUE zfi_es_real_x_budget_month( cost_center = &lt;ls_executed&gt;-cost_center
+                                                                  account     = &lt;ls_executed&gt;-account
+                                                                  currency    = &lt;ls_executed&gt;-currency
+                                                                  previous    = &lt;ls_executed&gt;-amount      ).
+                APPEND ls_item TO me-&gt;mt_output_itm.
+              CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+            ENDTRY.
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+    IF lt_real_current IS NOT INITIAL.
+      LOOP AT lt_real_current ASSIGNING &lt;ls_executed&gt;
+       WHERE month = p_month.
+        TRY.
+            me-&gt;mt_output_itm[ cost_center = &lt;ls_executed&gt;-cost_center
+                           account     = &lt;ls_executed&gt;-account
+                           currency    = &lt;ls_executed&gt;-currency ]-zcurrent = &lt;ls_executed&gt;-amount.
+          CATCH cx_sy_itab_line_not_found.
+            CLEAR ls_item.
+            TRY.
+                ls_item = VALUE zfi_es_real_x_budget_month( cost_center = &lt;ls_executed&gt;-cost_center
+                                                            account     = &lt;ls_executed&gt;-account
+                                                            currency    = &lt;ls_executed&gt;-currency
+                                                            zcurrent    = &lt;ls_executed&gt;-amount      ).
+                APPEND ls_item TO me-&gt;mt_output_itm.
+              CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+            ENDTRY.
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+    LOOP AT me-&gt;mt_output_itm ASSIGNING &lt;ls_item&gt;.
+      TRY.&quot;Cost center description
+          &lt;ls_item&gt;-cost_center_dsc = me-&gt;mr_model-&gt;get_cost_center_dsc(
+                                    i_ctrl_cst_area   = zif_fi_opex_constants=&gt;mc_priv
+                                    i_cost_center     = &lt;ls_item&gt;-cost_center
+                                    i_valid_to        = sy-datlo
+                                ).
+*                              CATCH cx_bapi_error.  &quot;
+        CATCH cx_bapi_error ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.&quot;Account description
+          &lt;ls_item&gt;-account_dsc = me-&gt;mr_model-&gt;get_account_dsc(
+                            i_account_plan = zif_fi_opex_constants=&gt;mc_pcpr
+                            i_account      = &lt;ls_item&gt;-account
+                        ).
+*                          CATCH cx_bapi_error.  &quot;
+        CATCH cx_bapi_error ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.
+          &lt;ls_item&gt;-var_bdg = ( &lt;ls_item&gt;-zcurrent / &lt;ls_item&gt;-budget ) * 100.
+        CATCH cx_sy_zerodivide.
+          IF &lt;ls_item&gt;-budget IS INITIAL.
+            &lt;ls_item&gt;-var_bdg = 100.
+          ENDIF.
+      ENDTRY.
+      TRY.
+          &lt;ls_item&gt;-var_rfc = ( &lt;ls_item&gt;-zcurrent / &lt;ls_item&gt;-reforecast ) * 100.
+        CATCH cx_sy_zerodivide.
+          IF &lt;ls_item&gt;-budget IS INITIAL.
+            &lt;ls_item&gt;-var_bdg = 100.
+          ENDIF.
+      ENDTRY.
+    ENDLOOP.
+
+    SORT me-&gt;mt_output_itm BY cost_center account.
+    DATA(lt_header) = me-&gt;mt_output_itm.
+    LOOP AT lt_header ASSIGNING FIELD-SYMBOL(&lt;ls_header&gt;).
+      CLEAR: &lt;ls_header&gt;-account, &lt;ls_header&gt;-account_dsc.
+      COLLECT &lt;ls_header&gt; INTO me-&gt;mt_output_hdr.
+    ENDLOOP.
+
+    me-&gt;mt_binding = VALUE #( ( master = &apos;COST_CENTER&apos; slave = &apos;COST_CENTER&apos; ) ).
+  ENDMETHOD.
+
+
+  METHOD set_columns_order.
+    DEFINE lm_set_row.
+      try.
+          me-&gt;mr_view-&gt;get_level( &amp;1 )-&gt;get_columns( )-&gt;get_column( columnname = &amp;2 )-&gt;set_row( value = &amp;3 ).
+*              CATCH cx_salv_not_found.    &quot;
+        catch cx_salv_not_found ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    lm_set_row: &quot;Parent
+                1 &apos;PREVIOUS&apos;   2,
+                1 &apos;BUDGET&apos;     2,
+                1 &apos;REFORECAST&apos; 2,
+                1 &apos;ZCURRENT&apos;   2,
+                1 &apos;VAR_BDG&apos;    2,
+                1 &apos;VAR_RFC&apos;    2,
+                &quot; Child
+                2 &apos;PREVIOUS&apos;   2,
+                2 &apos;BUDGET&apos;     2,
+                2 &apos;REFORECAST&apos; 2,
+                2 &apos;ZCURRENT&apos;   2,
+                2 &apos;VAR_BDG&apos;    2,
+                2 &apos;VAR_RFC&apos;    2.
+  ENDMETHOD.
+
+
+  METHOD set_columns_styles.
+    DEFINE lm_set_technical.
+      try .
+          &amp;1-&gt;get_column( &amp;2 )-&gt;set_technical( if_salv_c_bool_sap=&gt;true ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+    DEFINE lm_set_sign.
+      try .
+          &amp;1-&gt;get_column( &amp;2 )-&gt;set_sign( if_salv_c_bool_sap=&gt;true ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+    DEFINE lm_set_alignment.
+      try .
+          &amp;1-&gt;get_column( &amp;2 )-&gt;SET_ALIGNMENT( &amp;3 ).
+        catch cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      endtry.
+    END-OF-DEFINITION.
+
+    TRY.
+        DATA(lr_hdr_columns) = me-&gt;mr_view-&gt;get_columns( 1 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    TRY.
+        DATA(lr_itm_columns) = me-&gt;mr_view-&gt;get_columns( 2 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+*    lr_hdr_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+*    lr_itm_columns-&gt;set_optimize( value = if_salv_c_bool_sap=&gt;true ).
+
+    lm_set_technical: lr_hdr_columns &apos;EXPAND&apos;,
+                      lr_itm_columns &apos;EXPAND&apos;,
+                      lr_hdr_columns &apos;CURRENCY&apos;,
+                      lr_itm_columns &apos;CURRENCY&apos;,
+                      lr_hdr_columns &apos;ACCOUNT&apos;,
+                      lr_hdr_columns &apos;ACCOUNT_DSC&apos;.
+
+*    TRY. &quot;Changing color
+*        DATA(lr_columnlist) = CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( columnname = &apos;SEPARATOR1&apos; ) ).
+**          CATCH cx_salv_not_found.    &quot;
+*        lr_columnlist-&gt;set_color( value = VALUE #( col = 6 int = 0 inv = 0 ) ).
+*        lr_columnlist = CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( columnname = &apos;SEPARATOR2&apos; ) ).
+**          CATCH cx_salv_not_found.    &quot;
+*        lr_columnlist-&gt;set_color( value = VALUE #( col = 6 int = 0 inv = 0 ) ).
+*      CATCH cx_salv_not_found ##NO_HANDLER.
+*    ENDTRY.
+    &quot;Setting sign for variations
+    TRY.
+        lr_itm_columns-&gt;get_column( &apos;VAR_BDG&apos; )-&gt;set_alignment(
+                value = if_salv_c_alignment=&gt;centered
+            ).
+      CATCH cx_salv_not_found ##NO_HANDLER.
+    ENDTRY.
+    lm_set_sign: lr_hdr_columns &apos;PREVIOUS&apos;  ,
+                 lr_hdr_columns &apos;BUDGET&apos;    ,
+                 lr_hdr_columns &apos;REFORECAST&apos;,
+                 lr_hdr_columns &apos;ZCURRENT&apos;  ,
+                 lr_hdr_columns &apos;VAR_BDG&apos;,
+                 lr_hdr_columns &apos;VAR_RFC&apos;,
+                 lr_itm_columns &apos;PREVIOUS&apos;  ,
+                 lr_itm_columns &apos;BUDGET&apos;    ,
+                 lr_itm_columns &apos;REFORECAST&apos;,
+                 lr_itm_columns &apos;ZCURRENT&apos;  ,
+                 lr_itm_columns &apos;VAR_BDG&apos;,
+                 lr_itm_columns &apos;VAR_RFC&apos;,
+                 lr_itm_columns &apos;VAR_BDG&apos;,
+                 lr_itm_columns &apos;VAR_RFC&apos;.
+    &quot;Setting alignment for variations
+    lm_set_alignment: lr_hdr_columns &apos;VAR_BDG&apos; if_salv_c_alignment=&gt;centered,
+                      lr_hdr_columns &apos;VAR_RFC&apos; if_salv_c_alignment=&gt;centered,
+                      lr_itm_columns &apos;VAR_BDG&apos; if_salv_c_alignment=&gt;centered,
+                      lr_itm_columns &apos;VAR_RFC&apos; if_salv_c_alignment=&gt;centered.
+    &quot;Setting hotspot
+    IF me-&gt;mr_model-&gt;is_realized_loaded( i_fiscal_year = p_year ) = abap_false.
+      TRY .
+          CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( &apos;ZCURRENT&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+          CAST cl_salv_column_list( lr_itm_columns-&gt;get_column( &apos;ZCURRENT&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+        CATCH cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      ENDTRY.
+    ENDIF.
+
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+    IF me-&gt;mr_model-&gt;is_realized_loaded( i_fiscal_year = l_previous_year ) = abap_false.
+      TRY .
+          CAST cl_salv_column_list( lr_hdr_columns-&gt;get_column( &apos;PREVIOUS&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+          CAST cl_salv_column_list( lr_itm_columns-&gt;get_column( &apos;PREVIOUS&apos; ) )-&gt;set_cell_type( if_salv_c_cell_type=&gt;hotspot ).
+        CATCH cx_salv_not_found
+              cx_salv_data_error ##NO_HANDLER.
+      ENDTRY.
+    ENDIF.
+
+  ENDMETHOD.
+
+  METHOD set_events.
+
+    DATA(lr_event) = me-&gt;mr_view-&gt;get_event( ).
+    SET HANDLER  me-&gt;on_link_click   FOR lr_event.
+  ENDMETHOD.
+
+  METHOD set_expand_option.
+
+    TRY.
+        me-&gt;mr_view-&gt;get_columns( 1 )-&gt;set_expand_column( &apos;EXPAND&apos; ).
+      CATCH cx_salv_not_found
+            cx_salv_data_error.
+        RETURN.
+    ENDTRY.
+*
+*   Set items compressed by default
+    TRY.
+        me-&gt;mr_view-&gt;get_level( 1 )-&gt;set_items_expanded( if_salv_c_bool_sap=&gt;false ).
+      CATCH cx_salv_not_found.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD set_functions.
+
+    mr_view-&gt;set_screen_status(
+      EXPORTING
+        report        = sy-repid    &quot; ABAP Program: Current Main Program
+        pfstatus      = &apos;STANDARD_FULLSCREEN&apos;    &quot; Screens, Current GUI Status
+*        set_functions = C_FUNCTIONS_NONE    &quot; ALV: Data Element for Constants
+    ).
+
+    DATA(lr_functions) = mr_view-&gt;get_functions( ).
+    lr_functions-&gt;set_all(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+    lr_functions-&gt;set_export_localfile(
+*      value = if_salv_c_bool_sap=&gt;true
+    ).
+
+  ENDMETHOD.
+
+
+  METHOD set_sort.
+
+    TRY.
+        DATA(lr_sort_hdr) = me-&gt;mr_view-&gt;get_sorts( level = 1 ).
+*                      CATCH cx_salv_not_found.  &quot;
+        DATA(lr_sort_itm)  = me-&gt;mr_view-&gt;get_sorts( level = 2 ).
+*                       CATCH cx_salv_not_found.  &quot;
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    TRY.
+        lr_sort_hdr-&gt;add_sort(
+          EXPORTING
+            columnname         =  &apos;COST_CENTER&apos;    &quot; ALV Control: Field Name of Internal Table Field
+*            position           = position
+*            sequence           = sequence    &quot; Sort Sequence
+*            subtotal           = if_salv_c_bool_sap=&gt;true    &quot; Boolean Variable (X=True, Space=False)
+*            group              = group    &quot; Control Break
+*            obligatory         = obligatory    &quot; Boolean Variable (X=True, Space=False)
+*          RECEIVING
+*            value              = value    &quot; ALV Sort Settings
+        ).
+*          CATCH cx_salv_not_found.    &quot;
+*          CATCH cx_salv_existing.    &quot;
+*          CATCH cx_salv_data_error.    &quot;
+        lr_sort_itm-&gt;add_sort(
+          EXPORTING
+            columnname         = &apos;ACCOUNT&apos;    &quot; ALV Control: Field Name of Internal Table Field
+*            position           = position
+*            sequence           = sequence    &quot; Sort Sequence
+*            subtotal           = if_salv_c_bool_sap=&gt;true    &quot; Boolean Variable (X=True, Space=False)
+*            group              = group    &quot; Control Break
+*            obligatory         = obligatory    &quot; Boolean Variable (X=True, Space=False)
+*          RECEIVING
+*            value              = value    &quot; ALV Sort Settings
+        ).
+*          CATCH cx_salv_not_found.    &quot;
+*          CATCH cx_salv_existing.    &quot;
+*          CATCH cx_salv_data_error.    &quot;
+      CATCH cx_salv_not_found ##NO_HANDLER
+            cx_salv_existing
+            cx_salv_data_error.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD set_texts.
+    DATA:
+          lr_column    TYPE REF TO cl_salv_column,
+          l_hdr_text   TYPE string,
+          l_month_text TYPE string,
+          l_length     TYPE lvc_outlen.
+    DEFINE lm_set_header_text.
+      l_hdr_text = cond string( WHEN &amp;1 = abap_true then |{ l_month_text }{ l_previous_year+2(2) } - { &amp;2 }|
+                                ELSE  |{ l_month_text }{ p_year+2(2) } - { &amp;2 }| ).
+      l_length = strlen( l_hdr_text ).
+      TRY.
+          lr_column = &amp;3-&gt;get_column( columnname = &amp;4 ).
+*                    CATCH cx_salv_not_found.  &quot; .
+          lr_column-&gt;set_long_text( value = conv #( l_hdr_text ) ).
+          lr_column-&gt;set_output_length( value = l_length ).
+        CATCH cx_salv_not_found ##NO_HANDLER.
+      ENDTRY.
+    END-OF-DEFINITION.
+
+    TRY.
+        DATA(lr_hdr_columns) = me-&gt;mr_view-&gt;get_columns( 1 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    TRY.
+        DATA(lr_itm_columns) = me-&gt;mr_view-&gt;get_columns( 2 ).
+      CATCH cx_salv_not_found.
+        RETURN.
+    ENDTRY.
+
+    DATA(l_previous_year) = CONV gjahr( p_year - 1 ).
+
+    CASE p_month.
+      WHEN zif_fi_opex_constants=&gt;mc_month-jan.
+        l_month_text = &apos;janeiro/&apos;(h01).
+      WHEN zif_fi_opex_constants=&gt;mc_month-feb.
+        l_month_text = &apos;fevereiro/&apos;(h02).
+      WHEN zif_fi_opex_constants=&gt;mc_month-mar.
+        l_month_text = &apos;março/&apos;(h03).
+      WHEN zif_fi_opex_constants=&gt;mc_month-apr.
+        l_month_text = &apos;abril/&apos;(h04).
+      WHEN zif_fi_opex_constants=&gt;mc_month-may.
+        l_month_text = &apos;maio/&apos;(h05).
+      WHEN zif_fi_opex_constants=&gt;mc_month-jun.
+        l_month_text = &apos;junho/&apos;(h06).
+      WHEN zif_fi_opex_constants=&gt;mc_month-jul.
+        l_month_text = &apos;julho/&apos;(h07).
+      WHEN zif_fi_opex_constants=&gt;mc_month-aug.
+        l_month_text = &apos;agosto/&apos;(h08).
+      WHEN zif_fi_opex_constants=&gt;mc_month-sep.
+        l_month_text = &apos;setembro/&apos;(h09).
+      WHEN zif_fi_opex_constants=&gt;mc_month-oct.
+        l_month_text = &apos;outubro/&apos;(h10).
+      WHEN zif_fi_opex_constants=&gt;mc_month-nov.
+        l_month_text = &apos;novembro/&apos;(h11).
+      WHEN zif_fi_opex_constants=&gt;mc_month-dec.
+        l_month_text = &apos;dezembro/&apos;(h12).
+    ENDCASE.
+    lm_set_header_text: &apos;X&apos; &apos;Real&apos;(h14)              lr_hdr_columns &apos;PREVIOUS&apos;,
+                        &apos; &apos; &apos;Orçamento&apos;(h15)         lr_hdr_columns &apos;BUDGET&apos;,
+                        &apos; &apos; &apos;Reforecast&apos;(h16)        lr_hdr_columns &apos;REFORECAST&apos;,
+                        &apos; &apos; &apos;Real&apos;(h14)              lr_hdr_columns &apos;ZCURRENT&apos;,
+                        &apos; &apos; &apos;Orçamento x Real&apos;(h17)  lr_hdr_columns &apos;VAR_BDG&apos;,
+                        &apos; &apos; &apos;Reforecast x Real&apos;(h18) lr_hdr_columns &apos;VAR_RFC&apos;,
+                        &apos;X&apos; &apos;Real&apos;(h14)              lr_itm_columns &apos;PREVIOUS&apos;,
+                        &apos; &apos; &apos;Orçamento&apos;(h15)         lr_itm_columns &apos;BUDGET&apos;,
+                        &apos; &apos; &apos;Reforecast&apos;(h16)        lr_itm_columns &apos;REFORECAST&apos;,
+                        &apos; &apos; &apos;Real&apos;(h14)              lr_itm_columns &apos;ZCURRENT&apos;,
+                        &apos; &apos; &apos;Orçamento x Real&apos;(h17)  lr_itm_columns &apos;VAR_BDG&apos;,
+                        &apos; &apos; &apos;Reforecast x Real&apos;(h18) lr_itm_columns &apos;VAR_RFC&apos;.
+  ENDMETHOD.
+
+  METHOD set_view.
+
+    me-&gt;set_sort( ).
+
+    me-&gt;set_columns_order( ).
+
+    me-&gt;set_columns_styles( ).
+
+    me-&gt;set_functions( ).
+
+    me-&gt;set_events( ).
+
+    me-&gt;set_expand_option( ).
+
+    me-&gt;set_texts( ).
+  ENDMETHOD.
+
+  METHOD show_data.
+
+    TRY .
+        me-&gt;display( ).
+*        CATCH cx_bapi_error.    &quot;BAPI Error Exception: Migrated Error Messages Type &apos;E&apos;;
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.</source>
+ </PROG>
+ <PROG NAME="Z_FI_IN_RL_X_FRCST_MONTH_TOP" VARCL="X" DBAPL="S" DBNA="D$" SUBC="I" LEVL="740" RMAND="100" FIXPT="X" LDBNAME="D$S" UCCHECK="X">
+  <textPool>
+   <language SPRAS="P">
+    <textElement ID="R" ENTRY="OPEX - Relatório Real x Previsões - Definições globais" LENGTH="54 "/>
+   </language>
+  </textPool>
+  <source>REPORT z_fi_in_rl_x_frcst_month MESSAGE-ID zfi01.
+INCLUDE z_fi_in_rl_x_frcst_month_d01. &quot;Definições de classes
+
+**********************************************************************
+* Variáveis de referência
+**********************************************************************
+DATA
+     costcenter TYPE kostl.
+**********************************************************************
+* Tela de seleção
+**********************************************************************
+SELECTION-SCREEN BEGIN OF BLOCK b1.
+PARAMETERS:
+            p_year  TYPE gjahr OBLIGATORY,
+            p_month TYPE monat OBLIGATORY.
+SELECT-OPTIONS
+    s_cstc FOR costcenter.
+SELECTION-SCREEN END OF BLOCK b1.</source>
+ </PROG>
+</nugget>
