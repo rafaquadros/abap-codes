@@ -1,0 +1,979 @@
+<?xml version="1.0" encoding="utf-8"?>
+<nugget name="SALES_FORCE_INTEGRATION">
+ <CLAS CLSNAME="ZCL_MM_SALES_FORCE_MODEL" VERSION="1" LANGU="P" DESCRIPT="Integração com Sales Force - Modelo" CATEGORY="00" EXPOSURE="2" STATE="1" RELEASE="0" CLSFINAL="X" CLSCCINCL="X" FIXPT="X" UNICODE="X" CLSBCCAT="00" WITH_UNIT_TESTS="X" DURATION_TYPE="0 " RISK_LEVEL="0 " ZSAPLINK_PLUGIN_MAJOR_VERSION="0 " ZSAPLINK_PLUGIN_MINOR_VERSION="1 " ZSAPLINK_PLUGIN_BUILD_VERSION="0 " ZSAPLINK_PLUGIN_INFO1="ZSAPLINK_CLASS is part of the main ZSAPLINK project --&gt; This plugin found there instead of ZSAPLINK_PLUGINS projects" ZSAPLINK_PLUGIN_INFO2="SAPLINK homepage: https://www.assembla.com/spaces/saplink/wiki" ZSAPLINK_PLUGIN_INFO3="Download from https://www.assembla.com/code/saplink/subversion/nodes" ZSAPLINK_PLUGIN_INFO4="and navigate to:  trunk -&gt; core -&gt; ZSAPLINK -&gt; CLAS -&gt; ZSAPLINK_CLASS.slnk">
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YS_ITEM" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="1 " TYPTYPE="4" SRCROW1="2 " SRCCOLUMN1="11 " SRCROW2="5 " SRCCOLUMN2="24 " TYPESRC_LENG="0 " TYPESRC="BEGIN OF ys_item,
+            data     TYPE mepoitem,
+            instance TYPE REF TO if_purchase_order_item_mm,
+           END OF ys_item
+"/>
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YT_ITEMS" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="2 " TYPTYPE="4" SRCROW1="6 " SRCCOLUMN1="11 " SRCROW2="6 " SRCCOLUMN2="64 " TYPESRC_LENG="0 " TYPESRC="yt_items TYPE STANDARD TABLE OF ys_item WITH EMPTY KEY
+"/>
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YG_PURCHASING_ORDERS" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="1 " TYPTYPE="4" SRCROW1="7 " SRCCOLUMN1="11 " SRCROW2="7 " SRCCOLUMN2="50 " TYPESRC_LENG="0 " TYPESRC="yg_purchasing_orders TYPE RANGE OF ebeln
+"/>
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YG_SACARINO_IDS" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="2 " TYPTYPE="4" SRCROW1="8 " SRCCOLUMN1="11 " SRCROW2="8 " SRCCOLUMN2="53 " TYPESRC_LENG="0 " TYPESRC="yg_sacarino_ids      TYPE RANGE OF ze_sacno
+"/>
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YG_CREATION_DATES" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="3 " TYPTYPE="4" SRCROW1="9 " SRCCOLUMN1="11 " SRCROW2="9 " SRCCOLUMN2="50 " TYPESRC_LENG="0 " TYPESRC="yg_creation_dates    TYPE RANGE OF erdat
+"/>
+  <types CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="YG_SUPPLIERS" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="4 " TYPTYPE="4" SRCROW1="10 " SRCCOLUMN1="11 " SRCROW2="10 " SRCCOLUMN2="50 " TYPESRC_LENG="0 " TYPESRC="yg_suppliers         TYPE RANGE OF lifnr
+"/>
+  <localImplementation>*&quot;* use this source file for the definition and implementation of
+*&quot;* local helper classes, interface definitions and type
+*&quot;* declarations
+CLASS lcl_api IMPLEMENTATION.
+  METHOD z_mm_fun_calculate_tax_po_bcm.
+
+    CLEAR rs_taxes.
+    IF is_item-ebeln &lt;&gt; ms_current_item-ebeln OR
+       is_item-ebelp &lt;&gt; ms_current_item-ebelp.
+      CALL FUNCTION &apos;Z_MM_FUN_CALCULATE_TAX_PO_BCM&apos;
+        EXPORTING
+          is_header     = is_header   &quot; Pedido dds.cabeçalho
+          is_item       = is_item   &quot; Item do pedido
+          it_conditions = it_conditions   &quot; Tipo de tabela komv
+        IMPORTING
+          e_taxes       = me-&gt;ms_current_taxes.   &quot; PO Taxes
+
+      me-&gt;ms_current_item = is_item.
+    ENDIF.
+
+    rs_taxes = me-&gt;ms_current_taxes.
+  ENDMETHOD.
+
+  METHOD z_mm_fun_converter_sku.
+
+    CLEAR rt_conversions.
+    CALL FUNCTION &apos;Z_MM_FUN_CONVERTER_SKU&apos;
+      TABLES
+        t_ekpo         = it_items    &quot; Cabeçalho do documento de compra
+        t_qtde_zsku    = rt_conversions    &quot; Order using Reference Material
+      EXCEPTIONS
+        erro_conversao = 1
+        erro_select    = 2
+        OTHERS         = 3.
+    IF sy-subrc &lt;&gt; 0.
+      IF sy-msgid IS NOT INITIAL.
+        MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                   WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                   INTO DATA(l_message).
+        RAISE EXCEPTION TYPE cx_bapi_error
+          EXPORTING
+            status = VALUE #( ( id = sy-msgid
+                                type = sy-msgty
+                                number = sy-msgno
+                                message = l_message
+                                message_v1 = sy-msgv1
+                                message_v2 = sy-msgv2
+                                message_v3 = sy-msgv3
+                                message_v4 = sy-msgv4 ) ).
+      ELSE.
+        RAISE EXCEPTION TYPE cx_bapi_error.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_db IMPLEMENTATION.
+
+  METHOD mdfs_zmm_sf_control.
+
+    MODIFY zmm_sf_control FROM is_entry.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qry_monitor_data.
+
+    CLEAR rt_entries.
+    SELECT ebeln          bsart      zzsacno
+           lfa1~lifnr     name1      stcd1
+           sending_status
+           created_at     created_by last_changed_at modified_by
+      FROM ekko
+     INNER JOIN lfa1
+        ON lfa1~lifnr = ekko~lifnr
+      LEFT OUTER JOIN zmm_sf_control
+        ON zmm_sf_control~purchasing_order = ekko~ebeln
+      INTO TABLE rt_entries
+     WHERE ebeln      IN ig_purchasing_orders
+       AND aedat      IN ig_creation_dates
+       AND bsart      IN ig_order_types
+       AND ekko~lifnr IN ig_suppliers
+       AND loekz      =  space
+       AND zzsacno    IN ig_sacarino_ids
+     ORDER BY ekko~ebeln.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qry_stcd1_lfa1.
+
+    CLEAR r_cnpj.
+    SELECT stcd1
+        UP TO 1 ROWS
+      FROM lfa1
+      INTO r_cnpj
+     WHERE lifnr = i_partner_id
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+  ENDMETHOD.
+
+  METHOD qry_termli_lfa1.
+
+    CLEAR r_inv_ref.
+    SELECT term_li
+        UP TO 1 ROWS
+      FROM lfa1
+      INTO r_inv_ref
+     WHERE lifnr = i_partner_id
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qry_zaltreference_mara.
+
+    CLEAR r_alt_ref.
+    SELECT zaltreference
+        UP TO 1 ROWS
+      FROM mara
+      INTO r_alt_ref
+     WHERE matnr = i_product
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qrys_zmm_sf_control.
+
+    CLEAR rs_entry.
+    SELECT client     purchasing_order sending_status
+           created_at created_by       last_changed_at modified_by
+        UP TO 1 ROWS
+      FROM zmm_sf_control
+      INTO rs_entry
+     WHERE purchasing_order = i_purchasing_order
+     ORDER BY PRIMARY KEY.
+    ENDSELECT.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qry_zmm_v_sf_dt_cnv.
+
+    CLEAR rt_type_conversions.
+    SELECT document_category document_type salesforce_type
+      FROM zmm_v_sf_po_cnv
+      INTO TABLE rt_type_conversions.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD qry_zmm_sf_vendors.
+
+    CLEAR rt_vendors.
+    SELECT vendor_code
+      FROM zmm_sf_vendors
+      INTO TABLE rt_vendors.
+    IF sy-subrc &lt;&gt; 0.
+      RAISE EXCEPTION TYPE cx_sy_sql_error.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.</localImplementation>
+  <localTypes>*&quot;* use this source file for any type of declarations (class
+*&quot;* definitions, interfaces or type declarations) you need for
+*&quot;* components in the private section
+CLASS lcl_api DEFINITION.
+  PUBLIC SECTION.
+    TYPES: yt_po_items        TYPE STANDARD TABLE OF ekpo WITH EMPTY KEY,
+           yt_sku_conversions TYPE STANDARD TABLE OF zmm_es_qtde_sku WITH EMPTY KEY.
+    METHODS:
+             z_mm_fun_calculate_tax_po_bcm IMPORTING is_header       TYPE mepoheader
+                                                     is_item         TYPE mepoitem
+                                                     it_conditions   TYPE komv_tab
+                                           RETURNING VALUE(rs_taxes) TYPE zmm_es_po_taxes,
+             z_mm_fun_converter_sku        IMPORTING it_items        TYPE yt_po_items
+                                           RETURNING VALUE(rt_conversions) TYPE yt_sku_conversions
+                                           RAISING   cx_bapi_error.
+  PRIVATE SECTION.
+    DATA: ms_current_item  TYPE mepoitem,
+          ms_current_taxes TYPE zmm_es_po_taxes.
+ENDCLASS.
+
+
+CLASS lcl_db DEFINITION.
+  PUBLIC SECTION.
+    TYPES: BEGIN OF ys_monitor_data,
+                purchasing_order TYPE ebeln,
+                order_type       TYPE bsart,
+                sacarino_id      TYPE ze_sacno,
+                vendor_code      TYPE lifnr,
+                vendor_name      TYPE name1_gp,
+                cnpj             TYPE name1_gp,
+                sending_status   TYPE z_mm_ed_sf_sending_status,
+                created_at       TYPE z_mm_ed_createdat,
+                created_by       TYPE z_mm_ed_createdby,
+                last_changed_at  TYPE z_mm_ed_modifiedat,
+                modified_by      TYPE z_mm_ed_modifiedby,
+               END OF ys_monitor_data,
+               yt_monitor_data   TYPE TABLE OF ys_monitor_data WITH KEY purchasing_order,
+               yg_order_types    TYPE RANGE OF bsart.
+    METHODS:
+             mdfs_zmm_sf_control IMPORTING is_entry             TYPE zmm_sf_control
+                                 RAISING cx_sy_sql_error,
+             qry_monitor_data    IMPORTING ig_purchasing_orders TYPE zcl_mm_sales_force_model=&gt;yg_purchasing_orders
+                                           ig_sacarino_ids      TYPE zcl_mm_sales_force_model=&gt;yg_sacarino_ids
+                                           ig_creation_dates    TYPE zcl_mm_sales_force_model=&gt;yg_creation_dates
+                                           ig_order_types       TYPE yg_order_types
+                                           ig_suppliers         TYPE zcl_mm_sales_force_model=&gt;yg_suppliers
+                                 RETURNING VALUE(rt_entries)    TYPE yt_monitor_data
+                                 RAISING cx_sy_sql_error,
+             qry_stcd1_lfa1      IMPORTING i_partner_id               TYPE bu_partner
+                                 RETURNING VALUE(r_cnpj)              TYPE stcd1,
+             qry_termli_lfa1     IMPORTING i_partner_id               TYPE bu_partner
+                                 RETURNING VALUE(r_inv_ref)           TYPE j_1bterms_liab,
+             qry_zaltreference_mara IMPORTING i_product               TYPE matnr
+                                    RETURNING VALUE(r_alt_ref)        TYPE zzaltreference
+                                    RAISING cx_sy_sql_error,
+             qrys_zmm_sf_control IMPORTING i_purchasing_order         TYPE ebeln
+                                 RETURNING VALUE(rs_entry)            TYPE zmm_sf_control
+                                 RAISING cx_sy_sql_error,
+             qry_zmm_v_sf_dt_cnv RETURNING VALUE(rt_type_conversions) TYPE zmm_tt_sf_dc_ty_cnv
+                                 RAISING cx_sy_sql_error,
+             qry_zmm_sf_vendors  RETURNING VALUE(rt_vendors) TYPE cvis_vendor_t
+                                 RAISING cx_sy_sql_error.
+ENDCLASS.</localTypes>
+  <localMacros>*&quot;* use this source file for any macro definitions you need
+*&quot;* in the implementation part of the class</localMacros>
+  <localTestClasses>*&quot;* use this source file for your ABAP unit test classes</localTestClasses>
+  <attribute CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="MR_API" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="3 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="LCL_API" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="MR_DB" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="4 " ATTDECLTYP="0" ATTEXPVIRT="0" TYPTYPE="3" TYPE="LCL_DB" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="MT_RELEVANT_VENDORS" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="2 " ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="1" TYPE="CVIS_VENDOR_T" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="MT_TYPE_CONVERSIONS" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="1 " ATTDECLTYP="1" ATTEXPVIRT="0" TYPTYPE="1" TYPE="ZMM_TT_SF_DC_TY_CNV" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <attribute CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="M_PURCHASING_ORDER" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="1 " ATTDECLTYP="0" ATTRDONLY="X" ATTEXPVIRT="0" TYPTYPE="1" TYPE="EBELN" SRCROW1="0 " SRCCOLUMN1="0 " SRCROW2="0 " SRCCOLUMN2="0 " TYPESRC_LENG="0 "/>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="CONSTRUCTOR" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="3 " DISPID="0 " MTDTYPE="2" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="CONSTRUCTOR" SCONAME="I_PURCHASING_ORDER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="2" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="EBELN"/>
+   <source>METHOD constructor.
+
+    me-&gt;m_purchasing_order = i_purchasing_order.
+    me-&gt;mr_api = NEW lcl_api( ).
+    me-&gt;mr_db = NEW lcl_db( ).
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="DISPLAY" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="4 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <source>METHOD display.
+
+    SET PARAMETER ID &apos;BES&apos; FIELD me-&gt;m_purchasing_order.
+    CALL TRANSACTION zif_mm_sales_force_integration=&gt;mc_transaction-po_read.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="EXPAND_REFERENCES" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="EXPAND_REFERENCES" SCONAME="IT_ITEMS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="YT_ITEMS"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="EXPAND_REFERENCES" SCONAME="RT_ITEMS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="YT_ITEMS"/>
+   <source>METHOD expand_references.
+
+    rt_items = it_items.
+
+    DATA(lt_items) = VALUE yt_items(  ).
+
+    DATA(lt_po_items) = VALUE lcl_api=&gt;yt_po_items( FOR ls_item IN it_items
+                                                      ( CORRESPONDING #( ls_item-data ) )
+                                                    ).
+    TRY.
+        DATA(lt_conversions) = me-&gt;mr_api-&gt;z_mm_fun_converter_sku( lt_po_items ).
+        LOOP AT lt_conversions ASSIGNING FIELD-SYMBOL(&lt;ls_conversion&gt;).
+          APPEND INITIAL LINE TO lt_items ASSIGNING FIELD-SYMBOL(&lt;ls_item&gt;).
+          TRY.
+              &lt;ls_item&gt;-data = CORRESPONDING #( it_items[ data-ebelp = &lt;ls_conversion&gt;-ebelp ]-data ).
+              &lt;ls_item&gt;-instance = it_items[ data-ebelp = &lt;ls_item&gt;-data-ebelp ]-instance.
+              &lt;ls_item&gt;-data-matnr = &lt;ls_conversion&gt;-matnr.
+              &lt;ls_item&gt;-data-menge = &lt;ls_conversion&gt;-zqtde.
+            CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+          ENDTRY.
+        ENDLOOP.
+      CATCH cx_bapi_error.
+        RETURN.
+    ENDTRY.
+
+    SORT lt_items BY data-ebelp.
+    rt_items = lt_items.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ALTERNATIVE_REFERENCE" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="3 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ALTERNATIVE_REFERENCE" SCONAME="I_PRODUCT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MATNR"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ALTERNATIVE_REFERENCE" SCONAME="R_ALT_REF" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZZALTREFERENCE"/>
+   <source>METHOD get_alternative_reference.
+
+    CLEAR r_alt_ref.
+    TRY.
+        r_alt_ref = me-&gt;mr_db-&gt;qry_zaltreference_mara( i_product ).
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="1 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="1" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="IG_PURCHASING_ORDERS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="YG_PURCHASING_ORDERS"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="IG_SACARINO_IDS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="YG_SACARINO_IDS"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="IG_CREATION_DATES" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="YG_CREATION_DATES"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="IG_SUPPLIERS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="YG_SUPPLIERS"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="RT_ENTRIES" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="5 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZMM_TT_SF_MONITOR"/>
+   <exception CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DATA" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="P" MTDTYPE="0" EDITORDER="1 "/>
+   <source>METHOD get_data.
+
+    CLEAR rt_entries.
+    DATA(lr_db) = NEW lcl_db( ).
+
+    TRY.
+        DATA(lt_relevant_vendors) = lr_db-&gt;qry_zmm_sf_vendors(  ).
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        DATA(lt_type_conversions) = lr_db-&gt;qry_zmm_v_sf_dt_cnv(  ).
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+
+    DATA(lg_vendors) = VALUE yg_suppliers( FOR l_vendor IN lt_relevant_vendors
+                                           ( sign   = &apos;I&apos;
+                                             option = &apos;EQ&apos;
+                                             low    = l_vendor ) ).
+
+    LOOP AT lg_vendors ASSIGNING FIELD-SYMBOL(&lt;ls_vendor&gt;).
+      IF &lt;ls_vendor&gt;-low NOT IN ig_suppliers.
+        DELETE lg_vendors FROM &lt;ls_vendor&gt;.
+      ENDIF.
+    ENDLOOP.
+
+    IF lg_vendors IS INITIAL.
+      MESSAGE e060(zmm) INTO DATA(l_message).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = VALUE #( ( id = sy-msgid
+                              type = sy-msgty
+                              number = sy-msgno
+                              message = l_message
+                              message_v1 = sy-msgv1
+                              message_v2 = sy-msgv2
+                              message_v3 = sy-msgv3
+                              message_v4 = sy-msgv4 ) ).
+    ENDIF.
+
+    DATA(lg_order_types) = VALUE lcl_db=&gt;yg_order_types( FOR ls_type_conversion IN lt_type_conversions
+                                                         ( sign = &apos;I&apos;
+                                                           option = &apos;EQ&apos;
+                                                           low    = ls_type_conversion-document_type )
+                                                       ).
+
+    TRY.
+        DATA(lt_entries) = lr_db-&gt;qry_monitor_data( ig_purchasing_orders = ig_purchasing_orders
+                                                    ig_sacarino_ids      = ig_sacarino_ids
+                                                    ig_creation_dates    = ig_creation_dates
+                                                    ig_order_types       = lg_order_types
+                                                    ig_suppliers         = lg_vendors         ).
+      CATCH cx_sy_sql_error.
+        MESSAGE e060(zmm) INTO l_message.
+        RAISE EXCEPTION TYPE cx_bapi_error
+          EXPORTING
+            status = VALUE #( ( id = sy-msgid
+                                type = sy-msgty
+                                number = sy-msgno
+                                message = l_message
+                                message_v1 = sy-msgv1
+                                message_v2 = sy-msgv2
+                                message_v3 = sy-msgv3
+                                message_v4 = sy-msgv4 ) ).
+    ENDTRY.
+
+    LOOP AT lt_entries ASSIGNING FIELD-SYMBOL(&lt;ls_entry_db&gt;).
+      APPEND INITIAL LINE TO rt_entries ASSIGNING FIELD-SYMBOL(&lt;ls_entry&gt;).
+      &lt;ls_entry&gt; = CORRESPONDING #( &lt;ls_entry_db&gt; ).
+      &lt;ls_entry&gt;-code = &lt;ls_entry_db&gt;-vendor_code.
+      &lt;ls_entry&gt;-name = &lt;ls_entry_db&gt;-vendor_name.
+      CONVERT TIME STAMP &lt;ls_entry_db&gt;-last_changed_at TIME ZONE sy-zonlo
+         INTO DATE &lt;ls_entry&gt;-last_change_date TIME &lt;ls_entry&gt;-last_change_time.
+      &lt;ls_entry&gt;-last_modifier = &lt;ls_entry_db&gt;-modified_by.
+      IF &lt;ls_entry_db&gt;-sending_status IS INITIAL.
+        &lt;ls_entry&gt;-sending_status = zif_mm_sales_force_integration=&gt;mc_status-not_sent.
+      ENDIF.
+
+      &lt;ls_entry&gt;-sending_icon = set_status_icon( i_status = &lt;ls_entry_db&gt;-sending_status ).
+    ENDLOOP.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DISCOUNT" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="4 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DISCOUNT" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DISCOUNT" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DISCOUNT" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DISCOUNT" SCONAME="R_DISCOUNT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZMM_ED_VL_DES"/>
+   <source>METHOD get_discount.
+
+    CLEAR r_discount.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+    r_discount = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                      is_item       = ls_item
+                                                                      it_conditions = lt_conditions )-desconto / i_quantity.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DRY_COST" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="5 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DRY_COST" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DRY_COST" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DRY_COST" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_DRY_COST" SCONAME="R_DRY_COST" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_dry_cost.
+
+    CLEAR r_dry_cost.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions ).
+    DATA(l_unit_net_value) = me-&gt;get_unit_value(
+                             is_header    = is_header
+                             ir_item      = ir_item
+                             i_quantity   = i_quantity
+                         ).
+    &quot;r_dry_cost = l_unit_net_value + ( ls_taxes-ipi + ls_taxes-icms_st ) / ls_item-menge.
+    &quot;r_dry_cost = ( ls_taxes-s_imposto + ls_taxes-icms + ls_taxes-icms_st ) / i_quantity.
+    TRY.
+        DATA(l_pis) = lt_conditions[ kschl = &apos;IPIS&apos; ]-kwert.
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            l_pis = lt_conditions[ kschl = &apos;IPSN&apos; ]-kwert.
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+    ENDTRY.
+    TRY.
+        DATA(l_cofins) = lt_conditions[ kschl = &apos;ICOF&apos; ]-kwert.
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            l_cofins = lt_conditions[ kschl = &apos;ICON&apos; ]-kwert.
+          CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+        ENDTRY.
+    ENDTRY.
+
+    r_dry_cost = ( ls_taxes-s_imposto + ls_taxes-icms + ls_taxes-icms_st + l_pis + l_cofins ) / i_quantity.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_ST_UNIT" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="7 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_ST_UNIT" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_ST_UNIT" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_ST_UNIT" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_ST_UNIT" SCONAME="R_ICMS_ST_UNIT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_icms_st_unit.
+
+    CLEAR r_icms_st_unit.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions ).
+    r_icms_st_unit = ls_taxes-icms_st / i_quantity.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_UNIT" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="6 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_UNIT" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_UNIT" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_UNIT" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_ICMS_UNIT" SCONAME="R_ICMS_UNIT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_icms_unit.
+
+    CLEAR r_icms_unit.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions ).
+    r_icms_unit = ls_taxes-icms / i_quantity.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_IPI_UNIT" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="8 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_IPI_UNIT" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_IPI_UNIT" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_IPI_UNIT" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_IPI_UNIT" SCONAME="R_IPI_UNIT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_ipi_unit.
+
+    CLEAR r_ipi_unit.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions ).
+    r_ipi_unit = ls_taxes-ipi / i_quantity.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_NET_VALUE" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="9 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_NET_VALUE" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_NET_VALUE" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_NET_VALUE" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_NET_VALUE" SCONAME="R_NET_VALUE" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_net_value.
+
+    CLEAR r_net_value.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    r_net_value = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header        = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions )-s_imposto / i_quantity.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_RELEVANT_VENDORS" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="10 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_RELEVANT_VENDORS" SCONAME="RT_ENTRIES" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="CVIS_VENDOR_T"/>
+   <source>METHOD get_relevant_vendors.
+
+    CLEAR rt_entries.
+    DATA(l_tries) = VALUE i(  ).
+    TRY.
+        IF me-&gt;mt_relevant_vendors IS NOT INITIAL.
+          rt_entries = me-&gt;mt_relevant_vendors.
+        ELSE.
+          RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+        ENDIF.
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            mt_relevant_vendors = me-&gt;mr_db-&gt;qry_zmm_sf_vendors(  ).
+          CATCH cx_sy_sql_error ##NO_HANDLER.
+        ENDTRY.
+
+        IF l_tries &lt; 1.
+          ADD 1 TO l_tries.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_VALUE" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="11 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_VALUE" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_VALUE" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_VALUE" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_VALUE" SCONAME="R_TOTAL_VALUE" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_total_value.
+
+    CLEAR r_total_value.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    r_total_value = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                         is_item       = ls_item
+                                                                         it_conditions = lt_conditions )-s_imposto.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_WTAXES" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="12 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_WTAXES" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_WTAXES" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_WTAXES" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TOTAL_WTAXES" SCONAME="R_TOTAL_WTAXES" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD  get_total_wtaxes.
+
+    CLEAR r_total_wtaxes.
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header    = is_header
+                                                                         is_item       = ls_item
+                                                                         it_conditions = lt_conditions ).
+
+    r_total_wtaxes = ls_taxes-s_imposto + ls_taxes-ipi + ls_taxes-icms + ls_taxes-icms_st +
+                     ls_taxes-pis + ls_taxes-cofins + ls_taxes-iss + ls_taxes-frete.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TYPE_CONVERSIONS" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="13 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_TYPE_CONVERSIONS" SCONAME="RT_ENTRIES" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ZMM_TT_SF_DC_TY_CNV"/>
+   <source>METHOD get_type_conversions.
+
+    CLEAR rt_entries.
+    DATA(l_tries) = VALUE i(  ).
+    TRY.
+        IF me-&gt;mt_type_conversions IS NOT INITIAL.
+          rt_entries = me-&gt;mt_type_conversions.
+        ELSE.
+          RAISE EXCEPTION TYPE cx_sy_itab_line_not_found.
+        ENDIF.
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            mt_type_conversions = me-&gt;mr_db-&gt;qry_zmm_v_sf_dt_cnv(  ).
+          CATCH cx_sy_sql_error ##NO_HANDLER.
+        ENDTRY.
+
+        IF l_tries &lt; 1.
+          ADD 1 TO l_tries.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_UNIT_VALUE" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="14 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_UNIT_VALUE" SCONAME="IS_HEADER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MEPOHEADER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_UNIT_VALUE" SCONAME="IR_ITEM" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="3" TYPE="IF_PURCHASE_ORDER_ITEM_MM"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_UNIT_VALUE" SCONAME="I_QUANTITY" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="MENGE_D"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="GET_UNIT_VALUE" SCONAME="R_UNIT_VALUE" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="J_1BTAXVAL"/>
+   <source>METHOD get_unit_value.
+
+    CLEAR r_unit_value.
+
+    IF ir_item IS NOT BOUND.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_item) = ir_item-&gt;get_data( ).
+    ir_item-&gt;get_conditions(
+      IMPORTING
+        ex_conditions = DATA(lt_conditions)    &quot; Conditions
+    ).
+
+    DATA(ls_taxes) = me-&gt;mr_api-&gt;z_mm_fun_calculate_tax_po_bcm( EXPORTING is_header     = is_header
+                                                                          is_item       = ls_item
+                                                                          it_conditions = lt_conditions ).
+
+    r_unit_value = ( ls_taxes-s_imposto - ls_taxes-desconto ) / i_quantity.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="IS_VENDOR_INV_REF" VERSION="1" LANGU="P" EXPOSURE="0" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="IS_VENDOR_INV_REF" SCONAME="I_VENDOR_CODE" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="LIFNR"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="IS_VENDOR_INV_REF" SCONAME="R_RESULT" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="BOOLEAN"/>
+   <source>METHOD is_vendor_inv_ref.
+
+    CLEAR r_result.
+    TRY.
+        r_result = me-&gt;mr_db-&gt;qry_termli_lfa1( i_vendor_code ).
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="5 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" SCONAME="E_DATE" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="1" PARPASSTYP="1" TYPTYPE="1" TYPE="Z_MM_ED_SF_LAST_CHANGE_DATE"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" SCONAME="E_TIME" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="1" PARPASSTYP="1" TYPTYPE="1" TYPE="Z_MM_ED_SF_LAST_CHANGE_TIME"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" SCONAME="E_MODIFIER" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="3 " DISPID="0 " PARDECLTYP="1" PARPASSTYP="1" TYPTYPE="1" TYPE="Z_MM_ED_SF_LAST_MODIFIER"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" SCONAME="R_STATUS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="4 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="Z_MM_ED_SF_SENDING_STATUS"/>
+   <exception CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SEND_2_SF" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="P" MTDTYPE="0" EDITORDER="1 "/>
+   <source>METHOD send_2_sf.
+
+    CLEAR: r_status, e_date, e_time, e_modifier.
+
+    DATA(lt_type_conversions) = me-&gt;get_type_conversions( ).
+
+    DATA(lt_relevant_vendors) = me-&gt;get_relevant_vendors( ).
+
+    DATA(lr_header) = NEW cl_po_header_handle_mm(
+        im_po_number = me-&gt;m_purchasing_order
+    ).
+    lr_header-&gt;po_initialize(
+        im_document = VALUE #( doc_type = &apos;F&apos;
+                               process  = space
+                               trtyp    = zif_mm_sales_force_integration=&gt;mc_transaction_type-display
+                               doc_key  = me-&gt;m_purchasing_order )
+    ).
+    lr_header-&gt;po_read(
+      EXPORTING
+        im_tcode     = zif_mm_sales_force_integration=&gt;mc_transaction-po_read    &quot; Transaction
+        im_trtyp     = zif_mm_sales_force_integration=&gt;mc_transaction_type-display  &quot; Transaction Type
+        im_aktyp     = zif_mm_sales_force_integration=&gt;mc_transaction_type-display    &quot; Activity Category
+        im_po_number = me-&gt;m_purchasing_order    &quot; Document Number
+*        im_document  =     &quot; Purchasing Document
+*        im_gos       =     &quot; Publication for Generic Object Services
+*      IMPORTING
+*        ex_result    =     &quot; Result
+    ).
+
+
+    lr_header-&gt;get_data(
+        IMPORTING
+          ex_data =  DATA(ls_header)   &quot; Document Header
+        EXCEPTIONS
+          failure = 1
+          OTHERS  = 2
+      ).
+    IF sy-subrc &lt;&gt; 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                 WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                 INTO DATA(l_message).
+      RAISE EXCEPTION TYPE cx_bapi_error
+        EXPORTING
+          status = VALUE #( ( id         = sy-msgid
+                              type       = sy-msgty
+                              number     = sy-msgno
+                              message    = l_message
+                              message_v1 = sy-msgv1
+                              message_v2 = sy-msgv2
+                              message_v3 = sy-msgv3
+                              message_v4 = sy-msgv4 )
+                          ).
+    ENDIF.
+    DATA(lg_vendors) = VALUE cmm_t_idx_lifnr_rng( FOR l_vendor IN lt_relevant_vendors
+                                                      ( sign = &apos;I&apos;
+                                                        option = &apos;EQ&apos;
+                                                        low = l_vendor ) ).
+
+    IF line_exists( lt_type_conversions[ document_type = ls_header-bsart ] ) AND
+       ls_header-lifnr IN lg_vendors.
+
+      lr_header-&gt;get_items(
+*          EXPORTING
+*            im_items_with_error =     &quot; Only Those with Errors
+*            im_enq_err_mat      =     &quot; Only Items with Lock Errors
+*            im_enq_err_con      =     &quot; Only Items with Lock Errors
+        IMPORTING
+          ex_items            = DATA(lt_items)    &quot; Items
+      ).
+
+      DATA(lt_items_data) = VALUE yt_items(  ).
+      LOOP AT lt_items ASSIGNING FIELD-SYMBOL(&lt;ls_item&gt;).
+        DATA(lr_item) = CAST cl_po_item_handle_mm( &lt;ls_item&gt;-model ).
+        APPEND INITIAL LINE TO lt_items_data ASSIGNING FIELD-SYMBOL(&lt;ls_item_data&gt;).
+        lr_item-&gt;get_data(
+          IMPORTING
+            ex_data = &lt;ls_item_data&gt;-data    &quot; Data Part
+          EXCEPTIONS
+            failure = 1
+            OTHERS  = 2
+        ).
+        IF sy-subrc &lt;&gt; 0.
+          MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                     WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                     INTO l_message.
+          RAISE EXCEPTION TYPE cx_bapi_error
+            EXPORTING
+              status = VALUE #( ( id         = sy-msgid
+                                  type       = sy-msgty
+                                  number     = sy-msgno
+                                  message    = l_message
+                                  message_v1 = sy-msgv1
+                                  message_v2 = sy-msgv2
+                                  message_v3 = sy-msgv3
+                                  message_v4 = sy-msgv4 )
+                              ).
+        ENDIF.
+        &lt;ls_item_data&gt;-instance = lr_item.
+      ENDLOOP.
+
+      IF me-&gt;is_vendor_inv_ref( ls_header-lifnr ) = abap_true.
+
+        lt_items_data = me-&gt;expand_references( lt_items_data ).
+      ENDIF.
+
+      TRY.
+          DATA(lr_first_item) = CAST cl_po_item_handle_mm( lt_items[ 1 ]-model ).
+          lr_first_item-&gt;get_data(
+            IMPORTING
+              ex_data =  DATA(ls_item)   &quot; Data Part
+            EXCEPTIONS
+              failure = 1
+              OTHERS  = 2
+          ).
+          IF sy-subrc &lt;&gt; 0.
+            MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+                       WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4
+                       INTO l_message.
+            RAISE EXCEPTION TYPE cx_bapi_error
+              EXPORTING
+                status = VALUE #( ( id         = sy-msgid
+                                    type       = sy-msgty
+                                    number     = sy-msgno
+                                    message    = l_message
+                                    message_v1 = sy-msgv1
+                                    message_v2 = sy-msgv2
+                                    message_v3 = sy-msgv3
+                                    message_v4 = sy-msgv4 )
+                                ).
+          ENDIF.
+        CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+      ENDTRY.
+
+      TRY.
+          DATA(l_sf_type) = lt_type_conversions[ document_type = ls_header-bsart ]-salesforce_type.
+        CATCH cx_sy_itab_line_not_found.
+          l_sf_type = ls_header-bsart.
+      ENDTRY.
+
+      CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP DATA(l_now) TIME ZONE sy-zonlo.
+      TRY.
+          DATA(ls_control) = me-&gt;mr_db-&gt;qrys_zmm_sf_control( me-&gt;m_purchasing_order ).
+        CATCH cx_sy_sql_error.
+          ls_control-purchasing_order = me-&gt;m_purchasing_order.
+          ls_control-created_at = l_now.
+          ls_control-created_by = cl_abap_syst=&gt;get_user_name( ).
+      ENDTRY.
+
+      ls_control-sending_status = zif_mm_sales_force_integration=&gt;mc_status-ok.
+      ls_control-last_changed_at = l_now.
+      ls_control-modified_by = cl_abap_syst=&gt;get_user_name( ).
+
+      TRY.
+          NEW zmmco_si_purchase_order_sap_oa(
+*        logical_port_name =
+          )-&gt;si_purchase_order_sap_oa( output = VALUE #( mt_purchase_order_sap = VALUE #( sap_header_data-po = lr_header-&gt;po_number
+                                                                                          sap_header_data-cnpj = me-&gt;mr_db-&gt;qry_stcd1_lfa1( ls_header-lifnr )
+                                                                                          sap_header_data-data_de_entrega = ls_item-eindt
+                                                                                          sap_header_data-id_sacarino = ls_header-zzsacno
+                                                                                          sap_header_data-po_type = l_sf_type
+                                                                                          sap_header_data-campaign_id = ls_header-zzcampaing
+                                                                                          sap_header_data-sap_lines_data = VALUE #( FOR ls_item_data IN lt_items_data
+                                                                                                                                    (  descricao = ls_item_data-data-txz01
+                                                                                                                                       unidade   = ls_item_data-data-meins
+                                                                                                                                       quantidade = ls_item_data-data-menge
+                                                                                                                                       valor_liq_unitario = me-&gt;get_net_value( is_header  = ls_header
+                                                                                                                                                                               ir_item    = ls_item_data-instance
+                                                                                                                                                                               i_quantity = ls_item_data-data-menge )
+                                                                                                                                       valor_unitario_custo_seco = me-&gt;get_dry_cost( is_header  = ls_header
+                                                                                                                                                                                     ir_item    = ls_item_data-instance
+                                                                                                                                                                                     i_quantity = ls_item_data-data-menge )
+                                                                                                                                       desconto = me-&gt;get_discount( is_header  = ls_header
+                                                                                                                                                                    ir_item    = ls_item_data-instance
+                                                                                                                                                                    i_quantity = ls_item_data-data-menge  )
+                                                                                                                                       valor_liq_total = me-&gt;get_total_value( is_header  = ls_header
+                                                                                                                                                                              ir_item    = ls_item_data-instance
+                                                                                                                                                                              i_quantity = ls_item_data-data-menge )
+                                                                                                                                       st_unit = me-&gt;get_icms_st_unit( is_header  = ls_header
+                                                                                                                                                                       ir_item    = ls_item_data-instance
+                                                                                                                                                                       i_quantity = ls_item_data-data-menge )
+                                                                                                                                       ipi_unit = me-&gt;get_ipi_unit( is_header  = ls_header
+                                                                                                                                                                    ir_item    = ls_item_data-instance
+                                                                                                                                                                    i_quantity = ls_item_data-data-menge )
+                                                                                                                                       icms_unit = me-&gt;get_icms_unit( is_header  = ls_header
+                                                                                                                                                                      ir_item    = ls_item_data-instance
+                                                                                                                                                                      i_quantity = ls_item_data-data-menge )
+                                                                                                                                       valor_unitario = me-&gt;get_total_wtaxes( is_header = ls_header
+                                                                                                                                                                              ir_item    = ls_item_data-instance
+                                                                                                                                                                              i_quantity = ls_item_data-data-menge ) / ls_item_data-data-menge
+                                                                                                                                       valor_total = me-&gt;get_total_wtaxes( is_header  = ls_header
+                                                                                                                                                                           ir_item    = ls_item_data-instance
+                                                                                                                                                                           i_quantity = ls_item_data-data-menge )
+                                                                                                                                       sku = ls_item_data-data-matnr
+                                                                                                                                       item = ls_item_data-data-ebelp
+                                                                                                                                       ref_nf = me-&gt;get_alternative_reference( ls_item_data-data-matnr )
+                                                                                                                                       ref_forn = me-&gt;get_alternative_reference( ls_item_data-data-matnr )
+                                                                                                                                      ) ) ) ) ).
+*        CATCH cx_ai_system_fault.    &quot; .
+*      CATCH cx_ai_system_fault.  &quot;
+
+          r_status =  zif_mm_sales_force_integration=&gt;mc_status-ok.
+          CONVERT TIME STAMP ls_control-last_changed_at TIME ZONE sy-zonlo
+             INTO DATE e_date TIME e_time.
+          e_modifier = ls_control-modified_by.
+
+          TRY.
+              me-&gt;mr_db-&gt;mdfs_zmm_sf_control( ls_control ).
+            CATCH cx_sy_sql_error ##NO_HANDLER.
+          ENDTRY.
+
+          COMMIT WORK.
+        CATCH cx_ai_system_fault.
+          r_status = zif_mm_sales_force_integration=&gt;mc_status-error.
+          ls_control-sending_status = zif_mm_sales_force_integration=&gt;mc_status-error.
+          TRY.
+              me-&gt;mr_db-&gt;mdfs_zmm_sf_control( ls_control ).
+            CATCH cx_sy_sql_error ##NO_HANDLER.
+          ENDTRY.
+
+          COMMIT WORK.
+          MESSAGE e060(zmm) INTO l_message.
+*            RAISE EXCEPTION TYPE cx_bapi_error
+*              EXPORTING
+*                status = VALUE #( ( id         = sy-msgid
+*                                    type       = sy-msgty
+*                                    number     = sy-msgno
+*                                    message    = l_message
+*                                    message_v1 = sy-msgv1
+*                                    message_v2 = sy-msgv2
+*                                    message_v3 = sy-msgv3
+*                                    message_v4 = sy-msgv4 )
+*                                ).
+      ENDTRY.
+    ENDIF.
+
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SET_STATUS_ICON" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="2 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="1" BCMTDCAT="00" BCMTDSYN="0">
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SET_STATUS_ICON" SCONAME="I_STATUS" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="1 " DISPID="0 " PARDECLTYP="0" PARPASSTYP="1" TYPTYPE="1" TYPE="Z_MM_ED_SF_SENDING_STATUS"/>
+   <parameter CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SET_STATUS_ICON" SCONAME="R_ICON" VERSION="1" LANGU="P" CMPTYPE="1" MTDTYPE="0" EDITORDER="2 " DISPID="0 " PARDECLTYP="3" PARPASSTYP="0" TYPTYPE="1" TYPE="ICON_D"/>
+   <source>METHOD set_status_icon.
+
+    CLEAR r_icon.
+    r_icon = COND #( WHEN i_status = zif_mm_sales_force_integration=&gt;mc_status-ok
+                      THEN zif_mm_sales_force_integration=&gt;mc_icon-green_light
+                     WHEN i_status = zif_mm_sales_force_integration=&gt;mc_status-error
+                      THEN zif_mm_sales_force_integration=&gt;mc_icon-red_light
+                     ELSE
+                        zif_mm_sales_force_integration=&gt;mc_icon-turned_off ).
+  ENDMETHOD.</source>
+  </method>
+  <method CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SHOW_MESSAGES" VERSION="1" LANGU="P" EXPOSURE="2" STATE="1" EDITORDER="6 " DISPID="0 " MTDTYPE="0" MTDDECLTYP="0" MTDNEWEXC="X" BCMTDCAT="00" BCMTDSYN="0">
+   <exception CLSNAME="ZCL_MM_SALES_FORCE_MODEL" CMPNAME="SHOW_MESSAGES" SCONAME="CX_BAPI_ERROR" VERSION="1" LANGU="P" MTDTYPE="0" EDITORDER="1 "/>
+   <source>METHOD show_messages.
+
+    &quot;ToDo: implement behavior.
+  ENDMETHOD.</source>
+  </method>
+ </CLAS>
+</nugget>
