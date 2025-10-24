@@ -1,0 +1,204 @@
+CLASS zcl_fi_bank_extract_complement DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    TYPES y_extract_amount TYPE n LENGTH 18.
+    DATA
+        m_operation_reason TYPE vwezw_eb READ-ONLY.
+
+    CLASS-METHODS
+        class_constructor.
+
+    METHODS:
+        constructor   IMPORTING i_operation_reason TYPE vwezw_eb,
+        post_document IMPORTING i_amount TYPE y_extract_amount
+                                i_docdat TYPE bldat
+                                i_pstdat TYPE budat.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    CONSTANTS:
+        BEGIN OF mc_log,
+            main_object TYPE balobj_d  VALUE 'ZFI_GENERIC',
+            sub_object  TYPE balsubobj VALUE 'ZFI_DLY_CLS',
+        END OF mc_log.
+
+    CLASS-DATA
+        mt_accounts TYPE zfi_tt_dly_clns_acc.
+
+    DATA:
+        mr_api      TYPE REF TO lcl_api,
+        mr_db       TYPE REF TO lcl_db,
+        mr_log      TYPE REF TO cl_cacs_bal.
+ENDCLASS.
+
+
+
+CLASS ZCL_FI_BANK_EXTRACT_COMPLEMENT IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_BANK_EXTRACT_COMPLEMENT=>CLASS_CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD class_constructor.
+    TRY.
+        mt_accounts = NEW lcl_db( )->qry_zfi_dly_clns_acc( ).
+*                    CATCH cx_sy_sql_error.  "
+        EXIT.
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_FI_BANK_EXTRACT_COMPLEMENT->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_OPERATION_REASON             TYPE        VWEZW_EB
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+
+    me->m_operation_reason = i_operation_reason.
+
+    me->mr_api = NEW lcl_api( ).
+
+    me->mr_db = NEW lcl_db( ).
+
+    TRY.
+        me->mr_log = NEW cl_cacs_bal(
+*            i_handle              =
+            i_log_name            = CONV #( sy-repid && sy-datum && sy-uzeit )
+            i_object              = mc_log-main_object
+            i_subobject           = mc_log-sub_object
+*            i_default_msgid       =
+*            i_getmsgfilter        =
+*            i_msgfilter           =
+*            ib_use_cacs_bufferlog =
+*            id_probclass_filter   =
+        ).
+*          CATCH cx_cacs_bal_ex.  "
+      CATCH cx_cacs_bal_ex ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_FI_BANK_EXTRACT_COMPLEMENT->POST_DOCUMENT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_AMOUNT                       TYPE        Y_EXTRACT_AMOUNT
+* | [--->] I_DOCDAT                       TYPE        BLDAT
+* | [--->] I_PSTDAT                       TYPE        BUDAT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD post_document.
+
+    IF mt_accounts IS INITIAL.
+      RETURN.
+    ELSE.
+      LOOP AT mt_accounts ASSIGNING FIELD-SYMBOL(<ls_account>).
+        FIND <ls_account>-opr_reason IN me->m_operation_reason.
+        IF sy-subrc = 0.
+          DATA(ls_key) = <ls_account>.
+          EXIT.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+    IF ls_key IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    DATA(ls_header) = VALUE bapiache09( obj_type = 'BKPFF'
+                                        "obj_key  = '$'
+                                        "obj_sys  =
+                                        bus_act    = 'RFBU'
+                                        username   = cl_abap_syst=>get_user_name( )
+                                        header_txt = me->m_operation_reason
+                                        comp_code  = '0500'
+                                        doc_date   = i_docdat+4(4) && i_docdat+2(2) && i_docdat(2)
+                                        pstng_date = i_pstdat+4(4) && i_pstdat+2(2) && i_pstdat(2)
+                                        fis_period = i_pstdat+2(2)
+                                        fisc_year  = i_pstdat+4(4)
+                                        "ref_doc_no =
+                                        doc_type   = 'KZ' ). "'AB' ).
+    TRY.
+        DATA(l_gl_account) = COND #( WHEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'H' ]-gl_account IS NOT INITIAL THEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'H' ]-gl_account
+                                     ELSE me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'S' ]-gl_account ).
+        DATA(l_amount) = CONV bapidoccur( COND #( WHEN me->mt_accounts[ opr_reason = ls_key-opr_reason gl_account = l_gl_account ]-posting_id = 'S' THEN i_amount / 100
+                                                  ELSE i_amount / 100 * -1 ) ).
+      CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        DATA(l_vendor) = COND #( WHEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'H' ]-vendor IS NOT INITIAL THEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'H' ]-vendor
+                                 ELSE me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'S' ]-vendor ).
+      CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+    ENDTRY.
+
+    IF l_vendor IS INITIAL.
+      DATA(l_gl_account2) = COND #( WHEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'S' ]-gl_account IS NOT INITIAL THEN me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'S' ]-gl_account
+                                    ELSE me->mt_accounts[ opr_reason = ls_key-opr_reason posting_id = 'H' ]-gl_account ).
+    ENDIF.
+
+    DATA(lt_accountgl) = VALUE bapiacgl09_tab( ( itemno_acc = '0000000002'
+                                                 gl_account = l_gl_account
+                                                 comp_code  = '0500'
+                                                 "bus_area   = zif_fi_voucher_constants=>mc_business_place
+                                                 item_text  = me->m_operation_reason ) ).
+    IF l_vendor IS NOT INITIAL.
+      DATA(lt_accountpayable) = VALUE bapiacap09_tab( ( itemno_acc = '0000000001'
+                                                        vendor_no  = l_vendor
+                                                        comp_code  = '0500' ) ).
+    ELSE.
+      APPEND VALUE bapiacgl09( itemno_acc = '0000000001'
+                               gl_account = l_gl_account2
+                               comp_code  = '0500'
+                               "bus_area   = zif_fi_voucher_constants=>mc_business_place
+                               item_text  = me->m_operation_reason ) TO lt_accountgl.
+    ENDIF.
+    DATA(lt_currency_amount) = VALUE bapiaccr09_tab( ( itemno_acc = '0000000001'
+                                                       currency   = 'BRL'
+                                                       amt_doccur = l_amount * -1 )
+                                                     ( itemno_acc = '0000000002'
+                                                       currency   = 'BRL'
+                                                       amt_doccur = l_amount ) ).
+    TRY.
+        TRY.
+            DATA(l_document_key) = me->mr_api->bapi_acc_document_post(
+                          is_header            = ls_header
+                          it_accountgl         = lt_accountgl
+                          it_account_payable   = lt_accountpayable
+                          it_currency_amount   = lt_currency_amount
+                      ).
+*                  CATCH cx_bapi_error.  "
+            MESSAGE i344(zfi01) WITH l_document_key me->m_operation_reason INTO DATA(l_message).
+            me->mr_log->add_message( is_balmsg = VALUE #( msgid = sy-msgid
+                                                          msgty = sy-msgty
+                                                          msgno = sy-msgno
+                                                          msgv1 = sy-msgv1
+                                                          msgv2 = sy-msgv2
+                                                          msgv3 = sy-msgv3
+                                                          msgv4 = sy-msgv4 ) ).
+*        me->mr_api->bapi_transaction_commit( ). The "commit" happens on the conclusion of the enhanced transaction
+**         CATCH cx_bapi_error.    "
+          CATCH cx_bapi_error INTO DATA(lx_error).
+            LOOP AT lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>).
+              me->mr_log->add_message( is_balmsg = VALUE #( msgid = <ls_return>-id
+                                                            msgty = <ls_return>-type
+                                                            msgno = <ls_return>-number
+                                                            msgv1 = <ls_return>-message_v1
+                                                            msgv2 = <ls_return>-message_v2
+                                                            msgv3 = <ls_return>-message_v3
+                                                            msgv4 = <ls_return>-message_v4 ) ).
+*            CATCH cx_cacs_bal_ex.    "
+            ENDLOOP.
+
+        ENDTRY.
+
+        me->mr_log->save_messages(
+*                i_updatetask = ' '
+        ).
+*              CATCH cx_cacs_bal_ex.    "
+      CATCH cx_cacs_bal_ex ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.
