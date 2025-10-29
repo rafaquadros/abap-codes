@@ -1,0 +1,1160 @@
+CLASS zcl_fi_finnet_model DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    TYPES: BEGIN OF ys_payment_key,
+            fiscal_year      TYPE gjahr,
+            document_id      TYPE belnr_d,
+            item_id          TYPE buzei,
+            assignment       TYPE dzuonr,
+            base_date        TYPE dzfbdt,
+            days_to_due_date TYPE dzbd1t,
+            due_date         TYPE dats,
+           END OF ys_payment_key,
+           yt_payments_keys TYPE STANDARD TABLE OF ys_payment_key WITH EMPTY KEY,
+           BEGIN OF ys_payment_entry,
+            payment  TYPE zfi_es_payment,
+            sendings TYPE zfi_tt_payments_sendings,
+           END OF ys_payment_entry,
+           yt_comm_data TYPE STANDARD TABLE OF ys_payment_entry WITH EMPTY KEY.
+
+    TYPES:
+      yg_sending_date       TYPE RANGE OF dats,
+      yg_due_date           TYPE RANGE OF z_fi_ed_due_date,
+      yg_vendor             TYPE RANGE OF lifnr,
+      yg_paym_method        TYPE RANGE OF schzw_bseg,
+      yg_document_id        TYPE RANGE OF belnr_d,
+      yg_fiscal_year        TYPE RANGE OF gjahr.
+
+    CLASS-METHODS:
+        class_constructor,
+        get_van_comm_data   IMPORTING ig_sending_date TYPE yg_sending_date
+                                      ig_due_date     TYPE yg_due_date
+                                      ig_vendor       TYPE yg_vendor
+                                      ig_paym_method  TYPE yg_paym_method
+                                      ig_document_id  TYPE yg_document_id
+                                      i_company_code  TYPE bukrs
+                                      i_fiscal_year   TYPE gjahr
+                            RETURNING VALUE(rt_comm_data) TYPE yt_comm_data
+                            RAISING cx_bapi_error,
+        get_van_paym_data   IMPORTING ig_sending_date TYPE yg_sending_date
+                                      ig_due_date     TYPE yg_due_date
+                                      ig_vendor       TYPE yg_vendor
+                                      ig_paym_method  TYPE yg_paym_method
+                                      ig_document_id  TYPE yg_document_id
+                                      i_company_code  TYPE bukrs
+                                      ig_fiscal_year  TYPE yg_fiscal_year
+                                      i_only_errors   TYPE xfeld
+                            RETURNING VALUE(rt_paym_data) TYPE zfi_tt_paym_rprt_entries
+                            RAISING cx_bapi_error,
+        run_f110s RETURNING VALUE(rr_log) TYPE REF TO cl_cacs_bal,
+        run_from_foreground.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+    TYPES: yr_sending  TYPE REF TO zcl_fi_finnet_sending,
+           yt_sendings TYPE STANDARD TABLE OF yr_sending WITH EMPTY KEY,
+           BEGIN OF ys_document_header,
+            company_code     TYPE bukrs,
+            fiscal_year      TYPE gjahr,
+            document_id      TYPE belnr_d,
+            type             TYPE blart,
+            posting_date     TYPE budat,
+            currency         TYPE waers,
+           END OF ys_document_header,
+           yt_doc_headers TYPE STANDARD TABLE OF ys_document_header WITH KEY company_code fiscal_year document_id,
+           BEGIN OF ys_document_item,
+            company_code     TYPE bukrs,
+            fiscal_year      TYPE gjahr,
+            document_id      TYPE belnr_d,
+            item_id          TYPE buzei,
+            clearing_doc     TYPE augbl,
+            assignment       TYPE dzuonr,
+            payment_method   TYPE schzw_bseg,
+            block_key        TYPE dzlspr,
+            gl_account       TYPE hkont,
+            bank_short_key   TYPE hbkid,
+            amount           TYPE dmbtr,
+            withd_tax        TYPE qbshb,
+            vendor           TYPE lifnr,
+           END OF ys_document_item,
+           yt_doc_items      TYPE STANDARD TABLE OF ys_document_item WITH KEY company_code fiscal_year document_id item_id,
+           BEGIN OF ys_payment,
+            execution_date    TYPE laufd,
+            execution_id      TYPE laufi,
+            company_code      TYPE bukrs,
+            fiscal_year       TYPE gjahr,
+            document_id       TYPE belnr_d,
+            item_id           TYPE buzei,
+            payment_document  TYPE vblnr,
+            bank_account      TYPE dzbnkn,
+            bank_account_ctrl TYPE dzbkon,
+            own_bank          TYPE ubnkl,
+            own_account       TYPE ubknt,
+            own_account_ctrl  TYPE ubkon,
+           END OF ys_payment,
+           yt_payments        TYPE STANDARD TABLE OF ys_payment WITH KEY execution_date execution_id company_code fiscal_year document_id item_id,
+           BEGIN OF ys_vendor,
+            code              TYPE lifnr,
+            name              TYPE name1_gp,
+            fiscal_id         TYPE stcd1,
+           END OF ys_vendor,
+           yt_vendors         TYPE STANDARD TABLE OF ys_vendor WITH KEY code,
+           BEGIN OF ys_bank_return,
+            ff5_short_key     TYPE z_fi_ed_ff5_short_key,
+            fiscal_year       TYPE gjahr,
+            payment_doc       TYPE belnr_d,
+            bank_acc_rule     TYPE vgint_eb,
+            bank_text         TYPE butxt_eb,
+           END OF ys_bank_return,
+           yt_banks_returns   TYPE STANDARD TABLE OF ys_bank_return WITH KEY ff5_short_key fiscal_year payment_doc.
+    CLASS-DATA:
+        mr_api               TYPE REF TO lcl_api,
+        mr_db                TYPE REF TO lcl_db,
+        mr_tvarv             TYPE REF TO zcl_stvarv,
+        mt_banks_returns     TYPE yt_banks_returns,
+        mt_doc_headers       TYPE yt_doc_headers,
+        mt_doc_items         TYPE yt_doc_items,
+        mt_payments          TYPE yt_payments,
+        mt_sendings          TYPE yt_sendings,
+        mt_vendors           TYPE yt_vendors,
+        m_current_job_name   TYPE btcjob,
+        m_current_job_count  TYPE btcjobcnt.
+    CLASS-METHODS:
+        check_unicity       IMPORTING i_execution_date          TYPE laufd
+                                      i_execution_id            TYPE laufi
+                            RAISING cx_bapi_error,
+        get_bank_authentication IMPORTING i_company_code        TYPE bukrs
+                                          i_fiscal_year         TYPE gjahr
+                                          i_document_id         TYPE belnr_d
+                                          i_item_id             TYPE buzei
+                            RETURNING VALUE(r_bank_authentication) TYPE z_fi_ed_fnt_bank_authentic,
+        get_bank_return     IMPORTING i_short_key               TYPE kukey_eb
+*                                      i_fiscal_year             TYPE gjahr
+                                      i_payment_doc             TYPE belnr_d
+                            RETURNING VALUE(rs_bank_return)     TYPE ys_bank_return,
+        get_bar_code        IMPORTING i_company_code            TYPE bukrs
+                                      i_fiscal_year             TYPE gjahr
+                                      i_document_id             TYPE belnr_d
+                                      i_item_id                 TYPE buzei
+                            RETURNING VALUE(r_barcode)          TYPE z_fi_ed_fnt_bar_code,
+        get_document_header IMPORTING i_company_code            TYPE bukrs
+                                      i_fiscal_year             TYPE gjahr
+                                      i_document_id             TYPE belnr_d
+                            RETURNING VALUE(rs_document_header) TYPE ys_document_header,
+        get_document_item   IMPORTING i_company_code            TYPE bukrs
+                                      i_fiscal_year             TYPE gjahr
+                                      i_document_id             TYPE belnr_d
+                                      i_item_id                 TYPE buzei
+                            RETURNING VALUE(rs_document_item)   TYPE ys_document_item,
+        get_payment         IMPORTING i_execution_date          TYPE laufd
+                                      i_execution_id            TYPE laufi
+                                      i_company_code            TYPE bukrs
+                                      i_fiscal_year             TYPE gjahr
+                                      i_document_id             TYPE belnr_d
+                                      i_item_id                 TYPE buzei
+                            RETURNING VALUE(rs_payment)         TYPE ys_payment,
+        get_payments        IMPORTING i_company_code            TYPE bukrs
+                                      i_house_bank_key          TYPE hbkid
+                                      i_payment_method          TYPE dzlsch
+                            RETURNING VALUE(rt_payments_keys)   TYPE yt_payments_keys
+                            RAISING cx_bapi_error,
+        get_vendor_data     IMPORTING i_code                    TYPE lifnr
+                            RETURNING VALUE(rs_vendor_data)     TYPE ys_vendor,
+        submit_job          IMPORTING i_variant_model           TYPE raldb_vari
+                                      i_variant_name            TYPE raldb_vari
+                            RAISING cx_bapi_error,
+        wait_job_end        IMPORTING i_execution_date          TYPE laufd
+                                      i_execution_id            TYPE laufi
+                            RAISING cx_bapi_error.
+
+ENDCLASS.
+
+
+
+CLASS ZCL_FI_FINNET_MODEL IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>CHECK_UNICITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_EXECUTION_DATE               TYPE        LAUFD
+* | [--->] I_EXECUTION_ID                 TYPE        LAUFI
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD check_unicity.
+
+    TRY.
+        mr_db->chk_reguh(
+          EXPORTING
+            i_execution_date = i_execution_date
+            i_execution_id   = i_execution_id
+        ).
+*              CATCH cx_sy_sql_error.    "
+
+        MESSAGE e380(zfi01) INTO DATA(l_message).
+        m_raise_bapi_error.
+      CATCH cx_sy_sql_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_FINNET_MODEL=>CLASS_CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD class_constructor.
+
+    mr_api = NEW lcl_api(  ).
+    mr_db  = NEW lcl_db( ).
+    mr_tvarv = NEW zcl_stvarv(
+        prefix    = zif_fi_finnet_constants=>mc_tvarv-prefix
+        separator = zif_fi_finnet_constants=>mc_tvarv-separator
+        sycprog   = zif_fi_finnet_constants=>mc_tvarv-mc_abap_object_snd
+    ).
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_BANK_AUTHENTICATION
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [--->] I_DOCUMENT_ID                  TYPE        BELNR_D
+* | [--->] I_ITEM_ID                      TYPE        BUZEI
+* | [<-()] R_BANK_AUTHENTICATION          TYPE        Z_FI_ED_FNT_BANK_AUTHENTIC
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_bank_authentication.
+
+    CLEAR r_bank_authentication.
+
+    TRY.
+        r_bank_authentication = zcl_fi_finnet_paym_item=>get_instance_by_item_id(
+                            i_company_code = i_company_code
+                            i_fiscal_year  = i_fiscal_year
+                            i_document_id  = i_document_id
+                            i_item_id      = i_item_id
+                        )->get_bank_autentication( ).
+*                      CATCH cx_bapi_error.  " .
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_BANK_RETURN
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_SHORT_KEY                    TYPE        KUKEY_EB
+* | [--->] I_PAYMENT_DOC                  TYPE        BELNR_D
+* | [<-()] RS_BANK_RETURN                 TYPE        YS_BANK_RETURN
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_bank_return.
+
+    CLEAR rs_bank_return.
+    DATA(l_tries) = VALUE int4(  ).
+    TRY.
+        rs_bank_return = mt_banks_returns[ ff5_short_key = i_short_key payment_doc = i_payment_doc ].
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            INSERT mr_db->qry_febep(
+           i_short_key   = i_short_key
+           i_payment_doc = i_payment_doc
+       )
+*         CATCH cx_sy_sql_error.  "
+              INTO TABLE mt_banks_returns.
+            SORT mt_banks_returns BY ff5_short_key DESCENDING payment_doc DESCENDING.
+          CATCH cx_sy_sql_error.
+            RETURN.
+        ENDTRY.
+        ADD 1 TO l_tries.
+        IF l_tries <= 1.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_BAR_CODE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [--->] I_DOCUMENT_ID                  TYPE        BELNR_D
+* | [--->] I_ITEM_ID                      TYPE        BUZEI
+* | [<-()] R_BARCODE                      TYPE        Z_FI_ED_FNT_BAR_CODE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_bar_code.
+
+    CLEAR r_barcode.
+
+    TRY.
+        r_barcode = zcl_fi_finnet_paym_item=>get_instance_by_item_id(
+                            i_company_code = i_company_code
+                            i_fiscal_year  = i_fiscal_year
+                            i_document_id  = i_document_id
+                            i_item_id      = i_item_id
+                        )->get_barcode( ).
+*                          CATCH cx_bapi_error.  "
+      CATCH cx_bapi_error ##NO_HANDLER.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_DOCUMENT_HEADER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [--->] I_DOCUMENT_ID                  TYPE        BELNR_D
+* | [<-()] RS_DOCUMENT_HEADER             TYPE        YS_DOCUMENT_HEADER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_document_header.
+
+    CLEAR rs_document_header.
+    DATA(l_tries) = VALUE int4(  ).
+    TRY.
+        rs_document_header = mt_doc_headers[ company_code = i_company_code fiscal_year = i_fiscal_year document_id = i_document_id ].
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            INSERT mr_db->qry_bkpf(
+                       i_company_code = i_company_code
+                       i_fiscal_year  = i_fiscal_year
+                       i_document_id  = i_document_id
+                    )
+*         CATCH cx_sy_sql_error.  "
+              INTO TABLE mt_doc_headers.
+            SORT mt_doc_headers BY company_code fiscal_year DESCENDING document_id DESCENDING.
+          CATCH cx_sy_sql_error.
+            RETURN.
+        ENDTRY.
+        ADD 1 TO l_tries.
+        IF l_tries <= 1.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_DOCUMENT_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [--->] I_DOCUMENT_ID                  TYPE        BELNR_D
+* | [--->] I_ITEM_ID                      TYPE        BUZEI
+* | [<-()] RS_DOCUMENT_ITEM               TYPE        YS_DOCUMENT_ITEM
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_document_item.
+
+    CLEAR rs_document_item.
+    DATA(l_tries) = VALUE int4(  ).
+    TRY.
+        rs_document_item = mt_doc_items[ company_code = i_company_code fiscal_year = i_fiscal_year document_id = i_document_id item_id = i_item_id ].
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            INSERT mr_db->qry_bseg(
+                       i_company_code = i_company_code
+                       i_fiscal_year  = i_fiscal_year
+                       i_document_id  = i_document_id
+                       i_item_id      = i_item_id
+                    )
+*         CATCH cx_sy_sql_error.  "
+              INTO TABLE mt_doc_items.
+            SORT mt_doc_items BY company_code fiscal_year DESCENDING document_id DESCENDING item_id.
+          CATCH cx_sy_sql_error.
+            RETURN.
+        ENDTRY.
+        ADD 1 TO l_tries.
+        IF l_tries <= 1.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_PAYMENT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_EXECUTION_DATE               TYPE        LAUFD
+* | [--->] I_EXECUTION_ID                 TYPE        LAUFI
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [--->] I_DOCUMENT_ID                  TYPE        BELNR_D
+* | [--->] I_ITEM_ID                      TYPE        BUZEI
+* | [<-()] RS_PAYMENT                     TYPE        YS_PAYMENT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_payment.
+
+    CLEAR rs_payment.
+    DATA(l_tries) = VALUE int4(  ).
+    TRY.
+        rs_payment = mt_payments[ execution_date = i_execution_date execution_id = i_execution_id company_code = i_company_code
+                                  fiscal_year    = i_fiscal_year    document_id  = i_document_id  item_id      = i_item_id ].
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            INSERT mr_db->qry_regup_reguh(
+                       i_execution_date = i_execution_date
+                       i_execution_id   = i_execution_id
+                       i_company_code   = i_company_code
+                       i_fiscal_year    = i_fiscal_year
+                       i_document_id    = i_document_id
+                       i_item_id        = i_item_id
+                    )
+*         CATCH cx_sy_sql_error.  "
+              INTO TABLE mt_payments.
+            SORT mt_payments BY execution_date execution_id company_code fiscal_year DESCENDING document_id DESCENDING item_id.
+          CATCH cx_sy_sql_error.
+            RETURN.
+        ENDTRY.
+        ADD 1 TO l_tries.
+        IF l_tries <= 1.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_PAYMENTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_HOUSE_BANK_KEY               TYPE        HBKID
+* | [--->] I_PAYMENT_METHOD               TYPE        DZLSCH
+* | [<-()] RT_PAYMENTS_KEYS               TYPE        YT_PAYMENTS_KEYS
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_payments.
+
+    CLEAR rt_payments_keys.
+    TRY.
+        rt_payments_keys = mr_db->qry_bsik(
+                       i_company_code   = i_company_code
+                       i_house_bank_key = i_house_bank_key
+                       i_payment_method = i_payment_method
+                   ).
+*                     CATCH cx_sy_sql_error.  "
+      CATCH cx_sy_sql_error.
+        MESSAGE e416(zfi01) WITH i_company_code i_house_bank_key i_payment_method
+           INTO DATA(l_message).
+        RAISE EXCEPTION TYPE cx_bapi_error
+          EXPORTING
+            status = VALUE #( ( id = sy-msgid
+                                type = sy-msgty
+                                number = sy-msgno
+                                message = l_message
+                                message_v1 = sy-msgv1
+                                message_v2 = sy-msgv2
+                                message_v3 = sy-msgv3
+                                message_v4 = sy-msgv4 ) ).
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_FINNET_MODEL=>GET_VAN_COMM_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IG_SENDING_DATE                TYPE        YG_SENDING_DATE
+* | [--->] IG_DUE_DATE                    TYPE        YG_DUE_DATE
+* | [--->] IG_VENDOR                      TYPE        YG_VENDOR
+* | [--->] IG_PAYM_METHOD                 TYPE        YG_PAYM_METHOD
+* | [--->] IG_DOCUMENT_ID                 TYPE        YG_DOCUMENT_ID
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] I_FISCAL_YEAR                  TYPE        GJAHR
+* | [<-()] RT_COMM_DATA                   TYPE        YT_COMM_DATA
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_van_comm_data.
+    "ToDo: implement behavior - development interrupted
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_FINNET_MODEL=>GET_VAN_PAYM_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IG_SENDING_DATE                TYPE        YG_SENDING_DATE
+* | [--->] IG_DUE_DATE                    TYPE        YG_DUE_DATE
+* | [--->] IG_VENDOR                      TYPE        YG_VENDOR
+* | [--->] IG_PAYM_METHOD                 TYPE        YG_PAYM_METHOD
+* | [--->] IG_DOCUMENT_ID                 TYPE        YG_DOCUMENT_ID
+* | [--->] I_COMPANY_CODE                 TYPE        BUKRS
+* | [--->] IG_FISCAL_YEAR                 TYPE        YG_FISCAL_YEAR
+* | [--->] I_ONLY_ERRORS                  TYPE        XFELD
+* | [<-()] RT_PAYM_DATA                   TYPE        ZFI_TT_PAYM_RPRT_ENTRIES
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_van_paym_data.
+
+    CLEAR rt_paym_data.
+    TRY.
+        DATA(lt_sending_data) = mr_db->qry_z_payms_snds(
+                            ig_execution_date = ig_sending_date
+                            ig_due_date       = ig_due_date
+                            ig_document_id    = ig_document_id
+                            i_company_code    = i_company_code
+                            ig_fiscal_year    = ig_fiscal_year
+                        ).
+
+        SORT lt_sending_data BY company_code fiscal_year document_id item_id last_changed_at DESCENDING.
+        DELETE ADJACENT DUPLICATES FROM lt_sending_data COMPARING company_code fiscal_year document_id item_id.
+      CATCH cx_sy_sql_error.
+        MESSAGE e376(zfi01) INTO DATA(l_message).
+        m_raise_bapi_error.
+    ENDTRY.
+
+    rt_paym_data = VALUE zfi_tt_paym_rprt_entries( FOR ls_entry IN lt_sending_data
+     (
+        company_code      = ls_entry-company_code
+        fiscal_year       = ls_entry-fiscal_year
+        document_id       = ls_entry-document_id
+        document_type     = get_document_header( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id )-type
+        item_id           = ls_entry-item_id
+        posting_date      = get_document_header( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id )-posting_date
+        clearing_doc      = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-clearing_doc
+        payment_doc       = get_payment( i_execution_date = ls_entry-execution_date
+                                         i_execution_id   = ls_entry-execution_id
+                                         i_company_code   = ls_entry-company_code
+                                         i_fiscal_year    = ls_entry-fiscal_year
+                                         i_document_id    = ls_entry-document_id
+                                         i_item_id        = ls_entry-item_id )-payment_document
+        assignment        = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-assignment
+        payment_method    = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-payment_method
+        block_key         = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-block_key
+        gl_account        = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-gl_account
+        amount            = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-amount
+        withd_tax         = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-withd_tax
+        currency          = get_document_header( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id )-currency
+        vendor            = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-vendor
+        vendor_name       = get_vendor_data( i_code = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-vendor )-name
+        vendor_fiscal_id  = get_vendor_data( i_code = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-vendor )-fiscal_id
+        bar_code          = get_bar_code( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )
+        bank_authent      = get_bank_authentication( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )
+        bank_short_key    = get_document_item( i_company_code = ls_entry-company_code i_fiscal_year = ls_entry-fiscal_year i_document_id = ls_entry-document_id i_item_id = ls_entry-item_id )-bank_short_key
+        execution_date    = ls_entry-execution_date
+        execution_id      = ls_entry-execution_id
+        due_date          = ls_entry-due_date
+        van_return        = ls_entry-van_return
+        bank_account      = get_payment( i_execution_date = ls_entry-execution_date
+                                         i_execution_id   = ls_entry-execution_id
+                                         i_company_code   = ls_entry-company_code
+                                         i_fiscal_year    = ls_entry-fiscal_year
+                                         i_document_id    = ls_entry-document_id
+                                         i_item_id        = ls_entry-item_id )-bank_account
+        bank_account_ctrl = get_payment( i_execution_date = ls_entry-execution_date
+                                         i_execution_id   = ls_entry-execution_id
+                                         i_company_code   = ls_entry-company_code
+                                         i_fiscal_year    = ls_entry-fiscal_year
+                                         i_document_id    = ls_entry-document_id
+                                         i_item_id        = ls_entry-item_id )-bank_account_ctrl
+        own_account       = get_payment( i_execution_date = ls_entry-execution_date
+                                         i_execution_id   = ls_entry-execution_id
+                                         i_company_code   = ls_entry-company_code
+                                         i_fiscal_year    = ls_entry-fiscal_year
+                                         i_document_id    = ls_entry-document_id
+                                         i_item_id        = ls_entry-item_id )-own_account
+        own_account_ctrl  = get_payment( i_execution_date = ls_entry-execution_date
+                                         i_execution_id   = ls_entry-execution_id
+                                         i_company_code   = ls_entry-company_code
+                                         i_fiscal_year    = ls_entry-fiscal_year
+                                         i_document_id    = ls_entry-document_id
+                                         i_item_id        = ls_entry-item_id )-own_account_ctrl
+        bank_acc_rule     = get_bank_return( i_short_key = ls_entry-ff5_short_key
+                                             i_payment_doc = get_payment( i_execution_date = ls_entry-execution_date
+                                                                          i_execution_id   = ls_entry-execution_id
+                                                                          i_company_code   = ls_entry-company_code
+                                                                          i_fiscal_year    = ls_entry-fiscal_year
+                                                                          i_document_id    = ls_entry-document_id
+                                                                          i_item_id         = ls_entry-item_id )-payment_document )-bank_acc_rule
+        bank_text         = get_bank_return( i_short_key = ls_entry-ff5_short_key
+                                             i_payment_doc = get_payment( i_execution_date = ls_entry-execution_date
+                                                                          i_execution_id   = ls_entry-execution_id
+                                                                          i_company_code   = ls_entry-company_code
+                                                                          i_fiscal_year    = ls_entry-fiscal_year
+                                                                          i_document_id    = ls_entry-document_id
+                                                                          i_item_id         = ls_entry-item_id )-payment_document )-bank_text
+     )
+    ).
+
+    DELETE rt_paym_data WHERE: vendor         NOT IN ig_vendor,
+                               payment_method NOT IN ig_paym_method.
+
+    IF i_only_errors = abap_true.
+      DELETE rt_paym_data WHERE block_key <> zif_fi_finnet_constants=>mc_paym_block-rejected AND
+                                van_return IS NOT INITIAL.
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>GET_VENDOR_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_CODE                         TYPE        LIFNR
+* | [<-()] RS_VENDOR_DATA                 TYPE        YS_VENDOR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_vendor_data.
+
+    CLEAR rs_vendor_data.
+
+    DATA(l_tries) = VALUE int4(  ).
+    TRY.
+        rs_vendor_data = mt_vendors[ code = i_code ].
+      CATCH cx_sy_itab_line_not_found.
+        TRY.
+            INSERT mr_db->qry_lfa1(
+                       i_vendor_code = i_code
+                    )
+*         CATCH cx_sy_sql_error.  "
+              INTO TABLE mt_vendors.
+          CATCH cx_sy_sql_error.
+            RETURN.
+        ENDTRY.
+        ADD 1 TO l_tries.
+        IF l_tries <= 1.
+          RETRY.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_FINNET_MODEL=>RUN_F110S
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RR_LOG                         TYPE REF TO CL_CACS_BAL
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD run_f110s.
+    DATA lg_due_dates TYPE RANGE OF dats.
+
+    TRY.
+        rr_log = NEW cl_cacs_bal(
+*                 i_handle              =
+            i_log_name            = CONV #( |{ zif_fi_finnet_constants=>mc_prefix-finnet }{ sy-zonlo }{ sy-datlo }{ sy-timlo }| )
+            i_object              = zif_fi_finnet_constants=>mc_log-object
+            i_subobject           = zif_fi_finnet_constants=>mc_log-sobject_snd
+*                 i_default_msgid       =
+*                 i_getmsgfilter        =
+*                 i_msgfilter           =
+*                 ib_use_cacs_bufferlog =
+*                 id_probclass_filter   =
+        ).
+*               CATCH cx_cacs_bal_ex.  "
+      CATCH cx_cacs_bal_ex ##NO_HANDLER.
+    ENDTRY.
+
+    TRY.
+        DATA(lt_rparameters) = zcl_fi_finnet_paym_parms=>parameters_factory( ).
+*                         CATCH cx_bapi_error.  "
+        LOOP AT lt_rparameters ASSIGNING FIELD-SYMBOL(<lr_parameter>).
+          TRY.
+              lg_due_dates = VALUE #( ( sign = 'I'
+                                        option = 'BT'
+                                        low = sy-datlo
+                                        high = CONV dats( sy-datlo + <lr_parameter>->m_days_to_duedate )
+                                      )
+                                    ).
+              TRY.
+                  DATA(lt_payments_pre) = get_payments(
+                                    i_company_code   = <lr_parameter>->m_company_code
+                                    i_house_bank_key = <lr_parameter>->m_house_bank_key
+                                    i_payment_method = <lr_parameter>->m_payment_method
+                                ).
+*                          CATCH cx_bapi_error.  "
+                CATCH cx_bapi_error INTO DATA(lx_error).
+                  IF rr_log IS BOUND.
+                    LOOP AT lx_error->status ASSIGNING FIELD-SYMBOL(<ls_return>).
+                      TRY.
+                          rr_log->add_message( is_balmsg = VALUE #( msgid = <ls_return>-id
+                                                    msgty = <ls_return>-type
+                                                    msgno = <ls_return>-number
+                                                    msgv1 = <ls_return>-message_v1
+                                                    msgv2 = <ls_return>-message_v2
+                                                    msgv3 = <ls_return>-message_v3
+                                                    msgv4 = <ls_return>-message_v4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+                        CATCH cx_cacs_bal_ex ##NO_HANDLER.
+                      ENDTRY.
+                    ENDLOOP.
+                  ENDIF.
+                  CONTINUE.
+              ENDTRY.
+
+              DATA(lt_payments) = VALUE yt_payments_keys(  ).
+              LOOP AT lt_payments_pre ASSIGNING FIELD-SYMBOL(<ls_payment>).
+                <ls_payment>-due_date = CONV dats( <ls_payment>-base_date + <ls_payment>-days_to_due_date ).
+                IF <ls_payment>-due_date NOT IN lg_due_dates.
+                  CONTINUE.
+                ENDIF.
+
+                APPEND <ls_payment> TO lt_payments.
+              ENDLOOP.
+
+              IF lt_payments IS INITIAL.
+                CONTINUE.
+              ELSE.
+                <lr_parameter>->start( ).
+*            CATCH cx_bapi_error.    "
+              ENDIF.
+
+              SORT lt_payments BY assignment due_date.
+
+              DATA(l_last_assignment) = VALUE dzuonr(  ).
+              DATA(l_last_due_date) = VALUE dats(  ).
+              DATA(l_day_to_due_date) = CONV char02( <lr_parameter>->m_days_to_duedate ).
+              DATA(l_execution_id) = CONV laufi( |{ <lr_parameter>->m_payment_method }{ l_day_to_due_date }| ).
+
+              CONDENSE l_execution_id NO-GAPS.
+
+              " Create variant from the parameter template;
+              DATA(lt_variant_values) = mr_api->rs_variant_contents(
+                              i_program     = zif_fi_finnet_constants=>mc_abap_object-program-f110s
+                              i_variant     = <lr_parameter>->m_variant_name
+                          ).
+*                            CATCH cx_bapi_error.  "
+              TRY.
+                  DATA(l_execution_date) = CONV laufd( lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-execution_date ]-low ).
+                CATCH cx_sy_itab_line_not_found.
+                  l_execution_date = sy-datlo.
+              ENDTRY.
+              LOOP AT lt_payments ASSIGNING <ls_payment>.
+                IF <ls_payment>-assignment <> l_last_assignment OR
+                   <ls_payment>-due_date <> l_last_due_date OR
+                   ( <ls_payment>-assignment IS INITIAL AND l_last_assignment IS INITIAL AND
+                     mt_sendings IS INITIAL ).
+                  APPEND NEW zcl_fi_finnet_sending(
+                      i_house_bank_key = <lr_parameter>->m_house_bank_key
+                      i_payment_method = <lr_parameter>->m_payment_method
+                      i_assignment     = <ls_payment>-assignment
+                      i_due_date       = <ls_payment>-due_date
+                      i_execution_date = l_execution_date
+                      i_execution_id   = l_execution_id
+                  )
+                      TO mt_sendings.
+
+                  l_last_assignment = <ls_payment>-assignment.
+                  l_last_due_date   = <ls_payment>-due_date.
+                ENDIF.
+
+                TRY.
+                    DATA(lr_sending) = mt_sendings[ lines( mt_sendings ) ].
+                    IF lr_sending IS BOUND.
+                      lr_sending->add_item(
+                        EXPORTING
+                          i_company_code     = <lr_parameter>->m_company_code
+                          i_fiscal_year      = <ls_payment>-fiscal_year
+                          i_document_id      = <ls_payment>-document_id
+                          i_item_id          = <ls_payment>-item_id
+                          i_base_date        = <ls_payment>-base_date
+                          i_days_to_due_date = <ls_payment>-days_to_due_date
+                      ).
+                    ENDIF.
+                  CATCH cx_sy_itab_line_not_found .
+                ENDTRY.
+              ENDLOOP.
+
+              SORT lt_payments BY due_date assignment .
+              DELETE ADJACENT DUPLICATES FROM lt_payments COMPARING assignment due_date.
+              LOOP AT lt_payments ASSIGNING <ls_payment>.
+                TRY.
+                    GET TIME.
+                    l_execution_id = |{ l_execution_id(1) }{ sy-timlo+2 }|.
+                    check_unicity( EXPORTING i_execution_date = l_execution_date
+                                             i_execution_id   = l_execution_id   ).
+                  CATCH cx_bapi_error.
+                    RETRY.
+                ENDTRY.
+                CLEAR lr_sending.
+                LOOP AT mt_sendings ASSIGNING FIELD-SYMBOL(<lr_sending>).
+                  IF <lr_sending>->m_assignment = <ls_payment>-assignment AND
+                     <lr_sending>->m_due_date = <ls_payment>-due_date AND
+                     <lr_sending>->m_payment_method = <lr_parameter>->m_payment_method AND
+                     <lr_sending>->m_house_bank_key = <lr_parameter>->m_house_bank_key.
+                    lr_sending = <lr_sending>.
+                    lr_sending->m_execution_id = l_execution_id.
+                    EXIT.
+                  ENDIF.
+                ENDLOOP.
+
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-identification ]-low = l_execution_id.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-assignment ]-low = <ls_payment>-assignment.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-due_date ]-low = <ls_payment>-due_date.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-created_up_to ]-low = <ls_payment>-due_date.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-following_pst_date ]-low = CONV dats( <ls_payment>-due_date + 1 ).
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-posting_date ]-low = <ls_payment>-due_date.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+                TRY.
+                    lt_variant_values[ selname = zif_fi_finnet_constants=>mc_variant_field_name-customer_due_date ]-low = <ls_payment>-due_date.
+                  CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+                ENDTRY.
+
+                "Describing the new variant
+                DATA(l_variant_name) = CONV raldb_vari( |{ zif_fi_finnet_constants=>mc_prefix-finnet }{ sy-datlo+3 }{ sy-timlo }| ).
+                DATA(ls_variant_description) = VALUE varid(
+                    mandt      = sy-mandt
+                    report     = zif_fi_finnet_constants=>mc_abap_object-program-f110s
+                    variant    = l_variant_name
+*                  flag1      =
+*                  flag2      =
+*                  transport  =
+                    environmnt = zif_fi_finnet_constants=>mc_variant_attribute-enviroment-batch
+                    protected  = abap_true
+*                  secu       =
+*                  version    =
+                    ename      = cl_abap_syst=>get_user_name(  )
+                    edat       = sy-datlo
+                    etime      = sy-timlo
+                    aename     = cl_abap_syst=>get_user_name(  )
+                    aedat      = sy-datlo
+                    aetime     = sy-timlo
+                    mlangu     = cl_abap_syst=>get_language( )
+*                  xflag1     =
+*                  xflag2     =
+                ).
+
+                "Variant texts
+                DATA(lt_variant_texts) = VALUE diwps_varit_t( (
+                    mandt   = sy-mandt
+                    langu   = cl_abap_syst=>get_language( )
+                    report  = zif_fi_finnet_constants=>mc_abap_object-program-f110s
+                    variant = l_variant_name
+                    vtext   = |{ 'Cópia adaptada de'(t01) } { <lr_parameter>->m_variant_name }|
+                ) ).
+
+                TRY.
+                    "Creating the new variant
+                    mr_api->rs_create_variant(
+                      EXPORTING
+                        i_program     = zif_fi_finnet_constants=>mc_abap_object-program-f110s
+                        i_variant     = l_variant_name
+                        is_descr      = ls_variant_description
+                        it_contents   = lt_variant_values
+                        it_texts      = lt_variant_texts
+                    ).
+*                CATCH cx_bapi_error.    "
+                    " 2. Submit F110s
+                    submit_job(
+                      EXPORTING
+                        i_variant_model = <lr_parameter>->m_variant_name
+                        i_variant_name  = l_variant_name
+                    ).
+*              CATCH cx_bapi_error.    " .
+                    "Wait for the end of job execution
+                    wait_job_end(
+                      EXPORTING
+                        i_execution_date = l_execution_date
+                        i_execution_id   = l_execution_id
+                    ).
+*                  CATCH cx_bapi_error.    " .
+
+                    WAIT UP TO 1 SECONDS.
+                    mr_api->rs_variant_delete(
+                      EXPORTING
+                        i_program     = zif_fi_finnet_constants=>mc_abap_object-program-f110s
+                        i_variant     = l_variant_name
+                    ).
+*              CATCH cx_bapi_error.    "
+                    "Persist monitoring data
+                    lr_sending->persist( ).
+*             CATCH cx_bapi_error.    "
+                    lr_sending->send_2finnet( ).
+*            CATCH cx_bapi_error.    "
+                    MESSAGE i382(zfi01) WITH lr_sending->m_assignment lr_sending->m_execution_date lr_sending->m_execution_id
+                                 INTO DATA(l_message).
+                    TRY.
+                        rr_log->add_message( is_balmsg = VALUE #( msgid = sy-msgid
+                                                  msgty = sy-msgty
+                                                  msgno = sy-msgno
+                                                  msgv1 = sy-msgv1
+                                                  msgv2 = sy-msgv2
+                                                  msgv3 = sy-msgv3
+                                                  msgv4 = sy-msgv4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+                      CATCH cx_cacs_bal_ex ##NO_HANDLER.
+                    ENDTRY.
+                  CATCH cx_bapi_error INTO lx_error.
+                    IF lr_sending IS BOUND.
+                      TRY.
+                          lr_sending->persist( ).
+*                        CATCH cx_bapi_error.    "
+                        CATCH cx_bapi_error INTO DATA(lx_error_snd).
+                          APPEND LINES OF lx_error_snd->status TO lx_error->status.
+                      ENDTRY.
+                    ENDIF.
+                    IF rr_log IS BOUND.
+                      LOOP AT lx_error->status ASSIGNING <ls_return>.
+                        TRY.
+                            rr_log->add_message( is_balmsg = VALUE #( msgid = <ls_return>-id
+                                                      msgty = <ls_return>-type
+                                                      msgno = <ls_return>-number
+                                                      msgv1 = <ls_return>-message_v1
+                                                      msgv2 = <ls_return>-message_v2
+                                                      msgv3 = <ls_return>-message_v3
+                                                      msgv4 = <ls_return>-message_v4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+                          CATCH cx_cacs_bal_ex ##NO_HANDLER.
+                        ENDTRY.
+                      ENDLOOP.
+                    ENDIF.
+                ENDTRY.
+              ENDLOOP. " End of assignments
+              <lr_parameter>->stop( ).
+*            CATCH cx_bapi_error.    "
+
+            CATCH cx_bapi_error INTO lx_error.
+              IF <lr_parameter> IS BOUND.
+                TRY.
+                    <lr_parameter>->stop( ).
+*            CATCH cx_bapi_error.    "
+                  CATCH cx_bapi_error INTO DATA(lx_parameter_error).
+                    APPEND LINES OF lx_parameter_error->status TO lx_error->status.
+                ENDTRY.
+              ENDIF.
+              IF rr_log IS BOUND.
+                LOOP AT lx_error->status ASSIGNING <ls_return>.
+                  TRY.
+                      rr_log->add_message( is_balmsg = VALUE #( msgid = <ls_return>-id
+                                                msgty = <ls_return>-type
+                                                msgno = <ls_return>-number
+                                                msgv1 = <ls_return>-message_v1
+                                                msgv2 = <ls_return>-message_v2
+                                                msgv3 = <ls_return>-message_v3
+                                                msgv4 = <ls_return>-message_v4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+                    CATCH cx_cacs_bal_ex ##NO_HANDLER.
+                  ENDTRY.
+                ENDLOOP.
+              ENDIF.
+              CONTINUE.
+          ENDTRY.
+        ENDLOOP. "End of parameters list
+
+        MESSAGE i417(zfi01) INTO l_message.
+        TRY.
+            rr_log->add_message( is_balmsg = VALUE #( msgid = sy-msgid
+                                      msgty = sy-msgty
+                                      msgno = sy-msgno
+                                      msgv1 = sy-msgv1
+                                      msgv2 = sy-msgv2
+                                      msgv3 = sy-msgv3
+                                      msgv4 = sy-msgv4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+          CATCH cx_cacs_bal_ex ##NO_HANDLER.
+        ENDTRY.
+      CATCH cx_bapi_error INTO lx_error.
+        IF <lr_parameter> IS ASSIGNED AND <lr_parameter> IS BOUND.
+          TRY.
+              <lr_parameter>->stop( ).
+*            CATCH cx_bapi_error.    "
+            CATCH cx_bapi_error INTO lx_parameter_error.
+              APPEND LINES OF lx_parameter_error->status TO lx_error->status.
+          ENDTRY.
+        ENDIF.
+        IF rr_log IS BOUND.
+          LOOP AT lx_error->status ASSIGNING <ls_return>.
+            TRY.
+                rr_log->add_message( is_balmsg = VALUE #( msgid = <ls_return>-id
+                                          msgty = <ls_return>-type
+                                          msgno = <ls_return>-number
+                                          msgv1 = <ls_return>-message_v1
+                                          msgv2 = <ls_return>-message_v2
+                                          msgv3 = <ls_return>-message_v3
+                                          msgv4 = <ls_return>-message_v4 ) ).
+*                CATCH cx_cacs_bal_ex.    "
+              CATCH cx_cacs_bal_ex ##NO_HANDLER.
+            ENDTRY.
+          ENDLOOP.
+        ENDIF.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_FI_FINNET_MODEL=>RUN_FROM_FOREGROUND
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD run_from_foreground.
+
+    TRY.
+        DATA(l_decision) = mr_api->popup_to_confirm(
+                       i_main_text    = |{ 'Confirma processamento da interface FINNET ?'(P01) }|
+                       i_1st_bttn_txt = |{ 'Sim'(T02) }|
+                       i_2nd_bttn_txt = |{ 'Não'(T03) }|
+                   ).
+*                     CATCH cx_bapi_error.  "
+      CATCH cx_bapi_error.
+        MESSAGE i277(zfi01) DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
+
+    IF l_decision <> zif_fi_finnet_constants=>mc_decision-yes.
+      RETURN.
+    ELSE.
+      "Open Job
+      TRY.
+          mr_api->get_print_parameters(
+            IMPORTING
+              es_out_params = DATA(ls_out_params)
+*            e_valid       = l_valid
+          ).
+          m_current_job_name = |{ zif_fi_finnet_constants=>mc_prefix-custom_object }{ zif_fi_finnet_constants=>mc_prefix-finnet }_{ zif_fi_finnet_constants=>mc_from_frgrnd_sffx }|.
+          m_current_job_count = mr_api->job_open( i_job_name = m_current_job_name ).
+*  CATCH cx_bapi_error.    "
+
+          "Submit program
+          SUBMIT (zif_fi_finnet_constants=>mc_abap_object-program-zgen_payments)
+              TO SAP-SPOOL
+              WITHOUT SPOOL DYNPRO
+              SPOOL PARAMETERS ls_out_params
+              VIA JOB m_current_job_name
+              NUMBER m_current_job_count
+              AND RETURN.
+          "Close Job
+          mr_api->job_close(
+            EXPORTING
+              i_job_name    = m_current_job_name
+              i_job_count   = m_current_job_count
+          ).
+*      CATCH cx_bapi_error.    "
+          MESSAGE i377(zfi01) WITH m_current_job_name.
+        CATCH cx_bapi_error.
+          MESSAGE i277(zfi01) DISPLAY LIKE 'E'.
+          RETURN.
+      ENDTRY.
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>SUBMIT_JOB
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_VARIANT_MODEL                TYPE        RALDB_VARI
+* | [--->] I_VARIANT_NAME                 TYPE        RALDB_VARI
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD submit_job.
+    DATA l_valid TYPE c LENGTH 1.
+
+    "Open Job
+    TRY.
+        mr_api->get_print_parameters(
+          IMPORTING
+            es_out_params = DATA(ls_out_params)
+            e_valid       = l_valid
+        ).
+        m_current_job_name = |{ zif_fi_finnet_constants=>mc_prefix-custom_object }{ zif_fi_finnet_constants=>mc_prefix-finnet }_{ i_variant_model }|.
+        m_current_job_count = mr_api->job_open( i_job_name = m_current_job_name ).
+*  CATCH cx_bapi_error.    "
+      CATCH cx_bapi_error.
+        MESSAGE e277(zfi01) INTO DATA(l_message).
+        m_raise_bapi_error.
+    ENDTRY.
+    "Submit program
+    SUBMIT (zif_fi_finnet_constants=>mc_abap_object-program-f110s)
+        TO SAP-SPOOL
+        WITHOUT SPOOL DYNPRO
+        SPOOL PARAMETERS ls_out_params
+        VIA JOB m_current_job_name
+        NUMBER m_current_job_count
+        USING SELECTION-SET i_variant_name
+        AND RETURN.
+    "Close Job
+    mr_api->job_close(
+      EXPORTING
+        i_job_name    = m_current_job_name
+        i_job_count   = m_current_job_count
+    ).
+*      CATCH cx_bapi_error.    "
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Private Method ZCL_FI_FINNET_MODEL=>WAIT_JOB_END
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] I_EXECUTION_DATE               TYPE        LAUFD
+* | [--->] I_EXECUTION_ID                 TYPE        LAUFI
+* | [!CX!] CX_BAPI_ERROR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD wait_job_end.
+    DATA l_max_processing_time TYPE int4.
+
+    GET TIME.
+    CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP DATA(l_begin) TIME ZONE sy-zonlo.
+    mr_tvarv->get_parameter(
+      EXPORTING
+        suffix = CONV #( zif_fi_finnet_constants=>mc_tvarv-max_proc_time )
+      IMPORTING
+        value  = l_max_processing_time
+    ).
+
+    DATA(l_max_waiting_time) = l_max_processing_time * 10 / 100.
+    DATA(l_job_name) = |{ zif_fi_finnet_constants=>mc_job-f110s_prefix }-{ i_execution_date }-{ i_execution_id }|.
+    DATA(l_job_count) = VALUE btcjobcnt(  ).
+    DO.
+      TRY.
+          DATA(lt_joblist) = mr_api->bp_job_moni( i_job_name = CONV #( l_job_name ) ).
+*               CATCH cx_bapi_error.  "
+          TRY.
+              l_job_count = lt_joblist[ 1 ]-jobcount.
+            CATCH cx_sy_itab_line_not_found ##NO_HANDLER.
+              GET TIME.
+              CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP DATA(l_now) TIME ZONE sy-zonlo.
+              DATA(l_diff) = l_now - l_begin.
+              IF l_diff < l_max_waiting_time.
+                WAIT UP TO 5 SECONDS.
+                CONTINUE.
+              ELSE.
+                MESSAGE e398(zfi01) INTO DATA(l_message).
+                m_raise_bapi_error.
+              ENDIF.
+          ENDTRY.
+          IF l_job_count IS NOT INITIAL.
+            DATA(l_job_status) = mr_api->bp_job_checkstate(
+                             i_job_name    = CONV #( l_job_name ) "m_current_job_name
+                             i_job_count   = l_job_count
+                         ).
+*                       CATCH cx_bapi_error.  "
+          ENDIF.
+*        CATCH cx_bapi_error INTO DATA(lx_error).
+*          mr_db->chk_reguh(
+*            EXPORTING
+*              i_execution_date = i_execution_date
+*              i_execution_id   = i_execution_id
+*          ).
+**              CATCH cx_sy_sql_error.    "
+*          EXIT.
+*        CATCH cx_sy_sql_error.
+        CATCH cx_bapi_error.
+          GET TIME.
+          CONVERT DATE sy-datlo TIME sy-timlo INTO TIME STAMP l_now TIME ZONE sy-zonlo.
+          l_diff = l_now - l_begin.
+          IF l_diff < l_max_processing_time.
+            WAIT UP TO 5 SECONDS.
+            RETRY.
+          ELSE.
+            MESSAGE e398(zfi01) INTO l_message.
+            m_raise_bapi_error.
+          ENDIF.
+      ENDTRY.
+      IF l_job_status = zif_fi_finnet_constants=>mc_job-job_status-running.
+        WAIT UP TO 5 SECONDS.
+      ELSE.
+        EXIT.
+      ENDIF.
+    ENDDO.
+  ENDMETHOD.
+ENDCLASS.
