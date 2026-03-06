@@ -100,52 +100,62 @@ CLASS lcl_pm_order DEFINITION
     METHODS get_header_data
       EXPORTING
         et_header TYPE string_table
-        et_values TYPE string_table.
+        et_values TYPE string_table
+        et_fields TYPE string_table.
 
     METHODS get_service_data
       EXPORTING
         et_header TYPE string_table
-        et_values TYPE string_table.
+        et_values TYPE string_table
+        et_fields TYPE string_table.
 
     METHODS get_ref_order_item_data
       EXPORTING
         et_header TYPE string_table
-        et_values TYPE string_table.
+        et_values TYPE string_table
+        et_fields TYPE string_table.
 
     METHODS get_jva_data
       EXPORTING
         et_header TYPE string_table
-        et_values TYPE string_table.
+        et_values TYPE string_table
+        et_fields TYPE string_table.
 
     METHODS get_partners_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
     METHODS get_operations_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
     METHODS get_components_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
     METHODS get_settlement_rules_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
     METHODS get_costs_sum_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
     METHODS get_costs_details_data
       EXPORTING
         et_header TYPE string_table
-        et_rows   TYPE ty_rows.
+        et_rows   TYPE ty_rows
+        et_fields TYPE string_table.
 
   PRIVATE SECTION.
     CONSTANTS:
@@ -178,13 +188,15 @@ CLASS lcl_pm_order DEFINITION
         is_data   TYPE any
       EXPORTING
         et_header TYPE string_table
-        et_values TYPE string_table.
+        et_values TYPE string_table
+        et_fields TYPE string_table.
 
     METHODS rtti_table_to_header_rows
       IMPORTING
         it_data   TYPE ANY TABLE
       EXPORTING
         et_header TYPE string_table
+        et_fields TYPE string_table
         et_rows   TYPE ty_rows.
 
 ENDCLASS.
@@ -262,6 +274,7 @@ CLASS lcl_report DEFINITION FRIENDS lcl_pm_order.
         IMPORTING
           ir_ws          TYPE REF TO zcl_excel_worksheet
           it_header      TYPE string_table
+          it_fields      TYPE string_table OPTIONAL
         CHANGING
           cv_hdr_written TYPE abap_bool,
 

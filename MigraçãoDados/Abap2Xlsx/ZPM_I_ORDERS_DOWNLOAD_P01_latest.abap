@@ -99,7 +99,7 @@ CLASS lcl_pm_order IMPLEMENTATION.
 
   METHOD rtti_structure_2header_values.
 
-    CLEAR: et_header, et_values.
+    CLEAR: et_header, et_values, et_fields.
 
     DATA(lr_sd) = CAST cl_abap_structdescr( cl_abap_typedescr=>describe_by_data( is_data ) ).
     DATA(lt_comp) = lr_sd->get_components( ).
@@ -125,6 +125,7 @@ CLASS lcl_pm_order IMPLEMENTATION.
       ENDTRY.
 
       APPEND lv_head TO et_header.
+      APPEND |{ <c>-name }| TO et_fields.
 
       "--- Value
       ASSIGN COMPONENT <c>-name OF STRUCTURE is_data TO <f>.
@@ -141,7 +142,7 @@ CLASS lcl_pm_order IMPLEMENTATION.
 
   METHOD rtti_table_to_header_rows.
 
-    CLEAR: et_header, et_rows.
+    CLEAR: et_header, et_rows, et_fields.
 
     DATA(lr_td) = CAST cl_abap_tabledescr( cl_abap_typedescr=>describe_by_data( it_data ) ).
     DATA(lr_line) = lr_td->get_table_line_type( ).
@@ -168,6 +169,7 @@ CLASS lcl_pm_order IMPLEMENTATION.
       ENDTRY.
 
       APPEND lv_head TO et_header.
+      APPEND |{ <c>-name }| TO et_fields.
 
     ENDLOOP.
 
@@ -200,9 +202,11 @@ CLASS lcl_pm_order IMPLEMENTATION.
       IMPORTING
         et_header = et_header
         et_values = et_values
+        et_fields = et_fields
     ).
     " ORDERID sempre como 1ª coluna
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     INSERT |{ me->m_order_id }| INTO et_values INDEX 1.
   ENDMETHOD.
 
@@ -212,8 +216,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING is_data   = me->ms_service
       IMPORTING et_header = et_header
                 et_values = et_values
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     INSERT |{ me->m_order_id }| INTO et_values INDEX 1.
   ENDMETHOD.
 
@@ -223,8 +229,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING is_data   = me->ms_ref_order_item
       IMPORTING et_header = et_header
                 et_values = et_values
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     INSERT |{ me->m_order_id }| INTO et_values INDEX 1.
   ENDMETHOD.
 
@@ -234,8 +242,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING is_data   = me->ms_join_venture_accounting
       IMPORTING et_header = et_header
                 et_values = et_values
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     INSERT |{ me->m_order_id }| INTO et_values INDEX 1.
   ENDMETHOD.
 
@@ -245,8 +255,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_partners
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -258,8 +270,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_operations
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -271,8 +285,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_components
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -284,8 +300,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_settlement_rules
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -297,8 +315,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_costs_sum
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -310,8 +330,10 @@ CLASS lcl_pm_order IMPLEMENTATION.
       EXPORTING it_data   = me->mt_costs_details
       IMPORTING et_header = et_header
                 et_rows   = et_rows
+                et_fields = et_fields
     ).
     INSERT `ORDERID` INTO et_header INDEX 1.
+    INSERT `ORDERID` INTO et_fields INDEX 1.
     LOOP AT et_rows ASSIGNING FIELD-SYMBOL(<r>).
       INSERT |{ me->m_order_id }| INTO <r> INDEX 1.
     ENDLOOP.
@@ -386,6 +408,8 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     DATA(lv_col) = 1.
+
+    " Linha 1: descri絥s
     LOOP AT it_header ASSIGNING FIELD-SYMBOL(<h>).
       ir_ws->set_cell(
         ip_column = zcl_excel_common=>convert_column2alpha( lv_col )
@@ -395,9 +419,23 @@ CLASS lcl_report IMPLEMENTATION.
       lv_col += 1.
     ENDLOOP.
 
+    " Linha 2: nomes t飮icos (se informado)
+    IF it_fields IS NOT INITIAL.
+      lv_col = 1.
+      LOOP AT it_fields ASSIGNING FIELD-SYMBOL(<f>).
+        ir_ws->set_cell(
+          ip_column = zcl_excel_common=>convert_column2alpha( lv_col )
+          ip_row    = 2
+          ip_value  = <f>
+        ).
+        lv_col += 1.
+      ENDLOOP.
+    ENDIF.
+
     cv_hdr_written = abap_true.
 
   ENDMETHOD.
+
 
   METHOD write_rows.
 
@@ -422,6 +460,7 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD convert_to_xlsx.
+    DATA lt_tfields TYPE string_table.
 
     DATA(lr_excel) = NEW zcl_excel( ).
     TRY.
@@ -460,16 +499,16 @@ CLASS lcl_report IMPLEMENTATION.
           lv_h_csum    TYPE abap_bool VALUE abap_false,
           lv_h_cdet    TYPE abap_bool VALUE abap_false.
 
-    DATA: lv_r_header  TYPE i VALUE 2,
-          lv_r_service TYPE i VALUE 2,
-          lv_r_refitem TYPE i VALUE 2,
-          lv_r_jva     TYPE i VALUE 2,
-          lv_r_part    TYPE i VALUE 2,
-          lv_r_oper    TYPE i VALUE 2,
-          lv_r_comp    TYPE i VALUE 2,
-          lv_r_settl   TYPE i VALUE 2,
-          lv_r_csum    TYPE i VALUE 2,
-          lv_r_cdet    TYPE i VALUE 2.
+    DATA: lv_r_header  TYPE i VALUE 3,
+          lv_r_service TYPE i VALUE 3,
+          lv_r_refitem TYPE i VALUE 3,
+          lv_r_jva     TYPE i VALUE 3,
+          lv_r_part    TYPE i VALUE 3,
+          lv_r_oper    TYPE i VALUE 3,
+          lv_r_comp    TYPE i VALUE 3,
+          lv_r_settl   TYPE i VALUE 3,
+          lv_r_csum    TYPE i VALUE 3,
+          lv_r_cdet    TYPE i VALUE 3.
 
     LOOP AT me->mt_orders ASSIGNING FIELD-SYMBOL(<ls_order>).
 
@@ -502,37 +541,38 @@ CLASS lcl_report IMPLEMENTATION.
       "========================
       " Estruturas (1 linha por ordem)
       "========================
-      DATA lt_head TYPE string_table.
-      DATA lt_vals TYPE string_table.
+      DATA lt_head   TYPE string_table.
+      DATA lt_fields TYPE string_table.
+      DATA lt_vals   TYPE string_table.
 
       " Header
-      CLEAR: lt_head, lt_vals.
-      <ls_order>-instance->get_header_data( IMPORTING et_header = lt_head et_values = lt_vals ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_header it_header = lt_head
+      CLEAR: lt_head, lt_fields, lt_vals.
+      <ls_order>-instance->get_header_data( IMPORTING et_header = lt_head et_values = lt_vals et_fields = lt_fields ).
+      write_header_if_needed( EXPORTING ir_ws = lr_ws_header it_header = lt_head it_fields = lt_fields
                              CHANGING  cv_hdr_written = lv_h_header ).
       write_rows( EXPORTING ir_ws = lr_ws_header it_rows = VALUE lcl_pm_order=>ty_rows( ( lt_vals ) )
                  CHANGING  cv_next_row = lv_r_header ).
 
       " Service Spec
-      CLEAR: lt_head, lt_vals.
-      <ls_order>-instance->get_service_data( IMPORTING et_header = lt_head et_values = lt_vals ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_service it_header = lt_head
+      CLEAR: lt_head, lt_fields, lt_vals.
+      <ls_order>-instance->get_service_data( IMPORTING et_header = lt_head et_values = lt_vals et_fields = lt_fields ).
+      write_header_if_needed( EXPORTING ir_ws = lr_ws_service it_header = lt_head it_fields = lt_fields
                              CHANGING  cv_hdr_written = lv_h_service ).
       write_rows( EXPORTING ir_ws = lr_ws_service it_rows = VALUE lcl_pm_order=>ty_rows( ( lt_vals ) )
                  CHANGING  cv_next_row = lv_r_service ).
 
       " Ref. Ord. Item
-      CLEAR: lt_head, lt_vals.
-      <ls_order>-instance->get_ref_order_item_data( IMPORTING et_header = lt_head et_values = lt_vals ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_refitem it_header = lt_head
+      CLEAR: lt_head, lt_fields, lt_vals.
+      <ls_order>-instance->get_ref_order_item_data( IMPORTING et_header = lt_head et_values = lt_vals et_fields = lt_fields ).
+      write_header_if_needed( EXPORTING ir_ws = lr_ws_refitem it_header = lt_head it_fields = lt_fields
                              CHANGING  cv_hdr_written = lv_h_refitem ).
       write_rows( EXPORTING ir_ws = lr_ws_refitem it_rows = VALUE lcl_pm_order=>ty_rows( ( lt_vals ) )
                  CHANGING  cv_next_row = lv_r_refitem ).
 
       " JVA
-      CLEAR: lt_head, lt_vals.
-      <ls_order>-instance->get_jva_data( IMPORTING et_header = lt_head et_values = lt_vals ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_jva it_header = lt_head
+      CLEAR: lt_head, lt_fields, lt_vals.
+      <ls_order>-instance->get_jva_data( IMPORTING et_header = lt_head et_values = lt_vals et_fields = lt_fields ).
+      write_header_if_needed( EXPORTING ir_ws = lr_ws_jva it_header = lt_head it_fields = lt_fields
                              CHANGING  cv_hdr_written = lv_h_jva ).
       write_rows( EXPORTING ir_ws = lr_ws_jva it_rows = VALUE lcl_pm_order=>ty_rows( ( lt_vals ) )
                  CHANGING  cv_next_row = lv_r_jva ).
@@ -544,50 +584,100 @@ CLASS lcl_report IMPLEMENTATION.
       DATA lt_rows  TYPE lcl_pm_order=>ty_rows.
 
       " Partners
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_partners_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_partners it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_part ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_partners_data(
+        IMPORTING
+          et_header = lt_thead
+          et_rows   = lt_rows
+          et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING
+          ir_ws     = lr_ws_partners
+          it_header = lt_thead
+          it_fields = lt_tfields
+        CHANGING
+          cv_hdr_written = lv_h_part
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_partners it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_part ).
 
       " Operations
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_operations_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_oper it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_oper ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_operations_data(
+        IMPORTING et_header = lt_thead
+                  et_rows   = lt_rows
+                  et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING ir_ws     = lr_ws_oper
+                  it_header = lt_thead
+                  it_fields = lt_tfields
+        CHANGING  cv_hdr_written = lv_h_oper
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_oper it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_oper ).
 
       " Components
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_components_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_comp it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_comp ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_components_data(
+       IMPORTING et_header = lt_thead
+                 et_rows   = lt_rows
+                 et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING ir_ws     = lr_ws_comp
+                  it_header = lt_thead
+                  it_fields = lt_tfields
+        CHANGING  cv_hdr_written = lv_h_comp
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_comp it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_comp ).
 
       " Settlement Rules
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_settlement_rules_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_settl it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_settl ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_settlement_rules_data(
+       IMPORTING et_header = lt_thead
+                 et_rows   = lt_rows
+                 et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING ir_ws     =  lr_ws_settl
+                  it_header = lt_thead
+                  it_fields = lt_tfields
+        CHANGING  cv_hdr_written = lv_h_settl
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_settl it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_settl ).
 
       " Costs Sum
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_costs_sum_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_csum it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_csum ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_costs_sum_data(
+       IMPORTING et_header = lt_thead
+                 et_rows   = lt_rows
+                 et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING ir_ws     = lr_ws_csum
+                  it_header = lt_thead
+                  it_fields = lt_tfields
+        CHANGING  cv_hdr_written = lv_h_csum
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_csum it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_csum ).
 
-      " Costs Details
-      CLEAR: lt_thead, lt_rows.
-      <ls_order>-instance->get_costs_details_data( IMPORTING et_header = lt_thead et_rows = lt_rows ).
-      write_header_if_needed( EXPORTING ir_ws = lr_ws_cdet it_header = lt_thead
-                             CHANGING  cv_hdr_written = lv_h_cdet ).
+      CLEAR: lt_thead, lt_rows, lt_tfields.
+      <ls_order>-instance->get_costs_details_data(
+       IMPORTING et_header = lt_thead
+                 et_rows   = lt_rows
+                 et_fields = lt_tfields
+      ).
+      write_header_if_needed(
+        EXPORTING ir_ws     = lr_ws_cdet
+                  it_header = lt_thead
+                  it_fields = lt_tfields
+        CHANGING  cv_hdr_written = lv_h_cdet
+      ).
       write_rows( EXPORTING ir_ws = lr_ws_cdet it_rows = lt_rows
                  CHANGING  cv_next_row = lv_r_cdet ).
 
