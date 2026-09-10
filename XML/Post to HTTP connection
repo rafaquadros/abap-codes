@@ -1,0 +1,90 @@
+  METHOD push_xml.
+
+    DATA:
+      lv_status_code TYPE i,
+      lv_status_text TYPE string.
+
+    ev_rc = 4.  "Push default response code ERROR
+
+    " 1. Create the HTTP Client using the SM59 Destination
+    cl_http_client=>create_by_destination(
+      EXPORTING
+        destination              = 'CPI_XML_OUTBOUND'
+      IMPORTING
+        client                   = DATA(lo_http_client)
+      EXCEPTIONS
+        argument_not_found       = 1
+        destination_not_found    = 2
+        destination_no_authority = 3
+        plugin_not_active        = 4
+        internal_error           = 5
+        OTHERS                   = 6 ).
+
+    IF sy-subrc <> 0.
+      APPEND VALUE #( id = sy-msgid type = sy-msgty number = sy-msgno
+      message_v1 = sy-msgv1 message_v2 = sy-msgv2 message_v3 = sy-msgv3 message_v4 = sy-msgv4 ) TO et_msgs.
+      RETURN.
+    ENDIF.
+
+
+    " 2. Configure HTTP Header Fields
+    lo_http_client->request->set_method( if_http_request=>co_request_method_post ).
+    lo_http_client->request->set_header_field( name = |Content-Type| value = |application/xml; charset=utf-8| ).
+    lo_http_client->request->set_header_field( name = |Source|       value = |{ sy-sysid }CLNT{ sy-mandt }| ).
+
+    "Add additional ones specific to solution (like Target, Filename, Caller)
+    LOOP AT it_header ASSIGNING FIELD-SYMBOL(<fsh>).
+      lo_http_client->request->set_header_field( name = <fsh>-name value = <fsh>-value ).
+    ENDLOOP.
+
+    " 3. Bind your XML String into the Request Body
+    lo_http_client->request->set_data( data = iv_body ).
+
+    " 4. Send the Request to SAP BTP CPI
+    lo_http_client->send(
+      EXCEPTIONS
+        http_communication_failure = 1
+        http_invalid_state         = 2
+        http_processing_failed     = 3
+        OTHERS                     = 4 ).
+
+    IF sy-subrc = 0.
+      " 5. Receive the Response back from CPI
+      lo_http_client->receive(
+        EXCEPTIONS
+          http_communication_failure = 1
+          http_invalid_state         = 2
+          http_processing_failed     = 3
+          OTHERS                     = 4 ).
+    ENDIF.
+
+    " 6. Validate Response Status (200 or 202 means success)
+    IF sy-subrc = 0.
+      lo_http_client->response->get_status(
+        IMPORTING
+          code   = lv_status_code
+          reason = lv_status_text ).
+
+      IF lv_status_code = 200 OR lv_status_code = 202.
+        " Success logic: Payload safely delivered to BTP CPI
+        ev_rc = 0.
+
+      ELSE.
+        " Handle application errors or authorization blocks
+        APPEND VALUE #( id = sy-msgid type = sy-msgty number = sy-msgno
+        message_v1 = sy-msgv1 message_v2 = sy-msgv2 message_v3 = sy-msgv3 message_v4 = sy-msgv4 ) TO et_msgs.
+
+        DATA(lv_err_body) = lo_http_client->response->get_cdata( ).
+        APPEND VALUE #( type = |I| message = |{ lv_status_text } - { lv_err_body }| ) TO et_msgs.
+      ENDIF.
+    ELSE.
+      " Handle technical/network connection issues
+      APPEND VALUE #( id = sy-msgid type = sy-msgty number = sy-msgno
+      message_v1 = sy-msgv1 message_v2 = sy-msgv2 message_v3 = sy-msgv3 message_v4 = sy-msgv4 ) TO et_msgs.
+    ENDIF.
+
+    " 8. Always close the HTTP connection session
+    lo_http_client->close( ).
+
+
+  ENDMETHOD.
