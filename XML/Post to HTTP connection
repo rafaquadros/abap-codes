@@ -1,4 +1,12 @@
-  METHOD push_xml.
+  class-methods PUSH_XML
+    importing
+      !IT_HEADER type TIHTTPNVP optional
+      !IV_BODY type XSTRING
+    exporting
+      !EV_RC type SUBRC
+      !ET_MSGS type BAPIRET2_T .
+
+METHOD push_xml.
 
     DATA:
       lv_status_code TYPE i,
